@@ -1,0 +1,84 @@
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: #4b5563;
+}
+
+.count-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-top: 12px;
+}
+
+.count-row input {
+  margin-top: 6px;
+  padding: 8px;
+}
+
+.warning {
+  margin-top: 10px;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.table-form {
+  margin-top: 16px;
+}
+
+.grid-header, .grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.grid-header {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.grid-row input {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+}
+
+.actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+button.primary {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #e5e7eb;
+  color: #111827;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.success {
+  color: #15803d;
+}
