@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import ErrorModal from '../../common/ErrorModal';
+import ErrorModal from '../common/ErrorModal';
 import { FactoryType, MathFunctionInfo } from '../../../types/function.types';
 import { validateInterval, validatePointsCount } from '../../../utils/validation';
 import { mathFunctionApi, functionApi } from '../../../api/functionApi';
-import { LoadingOverlay, InlineLoading } from '../../common/LoadingOverlay';
+import { LoadingOverlay, InlineLoading } from '../common/LoadingOverlay';
 import FunctionPreviewGraph from './FunctionPreviewGraph';
 
 interface MathFunctionMap {

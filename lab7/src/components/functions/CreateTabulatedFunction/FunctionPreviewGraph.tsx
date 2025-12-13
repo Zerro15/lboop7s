@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { Point } from '../../../types/function.types';
-import { LoadingOverlay } from '../../common/LoadingOverlay';
+import { LoadingOverlay } from '../common/LoadingOverlay';
 
 Chart.register(...registerables, zoomPlugin);
 

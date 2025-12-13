@@ -1,5 +1,4 @@
 import React from 'react';
-import { ErrorType } from '../../types/function.types';
 
 interface ErrorModalProps {
   errorType: string;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PointsTable from './PointsTable';
-import ErrorModal from '../../common/ErrorModal';
+import ErrorModal from '../common/ErrorModal';
 import { Point, FactoryType } from '../../../types/function.types';
 import { validateSize, validatePoints } from '../../../utils/validation';
 import { functionApi } from '../../../api/functionApi';
