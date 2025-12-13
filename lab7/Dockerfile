@@ -1,5 +1,5 @@
-# Use Tomcat with Java 17
-FROM tomcat:9.0-jre17
+# Use Tomcat with Java 24 while retaining javax servlet support
+FROM tomcat:9.0-jdk24-temurin
 
 # Set maintainer
 LABEL maintainer="your-email@example.com"
