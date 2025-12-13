@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/lab6/docker/sql/init/01-init-schema.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/lab6/src/main/resources/manual/scripts/000_init_database.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/lab6/src/main/resources/manual/scripts/001_create_users_table.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/lab6/src/main/resources/manual/scripts/002_create_functions_table.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/lab6/src/main/resources/manual/scripts/003_create_points_table.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/lab6/src/main/resources/manual/scripts/crud/complex_queries.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/lab6/src/main/resources/manual/scripts/crud/functions_crud.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/lab6/src/main/resources/manual/scripts/crud/points_crud.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/lab6/src/main/resources/manual/scripts/crud/users_crud.sql" dialect="GenericSQL" />
+  </component>
+</project>
