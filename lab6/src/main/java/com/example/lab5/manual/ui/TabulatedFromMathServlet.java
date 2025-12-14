@@ -1,9 +1,9 @@
 package com.example.lab5.manual.ui;
 
+import com.example.lab5.manual.config.FactoryHolder;
 import com.example.lab5.manual.functions.MathFunction;
 import com.example.lab5.manual.functions.MathFunctionRegistry;
 import com.example.lab5.manual.functions.exception.UnknownFunctionException;
-import com.example.lab5.manual.functions.factory.ArrayTabulatedFunctionFactory;
 import com.example.lab5.manual.functions.factory.TabulatedFunctionFactory;
 import com.example.lab5.manual.functions.tabulated.TabulatedFunction;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,7 +23,6 @@ import java.util.Map;
 @WebServlet("/ui/api/tabulated/math")
 public class TabulatedFromMathServlet extends HttpServlet {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final TabulatedFunctionFactory factory = new ArrayTabulatedFunctionFactory();
     private final MathFunctionRegistry registry = new MathFunctionRegistry();
     private final ExceptionResponder exceptionResponder = new ExceptionResponder();
 
@@ -37,6 +36,7 @@ public class TabulatedFromMathServlet extends HttpServlet {
             int count = payload.get("count").asInt();
 
             MathFunction function = resolveFunction(functionName);
+            TabulatedFunctionFactory factory = FactoryHolder.getInstance().getFactory();
             TabulatedFunction tabulated = factory.create(function, from, to, count);
 
             resp.setContentType("application/json;charset=UTF-8");

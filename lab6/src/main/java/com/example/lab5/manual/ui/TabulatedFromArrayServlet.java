@@ -1,7 +1,7 @@
 package com.example.lab5.manual.ui;
 
+import com.example.lab5.manual.config.FactoryHolder;
 import com.example.lab5.manual.functions.exception.ValidationException;
-import com.example.lab5.manual.functions.factory.ArrayTabulatedFunctionFactory;
 import com.example.lab5.manual.functions.factory.TabulatedFunctionFactory;
 import com.example.lab5.manual.functions.tabulated.TabulatedFunction;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,7 +21,6 @@ import java.io.IOException;
 @WebServlet("/ui/api/tabulated/array")
 public class TabulatedFromArrayServlet extends HttpServlet {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final TabulatedFunctionFactory factory = new ArrayTabulatedFunctionFactory();
     private final ExceptionResponder exceptionResponder = new ExceptionResponder();
 
     @Override
@@ -37,6 +36,7 @@ public class TabulatedFromArrayServlet extends HttpServlet {
 
             double[] xValues = toArray(xValuesNode);
             double[] yValues = toArray(yValuesNode);
+            TabulatedFunctionFactory factory = FactoryHolder.getInstance().getFactory();
             TabulatedFunction function = factory.create(xValues, yValues);
 
             resp.setContentType("application/json;charset=UTF-8");

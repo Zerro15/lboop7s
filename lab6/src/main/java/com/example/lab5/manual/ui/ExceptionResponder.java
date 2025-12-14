@@ -33,6 +33,9 @@ public class ExceptionResponder {
         } else if (exception instanceof ValidationException) {
             status = HttpServletResponse.SC_BAD_REQUEST;
             message = exception.getMessage();
+        } else if (exception instanceof IllegalArgumentException) {
+            status = HttpServletResponse.SC_BAD_REQUEST;
+            message = exception.getMessage();
         }
 
         logger.log(Level.WARNING, "UI error", exception);
