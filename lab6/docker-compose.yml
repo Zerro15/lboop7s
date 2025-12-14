@@ -1,56 +1,37 @@
-version: '3.8'
-
 services:
+  # База данных
   postgres:
-    image: postgres:13
+    image: postgres:15-alpine
     container_name: lab5-postgres
     environment:
-      POSTGRES_DB: lab5db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: lab5_db
+      POSTGRES_USER: lab5_user
+      POSTGRES_PASSWORD: lab5_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/sql/init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U lab5_user -d lab5_db"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - lab5-network
 
-  lab5-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: lab5-manual-app
-    environment:
-      - DB_URL=jdbc:postgresql://postgres:5432/lab5db
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=password
-      - JAVA_OPTS=-Xmx512m -Dlogging.level.com.example.lab5=INFO
-    ports:
-      - "8080:8080"
+  # Наше приложение
+  app:
+    build: .  # Собираем из Dockerfile
+    container_name: lab5-app
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - ./logs:/usr/local/tomcat/logs
-      - app_logs:/app/logs
-    networks:
-      - lab5-network
-    healthcheck:
-      test: ["CMD", "/usr/local/bin/healthcheck.sh"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/lab5_db
+      SPRING_DATASOURCE_USERNAME: lab5_user
+      SPRING_DATASOURCE_PASSWORD: lab5_password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
 
 volumes:
   postgres_data:
-  app_logs:
-
-networks:
-  lab5-network:
-    driver: bridge

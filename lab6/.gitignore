@@ -1,4 +1,3 @@
-# Maven
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -12,6 +11,12 @@ target/
 *.iws
 *.iml
 *.ipr
+
+### Logs ###
+*.log
+logs/
+**/logs/
+*.logs
 
 ### Eclipse ###
 .apt_generated
@@ -37,15 +42,3 @@ build/
 
 ### Mac OS ###
 .DS_Store
-
-### JSON and JavaScript files ###
-*.json
-*.js
-!package.json
-!package-lock.json
-
-### Node.js ###
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
