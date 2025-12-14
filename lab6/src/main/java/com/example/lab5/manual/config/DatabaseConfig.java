@@ -30,10 +30,14 @@ public class DatabaseConfig {
     }
 
     public static Connection getConnection() throws SQLException {
-        String url = properties.getProperty("database.url");
-        String username = properties.getProperty("database.username");
-        String password = properties.getProperty("database.password");
-        String driver = properties.getProperty("database.driver");
+        String url = envOrProperty("DB_URL", "database.url");
+        String username = envOrProperty("DB_USERNAME", "database.username");
+        String password = envOrProperty("DB_PASSWORD", "database.password");
+        String driver = envOrProperty("DB_DRIVER", "database.driver");
+
+        if (url == null || url.isBlank()) {
+            throw new IllegalStateException("JDBC url is not configured");
+        }
 
         try {
             if (driver != null && !driver.isBlank()) {
@@ -45,10 +49,23 @@ public class DatabaseConfig {
         }
 
         logger.debug("Подключение к базе данных: {}", url);
-        return DriverManager.getConnection(url, username, password);
+        try {
+            return DriverManager.getConnection(url, username, password);
+        } catch (SQLException e) {
+            logger.error("Не удалось подключиться к базе данных: {}", url, e);
+            throw new IllegalStateException("Не удалось подключиться к базе данных. Проверьте конфигурацию соединения", e);
+        }
     }
 
     public static String getProperty(String key) {
         return properties.getProperty(key);
+    }
+
+    private static String envOrProperty(String envKey, String propertyKey) {
+        String envValue = System.getenv(envKey);
+        if (envValue != null && !envValue.isBlank()) {
+            return envValue;
+        }
+        return properties.getProperty(propertyKey);
     }
 }

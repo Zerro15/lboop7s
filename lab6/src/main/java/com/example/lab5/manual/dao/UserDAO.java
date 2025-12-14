@@ -32,8 +32,7 @@ public class UserDAO {
                 throw new SQLException("Создание пользователя не удалось, ID не получен");
             }
         } catch (SQLException e) {
-            logger.error("Ошибка при создании пользователя: {}", user.getLogin(), e);
-            throw new RuntimeException("Database error", e);
+            throw databaseError("Ошибка при создании пользователя: " + user.getLogin(), e);
         }
     }
 
@@ -54,8 +53,7 @@ public class UserDAO {
             logger.debug("Пользователь с ID {} не найден", id);
             return Optional.empty();
         } catch (SQLException e) {
-            logger.error("Ошибка при поиске пользователя по ID: {}", id, e);
-            throw new RuntimeException("Database error", e);
+            throw databaseError("Ошибка при поиске пользователя по ID: " + id, e);
         }
     }
 
@@ -76,8 +74,7 @@ public class UserDAO {
             logger.debug("Пользователь с логином {} не найден", login);
             return Optional.empty();
         } catch (SQLException e) {
-            logger.error("Ошибка при поиске пользователя по логину: {}", login, e);
-            throw new RuntimeException("Database error", e);
+            throw databaseError("Ошибка при поиске пользователя по логину: " + login, e);
         }
     }
 
@@ -95,8 +92,7 @@ public class UserDAO {
             logger.debug("Найдено {} пользователей", users.size());
             return users;
         } catch (SQLException e) {
-            logger.error("Ошибка при получении всех пользователей", e);
-            throw new RuntimeException("Database error", e);
+            throw databaseError("Ошибка при получении всех пользователей", e);
         }
     }
 
@@ -116,8 +112,7 @@ public class UserDAO {
             logger.debug("Найдено {} пользователей с ролью {}", users.size(), role);
             return users;
         } catch (SQLException e) {
-            logger.error("Ошибка при поиске пользователей по роли: {}", role, e);
-            throw new RuntimeException("Database error", e);
+            throw databaseError("Ошибка при поиске пользователей по роли: " + role, e);
         }
     }
 
@@ -142,8 +137,7 @@ public class UserDAO {
             }
             return updated;
         } catch (SQLException e) {
-            logger.error("Ошибка при обновлении пользователя с ID: {}", user.getId(), e);
-            throw new RuntimeException("Database error", e);
+            throw databaseError("Ошибка при обновлении пользователя с ID: " + user.getId(), e);
         }
     }
 
@@ -164,8 +158,7 @@ public class UserDAO {
             }
             return deleted;
         } catch (SQLException e) {
-            logger.error("Ошибка при удалении пользователя с ID: {}", id, e);
-            throw new RuntimeException("Database error", e);
+            throw databaseError("Ошибка при удалении пользователя с ID: " + id, e);
         }
     }
 
@@ -176,5 +169,10 @@ public class UserDAO {
         user.setRole(rs.getString("role"));
         user.setPassword(rs.getString("password"));
         return user;
+    }
+
+    private RuntimeException databaseError(String message, SQLException e) {
+        logger.error(message, e);
+        return new IllegalStateException("Ошибка базы данных: " + e.getMessage(), e);
     }
 }
