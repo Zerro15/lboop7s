@@ -70,4 +70,21 @@ public class UserService {
         Optional<UserDTO> user = userDAO.findByLogin(login);
         return user.isPresent() && user.get().getPassword().equals(password);
     }
+
+    public UserDTO register(String login, String password) {
+        logger.info("Регистрация пользователя с логином {}", login);
+        if (login == null || login.isBlank() || password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Логин и пароль обязательны");
+        }
+
+        Optional<UserDTO> existing = userDAO.findByLogin(login);
+        if (existing.isPresent()) {
+            throw new IllegalArgumentException("Пользователь уже существует");
+        }
+
+        UserDTO user = new UserDTO(login, "USER", password);
+        Long id = userDAO.createUser(user);
+        user.setId(id);
+        return user;
+    }
 }

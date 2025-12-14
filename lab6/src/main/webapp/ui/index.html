@@ -59,6 +59,8 @@
         input, select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
         body.dark input, body.dark select { background: #0b1220; color: #e2e8f0; }
         .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+        .auth-fields { display: flex; flex-direction: column; gap: 8px; }
+        .auth-fields label { margin-bottom: -4px; }
         .divider { height: 1px; background: var(--border); margin: 14px 0; }
         .badge { padding: 4px 8px; border-radius: 12px; background: #ecf1f9; color: var(--primary-dark); font-size: 12px; font-weight: 700; }
         body.dark .badge { background: #1f2937; color: #c084fc; }
@@ -230,6 +232,14 @@
                     <button data-save="graph" class="secondary">Сохранить</button>
                 </div>
                 <div class="actions">
+                    <input id="graph-name" placeholder="Название функции">
+                    <button id="graph-save">Сохранить график</button>
+                </div>
+                <div class="actions">
+                    <select id="graph-saved"></select>
+                    <button id="graph-load" class="secondary">Загрузить сохранённый</button>
+                </div>
+                <div class="actions">
                     <input id="apply-x" type="number" step="0.1" placeholder="X для вычисления">
                     <button id="apply-run">Вычислить apply()</button>
                     <span id="apply-result" class="badge">—</span>
@@ -326,7 +336,7 @@
     <!-- Auth modal -->
     <div class="modal" id="auth-modal">
         <div class="modal-header"><h3 id="auth-title">Вход</h3></div>
-        <div class="grid-2" style="margin-top:10px;">
+        <div class="auth-fields" style="margin-top:10px;">
             <label for="auth-login">Логин</label>
             <input id="auth-login" placeholder="login">
             <label for="auth-password">Пароль</label>
@@ -359,9 +369,12 @@
 
     const state = {
         token: localStorage.getItem('token'),
+        login: localStorage.getItem('login'),
+        role: localStorage.getItem('role'),
         authMode: 'login',
         factory: 'ARRAY',
         functionsList: [],
+        savedFunctions: [],
         saveFormat: 'bin',
         functions: {
             opA: { points: [], insertable: true, removable: true },
@@ -418,7 +431,11 @@
         const res = await fetch(url, options);
         if (res.status === 401) {
             localStorage.removeItem('token');
+            localStorage.removeItem('login');
+            localStorage.removeItem('role');
             state.token = null;
+            state.login = null;
+            state.role = null;
             updateUserChip();
             openModal('auth');
             throw new Error('Требуется авторизация');
@@ -461,7 +478,12 @@
             const password = document.getElementById('auth-password').value;
             const endpoint = state.authMode === 'login' ? '/auth/login' : '/auth/register';
             const data = await apiCall(endpoint, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ login, password }) });
-            state.token = data.token; localStorage.setItem('token', state.token);
+            state.token = data.token;
+            state.login = data.login;
+            state.role = data.role;
+            localStorage.setItem('token', state.token);
+            localStorage.setItem('login', data.login);
+            localStorage.setItem('role', data.role);
             updateUserChip(data.login, data.role);
             await hydrateAfterAuth();
             closeModal();
@@ -504,6 +526,27 @@
             option.value = name; option.textContent = name; select.appendChild(option);
         });
         renderCompositeList();
+    }
+
+    async function loadSavedFunctions() {
+        const list = await apiCall('/user-functions');
+        state.savedFunctions = list;
+        const select = document.getElementById('graph-saved');
+        select.innerHTML = '';
+        if (list.length === 0) {
+            const option = document.createElement('option');
+            option.disabled = true;
+            option.selected = true;
+            option.textContent = 'Нет сохранённых графиков';
+            select.appendChild(option);
+            return;
+        }
+        list.forEach(fn => {
+            const option = document.createElement('option');
+            option.value = fn.id;
+            option.textContent = fn.name;
+            select.appendChild(option);
+        });
     }
 
     function renderCompositeList() {
@@ -732,6 +775,28 @@
         } catch (err) { showError(err.message); }
     });
 
+    document.getElementById('graph-save').addEventListener('click', async () => {
+        const name = document.getElementById('graph-name').value.trim();
+        const points = state.functions.graph.points || [];
+        if (!name) { showError('Укажите имя функции перед сохранением'); return; }
+        if (!points.length) { showError('Добавьте точки перед сохранением'); return; }
+        try {
+            const saved = await apiCall('/user-functions', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, points })});
+            state.savedFunctions.push(saved);
+            await loadSavedFunctions();
+            document.getElementById('graph-name').value = '';
+        } catch (err) { showError(err.message); }
+    });
+
+    document.getElementById('graph-load').addEventListener('click', () => {
+        const select = document.getElementById('graph-saved');
+        const id = select.value;
+        const fn = state.savedFunctions.find(f => String(f.id) === String(id));
+        if (!fn) { showError('Выберите сохранённую функцию'); return; }
+        state.functions.graph.points = fn.points;
+        renderAllTables();
+    });
+
     // Integral
     document.getElementById('integral-run').addEventListener('click', async () => {
         const threads = Number(document.getElementById('integral-threads').value);
@@ -773,6 +838,7 @@
     async function hydrateAfterAuth() {
         await loadFactory();
         await loadFunctionsList();
+        await loadSavedFunctions();
         renderAllTables();
         attachLoaders();
         attachSavers();
@@ -781,7 +847,7 @@
     document.addEventListener('DOMContentLoaded', async () => {
         if (state.token) {
             try {
-                updateUserChip('Пользователь');
+                updateUserChip(state.login || 'Пользователь', state.role);
                 await hydrateAfterAuth();
             } catch (err) {
                 showError(err.message);
