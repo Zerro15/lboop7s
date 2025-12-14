@@ -30,6 +30,9 @@ public class FunctionService {
     @Autowired
     private PointRepository pointRepository;
 
+    @Autowired
+    private MathFunctionService mathFunctionService;
+
     // Существующие методы...
 
     public Function createFunction(Long userId, String name, String signature) {
@@ -133,7 +136,7 @@ public class FunctionService {
 
         for (int i = 0; i < pointsCount; i++) {
             double x = leftBound + i * step;
-            double y = calculateMathFunction(mathFunctionKey, x);
+            double y = mathFunctionService.calculateFunction(mathFunctionKey, x);
 
             Point point = new Point();
             point.setXValue(x);
@@ -212,26 +215,6 @@ public class FunctionService {
 
         logger.warn("Не удалось вычислить значение функции {} в точке {}", functionId, x);
         return null;
-    }
-
-    private double calculateMathFunction(String functionKey, double x) {
-        switch (functionKey) {
-            case "sqr":
-                return x * x;
-            case "identity":
-                return x;
-            case "sin":
-                return Math.sin(x);
-            case "cos":
-                return Math.cos(x);
-            case "exp":
-                return Math.exp(x);
-            case "log":
-                return x > 0 ? Math.log(x) : Double.NaN;
-            default:
-                logger.warn("Неизвестная функция: {}", functionKey);
-                return 0;
-        }
     }
 
     // Остальные существующие методы...

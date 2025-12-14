@@ -1,43 +1,28 @@
 package com.example.lab5.framework.service;
 
 import com.example.lab5.framework.dto.*;
+import com.example.lab5.framework.math.annotations.MathFunctionDescriptor;
+import com.example.lab5.framework.math.functions.AnnotatedMathFunction;
 import org.springframework.stereotype.Service;
+
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class MathFunctionService {
 
     public List<MathFunctionDTO> getAllMathFunctions() {
-        List<MathFunctionDTO> functions = new ArrayList<>();
-
-        functions.add(createFunctionDTO("sqr", "Квадратичная функция",
-                "Функция y = x²", "f(x) = x²", "алгебраические", "SqrFunction"));
-
-        functions.add(createFunctionDTO("identity", "Тождественная функция",
-                "Функция y = x", "f(x) = x", "алгебраические", "IdentityFunction"));
-
-        functions.add(createFunctionDTO("sin", "Синус",
-                "Тригонометрическая функция синус", "f(x) = sin(x)", "тригонометрические", "SinFunction"));
-
-        functions.add(createFunctionDTO("cos", "Косинус",
-                "Тригонометрическая функция косинус", "f(x) = cos(x)", "тригонометрические", "CosFunction"));
-
-        functions.add(createFunctionDTO("exp", "Экспонента",
-                "Экспоненциальная функция", "f(x) = e^x", "экспоненциальные", "ExpFunction"));
-
-        functions.add(createFunctionDTO("log", "Натуральный логарифм",
-                "Логарифмическая функция", "f(x) = ln(x)", "логарифмические", "LogFunction"));
-
-        // Сортировка по алфавиту
-        functions.sort(Comparator.comparing(MathFunctionDTO::getLabel));
-
-        return functions;
+        return loadAnnotatedFunctions().stream()
+                .map(this::toDto)
+                .sorted(Comparator
+                        .comparingInt(MathFunctionDTO::getPriority)
+                        .thenComparing(MathFunctionDTO::getLabel))
+                .collect(Collectors.toList());
     }
 
     public Map<String, MathFunctionDTO> getFunctionMap() {
-        Map<String, MathFunctionDTO> map = new HashMap<>();
-        getAllMathFunctions().forEach(func -> map.put(func.getKey(), func));
-        return map;
+        return getAllMathFunctions().stream()
+                .collect(Collectors.toMap(MathFunctionDTO::getKey, f -> f));
     }
 
     public PreviewResponse previewMathFunction(String functionKey, Integer pointsCount,
@@ -61,34 +46,28 @@ public class MathFunctionService {
         return response;
     }
 
-    private double calculateFunction(String functionKey, double x) {
-        switch (functionKey) {
-            case "sqr":
-                return x * x;
-            case "identity":
-                return x;
-            case "sin":
-                return Math.sin(x);
-            case "cos":
-                return Math.cos(x);
-            case "exp":
-                return Math.exp(x);
-            case "log":
-                return x > 0 ? Math.log(x) : Double.NaN;
-            default:
-                return 0;
-        }
+    public double calculateFunction(String functionKey, double x) {
+        return loadAnnotatedFunctions().stream()
+                .filter(f -> f.getDescriptor().key().equals(functionKey))
+                .findFirst()
+                .map(func -> func.getFunction().apply(x))
+                .orElse(Double.NaN);
     }
 
-    private MathFunctionDTO createFunctionDTO(String key, String label, String description,
-                                              String example, String category, String functionType) {
+    private List<AnnotatedMathFunction> loadAnnotatedFunctions() {
+        return AnnotatedMathFunction.discoveryCache();
+    }
+
+    private MathFunctionDTO toDto(AnnotatedMathFunction annotated) {
+        MathFunctionDescriptor meta = annotated.getDescriptor();
         MathFunctionDTO dto = new MathFunctionDTO();
-        dto.setKey(key);
-        dto.setLabel(label);
-        dto.setDescription(description);
-        dto.setExample(example);
-        dto.setCategory(category);
-        dto.setFunctionType(functionType);
+        dto.setKey(meta.key());
+        dto.setLabel(meta.localizedName());
+        dto.setDescription(meta.description());
+        dto.setExample(meta.example());
+        dto.setCategory(meta.category());
+        dto.setFunctionType(annotated.getFunction().getClass().getSimpleName());
+        dto.setPriority(meta.priority());
         return dto;
     }
 }
