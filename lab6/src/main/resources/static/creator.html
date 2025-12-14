@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создание табулированных функций</title>
+    <link rel="stylesheet" href="/css/flat.css">
+</head>
+<body>
+<header>
+    <h1>Мастер создания табулированных функций</h1>
+    <p>Создание из массивов или из MathFunction. Все проверки выполняются на стороне клиента.</p>
+    <div class="nav">
+        <a href="/">Главная</a>
+        <a href="/settings.html">Настройки</a>
+        <a href="/operations.html">Операции</a>
+        <a href="/differentiate.html">Дифференцирование</a>
+    </div>
+</header>
+<main>
+    <div class="panel" style="margin-bottom:16px;">
+        <div class="row">
+            <div class="stack">
+                <label for="login">Логин</label>
+                <input id="login" placeholder="admin" autocomplete="username">
+            </div>
+            <div class="stack">
+                <label for="password">Пароль</label>
+                <input id="password" type="password" placeholder="пароль" autocomplete="current-password">
+            </div>
+            <div class="stack">
+                <label>&nbsp;</label>
+                <button class="primary" onclick="applyCredentials()">Сохранить доступ</button>
+            </div>
+            <div class="stack">
+                <label>Тип фабрики</label>
+                <div class="pill-select" id="factorySelect"></div>
+                <span class="muted">По умолчанию используется массив.</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid">
+        <section class="panel" id="arraysPanel">
+            <div class="badge">Создание из массивов</div>
+            <h2>Загрузка табличных значений</h2>
+            <p class="sub">Введите количество точек и заполните таблицу значений x / y. При повторном построении таблица пересоздаётся.</p>
+
+            <div class="row">
+                <div class="stack">
+                    <label for="arrayFunctionName">Название функции</label>
+                    <input id="arrayFunctionName" placeholder="Например, sin табличная">
+                </div>
+                <div class="stack">
+                    <label for="arrayUserId">ID пользователя</label>
+                    <input id="arrayUserId" type="number" min="1" placeholder="1">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="stack">
+                    <label for="pointsCount">Количество точек</label>
+                    <input id="pointsCount" type="number" min="2" max="500" placeholder="Например, 5">
+                    <span class="muted">Безопасный лимит: 500 точек. При превышении появится предупреждение.</span>
+                </div>
+                <div class="stack">
+                    <label>&nbsp;</label>
+                    <button class="secondary" onclick="buildTable()">Построить таблицу</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="pointsTable">
+                    <thead><tr><th>#</th><th>x</th><th>y</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="actions">
+                <button class="primary" onclick="createFromArrays()">Создать табулированную функцию</button>
+            </div>
+        </section>
+
+        <section class="panel" id="mathPanel">
+            <div class="badge">Создание из MathFunction</div>
+            <h2>Автотабулирование функции</h2>
+            <p class="sub">Выберите базовую функцию, количество точек и интервал. Имена функций отсортированы по алфавиту.</p>
+
+            <div class="row">
+                <div class="stack">
+                    <label for="mathFunctionName">Название функции</label>
+                    <input id="mathFunctionName" placeholder="Например, косинус в табличном виде">
+                </div>
+                <div class="stack">
+                    <label for="mathUserId">ID пользователя</label>
+                    <input id="mathUserId" type="number" min="1" placeholder="1">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="stack">
+                    <label for="mathSelect">Базовая MathFunction</label>
+                    <select id="mathSelect"></select>
+                </div>
+                <div class="stack">
+                    <label for="mathPointsCount">Количество точек</label>
+                    <input id="mathPointsCount" type="number" min="2" max="10000" placeholder="101">
+                    <span class="muted">Для тяжёлых запросов появится предупреждение.</span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="stack">
+                    <label for="leftBound">Левая граница</label>
+                    <input id="leftBound" type="number" step="any" placeholder="0">
+                </div>
+                <div class="stack">
+                    <label for="rightBound">Правая граница</label>
+                    <input id="rightBound" type="number" step="any" placeholder="6.28">
+                </div>
+            </div>
+
+            <div class="floating-info">
+                Выбор функции основан на соответствиях «отображение Map»: ключ — локализованное имя, значение — объект MathFunction.
+            </div>
+
+            <div class="actions">
+                <button class="primary" onclick="createFromMath()">Создать табулированную функцию</button>
+            </div>
+        </section>
+    </div>
+</main>
+
+<dialog id="errorModal">
+    <div class="modal-header" id="errorTitle">Ошибка</div>
+    <div class="modal-body">
+        <p id="errorMessage" class="error"></p>
+        <p id="errorDetails" class="muted"></p>
+    </div>
+    <div class="modal-actions">
+        <button class="secondary" onclick="errorModal.close()">Закрыть</button>
+    </div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script src="/js/ui-common.js"></script>
+<script>
+    const mathSelect = document.getElementById('mathSelect');
+    mathFunctionRegistry.sort((a,b) => a.label.localeCompare(b.label)).forEach(fn => {
+        const option = document.createElement('option');
+        option.value = fn.key;
+        option.textContent = fn.label;
+        mathSelect.appendChild(option);
+    });
+
+    const renderFactory = factoryPills('factorySelect', async (type) => {
+        try {
+            await fetchSafe('/api/v1/factory/set', {
+                method: 'POST',
+                body: JSON.stringify({ factoryType: type })
+            });
+        } catch (e) {
+            errorModal.show('Не удалось сменить фабрику', e.message);
+        }
+    });
+
+    const applyCredentials = () => {
+        const login = document.getElementById('login').value.trim();
+        const password = document.getElementById('password').value;
+        if (!login || !password) {
+            return errorModal.show('Не заданы учётные данные', 'Укажите логин и пароль перед выполнением запросов.');
+        }
+        persistAuth(login, password);
+        localStorage.setItem('lastLogin', login);
+        toast('Доступ сохранён.');
+        loadFactory();
+    };
+
+    const loadFactory = async () => {
+        try {
+            const info = await fetchSafe('/api/v1/factory/current');
+            updateFactoryType(info.currentFactory || 'array');
+            renderFactory.render(info.currentFactory);
+        } catch (_) {
+            renderFactory.render(uiState.factoryType);
+        }
+    };
+
+    const buildTable = () => {
+        const input = document.getElementById('pointsCount');
+        const count = parseInt(input.value, 10);
+        if (!Number.isInteger(count) || count < 2) {
+            return errorModal.show('Некорректный размер', 'Введите целое число точек не менее 2.');
+        }
+        if (count > 500) {
+            return errorModal.show('Слишком много точек', 'Для безопасности интерфейса ограничение — 500 строк.');
+        }
+        const tbody = document.querySelector('#pointsTable tbody');
+        if (tbody.children.length > 0) {
+            if (!confirm('Таблица уже заполнена. Пересобрать и очистить значения?')) {
+                return;
+            }
+        }
+        tbody.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${i + 1}</td>` +
+                `<td><input type="number" step="any" placeholder="x${i + 1}"></td>` +
+                `<td><input type="number" step="any" placeholder="y${i + 1}"></td>`;
+            tbody.appendChild(row);
+        }
+    };
+
+    const createFromArrays = async () => {
+        const userId = parseInt(document.getElementById('arrayUserId').value, 10);
+        const name = document.getElementById('arrayFunctionName').value.trim();
+        const rows = Array.from(document.querySelectorAll('#pointsTable tbody tr'));
+        if (!uiState.authHeader) return errorModal.show('Нет доступа', 'Сначала сохраните логин и пароль.');
+        if (!name) return errorModal.show('Не указано название', 'Введите понятное имя функции.');
+        if (!Number.isInteger(userId) || userId <= 0) {
+            return errorModal.show('Некорректный пользователь', 'ID пользователя должен быть положительным числом.');
+        }
+        if (rows.length < 2) {
+            return errorModal.show('Пустая таблица', 'Постройте таблицу и заполните хотя бы две строки.');
+        }
+        const points = [];
+        for (const [index, row] of rows.entries()) {
+            const inputs = row.querySelectorAll('input');
+            const x = safeNumber(inputs[0].value);
+            const y = safeNumber(inputs[1].value);
+            if (x === null || y === null) {
+                return errorModal.show('Невозможно создать функцию', `Строка ${index + 1}: заполните числовые значения x и y.`);
+            }
+            points.push({ x, y });
+        }
+        try {
+            const payload = { userId, name, points, factoryType: uiState.factoryType };
+            await fetchSafe('/api/v1/functions/create-from-arrays', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            toast('Функция создана из таблицы.');
+            rows.forEach(row => row.querySelectorAll('input').forEach(i => i.value = ''));
+        } catch (e) {
+            errorModal.show('Ошибка создания', e.message);
+        }
+    };
+
+    const createFromMath = async () => {
+        if (!uiState.authHeader) return errorModal.show('Нет доступа', 'Сначала сохраните логин и пароль.');
+        const userId = parseInt(document.getElementById('mathUserId').value, 10);
+        const name = document.getElementById('mathFunctionName').value.trim();
+        const key = document.getElementById('mathSelect').value;
+        const pointsCount = parseInt(document.getElementById('mathPointsCount').value, 10);
+        const leftBound = safeNumber(document.getElementById('leftBound').value);
+        const rightBound = safeNumber(document.getElementById('rightBound').value);
+
+        if (!name) return errorModal.show('Не указано название', 'Введите название создаваемой табулированной функции.');
+        if (!Number.isInteger(userId) || userId <= 0) {
+            return errorModal.show('Некорректный пользователь', 'ID пользователя должен быть положительным числом.');
+        }
+        if (!Number.isInteger(pointsCount) || pointsCount < 2) {
+            return errorModal.show('Некорректное количество точек', 'Задайте минимум две точки для табулирования.');
+        }
+        if (pointsCount > 10000) {
+            return errorModal.show('Слишком плотное разбиение', 'Для стабильной работы ограничение — 10 000 точек.');
+        }
+        if (leftBound === null || rightBound === null) {
+            return errorModal.show('Границы не заданы', 'Заполните обе границы интервала.');
+        }
+        if (leftBound >= rightBound) {
+            return errorModal.show('Неверный интервал', 'Левая граница должна быть меньше правой.');
+        }
+        try {
+            const payload = {
+                userId,
+                name,
+                mathFunctionKey: key,
+                pointsCount,
+                leftBound,
+                rightBound,
+                factoryType: uiState.factoryType
+            };
+            await fetchSafe('/api/v1/functions/create-from-math', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            toast('Функция создана через MathFunction.');
+        } catch (e) {
+            errorModal.show('Ошибка табулирования', e.message);
+        }
+    };
+
+    // загрузка предыдущих настроек
+    (function init() {
+        document.getElementById('login').value = localStorage.getItem('lastLogin') || '';
+        if (uiState.authHeader) {
+            document.getElementById('password').placeholder = 'пароль сохранён';
+        }
+        factoryPills('factorySelect');
+        loadFactory();
+    })();
+</script>
+</body>
+</html>

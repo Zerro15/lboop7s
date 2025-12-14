@@ -3,443 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Лабораторная 7 — Табулированные функции</title>
-    <style>
-        :root {
-            --accent: #2563eb;
-            --accent-strong: #1d4ed8;
-            --danger: #ef4444;
-            --bg: #f8fafc;
-            --panel: #ffffff;
-            --border: #e2e8f0;
-            --text: #0f172a;
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-        }
-        header {
-            background: linear-gradient(135deg, #0ea5e9, #2563eb);
-            color: white;
-            padding: 24px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-        }
-        header h1 { margin: 0 0 8px; font-size: 26px; }
-        header p { margin: 0; opacity: 0.9; }
-        main { padding: 24px; max-width: 1200px; margin: 0 auto; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 16px; }
-        .panel {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-        }
-        .panel h2 { margin-top: 0; margin-bottom: 12px; font-size: 20px; }
-        .panel p.sub { margin-top: 0; color: #475569; }
-        label { display: block; font-weight: 600; margin-bottom: 6px; }
-        input, select, button, textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            font-size: 15px;
-            font-family: inherit;
-        }
-        input:focus, select:focus, textarea:focus {
-            outline: 2px solid rgba(37, 99, 235, 0.3);
-            border-color: var(--accent);
-        }
-        .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px; }
-        .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
-        button.primary {
-            background: var(--accent);
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background 0.2s ease, transform 0.1s ease;
-        }
-        button.primary:hover { background: var(--accent-strong); }
-        button.primary:active { transform: translateY(1px); }
-        button.secondary { background: #e2e8f0; border: none; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-        th, td { padding: 8px; border-bottom: 1px solid var(--border); text-align: left; }
-        th { background: #f1f5f9; }
-        .badge { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; background: #eef2ff; color: #312e81; font-weight: 600; font-size: 13px; }
-        .muted { color: #475569; font-size: 14px; }
-        .stack { display: flex; flex-direction: column; gap: 12px; }
-        .table-container { max-height: 320px; overflow: auto; border: 1px solid var(--border); border-radius: 12px; padding: 8px; background: #f8fafc; }
-        .pill-select { display: inline-flex; gap: 8px; flex-wrap: wrap; }
-        .pill { padding: 8px 12px; border-radius: 999px; border: 1px solid var(--border); background: white; cursor: pointer; }
-        .pill.active { background: #e0f2fe; border-color: #0ea5e9; color: #0c4a6e; font-weight: 700; }
-        .divider { border-top: 1px dashed var(--border); margin: 12px 0; }
-        .inline { display: inline-flex; align-items: center; gap: 6px; }
-        .error { color: var(--danger); font-weight: 600; }
-        .floating-info { padding: 10px 12px; border-radius: 10px; background: #fef9c3; border: 1px solid #f59e0b33; color: #92400e; }
-        dialog::backdrop { background: rgba(15,23,42,0.65); }
-        dialog { border: none; border-radius: 16px; padding: 0; max-width: 520px; width: 100%; }
-        .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-weight: 700; background: #0f172a; color: #e2e8f0; }
-        .modal-body { padding: 16px 20px; }
-        .modal-actions { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
-        .toast { position: fixed; right: 20px; bottom: 20px; background: #10b981; color: white; padding: 12px 16px; border-radius: 12px; box-shadow: 0 12px 30px rgba(16, 185, 129, 0.3); display: none; }
-        @media (max-width: 720px) {
-            .grid { grid-template-columns: 1fr; }
-            header { padding: 18px; }
-            main { padding: 16px; }
-        }
-    </style>
+    <title>Главная — Табулированные функции</title>
+    <link rel="stylesheet" href="/css/flat.css">
 </head>
 <body>
 <header>
-    <h1>Табулированные функции: создание через UI</h1>
-    <p>Создавайте функции из таблиц точек или на базе встроенных MathFunction. Все проверки выполняются до запроса.</p>
+    <h1>Табулированные функции — панель управления</h1>
+    <p>Переключайтесь между настройками, созданием, операциями и дифференцированием. Дизайн в стиле Flat.</p>
 </header>
 <main>
-    <div class="panel" style="margin-bottom:16px;">
-        <div class="row">
-            <div class="stack">
-                <label for="login">Логин</label>
-                <input id="login" placeholder="admin" autocomplete="username">
+    <section class="panel">
+        <h2>Быстрый доступ</h2>
+        <p class="sub">Главная страница не навязывает действий: выберите, что нужно сейчас. Все окна открываются в модальном режиме, чтобы избежать дубликатов.</p>
+        <div class="card-grid">
+            <div class="card">
+                <strong>Настройки фабрики</strong>
+                <p class="muted">Выберите реализацию (массив или связный список) и сохраните её как глобальную для всех окон.</p>
+                <div class="card-actions">
+                    <a class="primary" href="/settings.html">Открыть настройки</a>
+                </div>
             </div>
-            <div class="stack">
-                <label for="password">Пароль</label>
-                <input id="password" type="password" placeholder="пароль" autocomplete="current-password">
+            <div class="card">
+                <strong>Создание функций</strong>
+                <p class="muted">Создавайте табулированные функции из массивов или на базе MathFunction. Окна из задания 1 доступны здесь.</p>
+                <div class="card-actions">
+                    <a class="primary" href="/creator.html">К мастерам создания</a>
+                </div>
             </div>
-            <div class="stack">
-                <label>&nbsp;</label>
-                <button class="primary" onclick="uiActions.applyCredentials()">Сохранить доступ</button>
+            <div class="card">
+                <strong>Операции над функциями</strong>
+                <p class="muted">Сложение, вычитание, умножение и деление поэлементно. Работает с редактируемыми таблицами.</p>
+                <div class="card-actions">
+                    <a class="primary" href="/operations.html">Перейти к операциям</a>
+                </div>
             </div>
-            <div class="stack">
-                <label>Тип фабрики</label>
-                <div class="pill-select" id="factorySelect"></div>
-                <span class="muted">По умолчанию используется массив. При смене значения запрос отправится с выбранным типом.</span>
+            <div class="card">
+                <strong>Дифференцирование</strong>
+                <p class="muted">Получите производную табулированной функции. Результат доступен для сохранения.</p>
+                <div class="card-actions">
+                    <a class="primary" href="/differentiate.html">Открыть модуль</a>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="grid">
-        <section class="panel" id="arraysPanel">
-            <div class="badge">Создание из массивов</div>
-            <h2>Загрузка табличных значений</h2>
-            <p class="sub">Введите количество точек и заполните таблицу значений x / y. При повторном построении таблица пересоздаётся.</p>
-
-            <div class="row">
-                <div class="stack">
-                    <label for="arrayFunctionName">Название функции</label>
-                    <input id="arrayFunctionName" placeholder="Например, sin табличная">
-                </div>
-                <div class="stack">
-                    <label for="arrayUserId">ID пользователя</label>
-                    <input id="arrayUserId" type="number" min="1" placeholder="1">
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="stack">
-                    <label for="pointsCount">Количество точек</label>
-                    <input id="pointsCount" type="number" min="2" max="500" placeholder="Например, 5">
-                    <span class="muted">Безопасный лимит: 500 точек. При превышении появится предупреждение.</span>
-                </div>
-                <div class="stack">
-                    <label>&nbsp;</label>
-                    <button class="secondary" onclick="uiActions.buildTable()">Построить таблицу</button>
-                </div>
-            </div>
-
-            <div class="table-container">
-                <table id="pointsTable">
-                    <thead><tr><th>#</th><th>x</th><th>y</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-
-            <div class="actions">
-                <button class="primary" onclick="uiActions.createFromArrays()">Создать табулированную функцию</button>
-            </div>
-        </section>
-
-        <section class="panel" id="mathPanel">
-            <div class="badge">Создание из MathFunction</div>
-            <h2>Автотабулирование функции</h2>
-            <p class="sub">Выберите базовую функцию, количество точек и интервал. Имена функций отсортированы по алфавиту.</p>
-
-            <div class="row">
-                <div class="stack">
-                    <label for="mathFunctionName">Название функции</label>
-                    <input id="mathFunctionName" placeholder="Например, косинус в табличном виде">
-                </div>
-                <div class="stack">
-                    <label for="mathUserId">ID пользователя</label>
-                    <input id="mathUserId" type="number" min="1" placeholder="1">
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="stack">
-                    <label for="mathSelect">Базовая MathFunction</label>
-                    <select id="mathSelect"></select>
-                </div>
-                <div class="stack">
-                    <label for="mathPointsCount">Количество точек</label>
-                    <input id="mathPointsCount" type="number" min="2" max="10000" placeholder="101">
-                    <span class="muted">Для тяжёлых запросов появится предупреждение.</span>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="stack">
-                    <label for="leftBound">Левая граница</label>
-                    <input id="leftBound" type="number" step="any" placeholder="0">
-                </div>
-                <div class="stack">
-                    <label for="rightBound">Правая граница</label>
-                    <input id="rightBound" type="number" step="any" placeholder="6.28">
-                </div>
-            </div>
-
-            <div class="floating-info">
-                Выбор функции основан на соответствиях «отображение Map»: ключ — локализованное имя, значение — объект MathFunction.
-            </div>
-
-            <div class="actions">
-                <button class="primary" onclick="uiActions.createFromMath()">Создать табулированную функцию</button>
-            </div>
-        </section>
-    </div>
+    <section class="panel" style="margin-top:16px;">
+        <h2>Подсказки</h2>
+        <ul class="muted">
+            <li>Учетные данные и выбранная фабрика сохраняются в браузере и автоматически подставляются в формах.</li>
+            <li>Повторное открытие одного и того же окна блокируется — сперва закройте уже открытое модальное окно.</li>
+            <li>Все страницы используют единую цветовую схему Flat Design.</li>
+        </ul>
+    </section>
 </main>
 
-<dialog id="errorModal">
-    <div class="modal-header" id="errorTitle">Ошибка</div>
-    <div class="modal-body">
-        <p id="errorMessage" class="error"></p>
-        <p id="errorDetails" class="muted"></p>
-    </div>
-    <div class="modal-actions">
-        <button class="secondary" onclick="uiActions.closeError()">Закрыть</button>
-    </div>
-</dialog>
-
 <div class="toast" id="toast"></div>
-
-<script>
-    const state = {
-        authHeader: null,
-        factoryType: 'array',
-        mathFunctions: [],
-    };
-
-    const modal = document.getElementById('errorModal');
-    const toast = document.getElementById('toast');
-
-    const showToast = (text) => {
-        toast.textContent = text;
-        toast.style.display = 'block';
-        setTimeout(() => toast.style.display = 'none', 2600);
-    };
-
-    const showError = (title, message, details = '') => {
-        document.getElementById('errorTitle').textContent = title;
-        document.getElementById('errorMessage').textContent = message;
-        document.getElementById('errorDetails').textContent = details;
-        if (!modal.open) modal.showModal();
-    };
-
-    const closeError = () => modal.close();
-
-    const authHeaders = () => {
-        const headers = { 'Content-Type': 'application/json' };
-        if (state.authHeader) {
-            headers['Authorization'] = state.authHeader;
-        }
-        return headers;
-    };
-
-    const safeNumber = (value) => {
-        const num = Number(value);
-        return Number.isFinite(num) ? num : null;
-    };
-
-    const fetchWithHandling = async (url, options = {}) => {
-        const config = { ...options, headers: { ...(options.headers || {}), ...authHeaders() } };
-        const response = await fetch(url, config);
-        if (!response.ok) {
-            let payload;
-            try { payload = await response.json(); } catch (_) { payload = {}; }
-            const message = payload.message || `HTTP ${response.status}`;
-            throw new Error(message);
-        }
-        return response.json();
-    };
-
-    const factoryPills = {
-        render(factoryType = 'array') {
-            const container = document.getElementById('factorySelect');
-            container.innerHTML = '';
-            ['array', 'linked_list'].forEach(type => {
-                const pill = document.createElement('button');
-                pill.className = `pill ${type === factoryType ? 'active' : ''}`;
-                pill.textContent = type === 'array' ? 'Массив' : 'Связный список';
-                pill.type = 'button';
-                pill.onclick = () => factoryPills.select(type);
-                container.appendChild(pill);
-            });
-        },
-        select(type) {
-            state.factoryType = type;
-            factoryPills.render(type);
-            showToast(`Фабрика: ${type === 'array' ? 'массив' : 'связный список'}`);
-        }
-    };
-
-    const uiActions = {
-        closeError,
-        applyCredentials() {
-            const login = document.getElementById('login').value.trim();
-            const password = document.getElementById('password').value;
-            if (!login || !password) {
-                return showError('Не заданы учётные данные', 'Укажите логин и пароль перед выполнением запросов.');
-            }
-            state.authHeader = 'Basic ' + btoa(`${login}:${password}`);
-            showToast('Доступ сохранён.');
-            this.loadFactory();
-            this.loadMathFunctions();
-        },
-        async loadFactory() {
-            try {
-                const info = await fetchWithHandling('/api/v1/factory/current');
-                state.factoryType = info.currentFactory || 'array';
-                factoryPills.render(state.factoryType);
-            } catch (e) {
-                showError('Не удалось загрузить фабрику', e.message);
-                factoryPills.render('array');
-            }
-        },
-        async loadMathFunctions() {
-            try {
-                const list = await fetchWithHandling('/api/v1/math-functions');
-                state.mathFunctions = list;
-                const select = document.getElementById('mathSelect');
-                select.innerHTML = '';
-                list.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.key;
-                    option.textContent = item.label;
-                    select.appendChild(option);
-                });
-            } catch (e) {
-                showError('Ошибка при загрузке функций', e.message);
-            }
-        },
-        buildTable() {
-            const input = document.getElementById('pointsCount');
-            const count = parseInt(input.value, 10);
-            if (!Number.isInteger(count) || count < 2) {
-                return showError('Некорректный размер', 'Введите целое число точек не менее 2.');
-            }
-            if (count > 500) {
-                return showError('Слишком много точек', 'Для безопасности интерфейса ограничение — 500 строк.');
-            }
-            const tbody = document.querySelector('#pointsTable tbody');
-            if (tbody.children.length > 0) {
-                if (!confirm('Таблица уже заполнена. Пересобрать и очистить значения?')) {
-                    return;
-                }
-            }
-            tbody.innerHTML = '';
-            for (let i = 0; i < count; i++) {
-                const row = document.createElement('tr');
-                row.innerHTML = `<td>${i + 1}</td>` +
-                    `<td><input type="number" step="any" placeholder="x${i + 1}"></td>` +
-                    `<td><input type="number" step="any" placeholder="y${i + 1}"></td>`;
-                tbody.appendChild(row);
-            }
-        },
-        async createFromArrays() {
-            const userId = parseInt(document.getElementById('arrayUserId').value, 10);
-            const name = document.getElementById('arrayFunctionName').value.trim();
-            const rows = Array.from(document.querySelectorAll('#pointsTable tbody tr'));
-            if (!state.authHeader) return showError('Нет доступа', 'Сначала сохраните логин и пароль.');
-            if (!name) return showError('Не указано название', 'Введите понятное имя функции.');
-            if (!Number.isInteger(userId) || userId <= 0) {
-                return showError('Некорректный пользователь', 'ID пользователя должен быть положительным числом.');
-            }
-            if (rows.length < 2) {
-                return showError('Пустая таблица', 'Постройте таблицу и заполните хотя бы две строки.');
-            }
-            const points = [];
-            for (const [index, row] of rows.entries()) {
-                const inputs = row.querySelectorAll('input');
-                const x = safeNumber(inputs[0].value);
-                const y = safeNumber(inputs[1].value);
-                if (x === null || y === null) {
-                    return showError('Невозможно создать функцию', `Строка ${index + 1}: заполните числовые значения x и y.`);
-                }
-                points.push({ x, y });
-            }
-            try {
-                const payload = { userId, name, points, factoryType: state.factoryType };
-                await fetchWithHandling('/api/v1/functions/create-from-arrays', {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                });
-                showToast('Функция создана из таблицы.');
-                rows.forEach(row => row.querySelectorAll('input').forEach(i => i.value = ''));
-            } catch (e) {
-                showError('Ошибка создания', e.message);
-            }
-        },
-        async createFromMath() {
-            if (!state.authHeader) return showError('Нет доступа', 'Сначала сохраните логин и пароль.');
-            const userId = parseInt(document.getElementById('mathUserId').value, 10);
-            const name = document.getElementById('mathFunctionName').value.trim();
-            const key = document.getElementById('mathSelect').value;
-            const pointsCount = parseInt(document.getElementById('mathPointsCount').value, 10);
-            const leftBound = safeNumber(document.getElementById('leftBound').value);
-            const rightBound = safeNumber(document.getElementById('rightBound').value);
-
-            if (!name) return showError('Не указано название', 'Введите название создаваемой табулированной функции.');
-            if (!Number.isInteger(userId) || userId <= 0) {
-                return showError('Некорректный пользователь', 'ID пользователя должен быть положительным числом.');
-            }
-            if (!Number.isInteger(pointsCount) || pointsCount < 2) {
-                return showError('Некорректное количество точек', 'Задайте минимум две точки для табулирования.');
-            }
-            if (pointsCount > 10000) {
-                return showError('Слишком плотное разбиение', 'Для стабильной работы ограничение — 10 000 точек.');
-            }
-            if (leftBound === null || rightBound === null) {
-                return showError('Границы не заданы', 'Заполните обе границы интервала.');
-            }
-            if (leftBound >= rightBound) {
-                return showError('Неверный интервал', 'Левая граница должна быть меньше правой.');
-            }
-            try {
-                const payload = {
-                    userId,
-                    name,
-                    mathFunctionKey: key,
-                    pointsCount,
-                    leftBound,
-                    rightBound,
-                    factoryType: state.factoryType
-                };
-                await fetchWithHandling('/api/v1/functions/create-from-math', {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                });
-                showToast('Функция создана через MathFunction.');
-            } catch (e) {
-                showError('Ошибка табулирования', e.message);
-            }
-        }
-    };
-
-    factoryPills.render();
-    // Предзагружаем функции без авторизации, чтобы не блокировать интерфейс
-    uiActions.loadMathFunctions().catch(() => {});
-</script>
+<script src="/js/ui-common.js"></script>
 </body>
 </html>

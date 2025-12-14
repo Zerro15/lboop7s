@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Операции над табулированными функциями</title>
+    <link rel="stylesheet" href="/css/flat.css">
+</head>
+<body>
+<header>
+    <h1>Поэлементные операции</h1>
+    <p>Сложение, вычитание, умножение и деление для двух табулированных функций. Окна создания открываются модально.</p>
+    <div class="nav">
+        <a href="/">Главная</a>
+        <a href="/creator.html">Создание функций</a>
+        <a href="/settings.html">Настройки</a>
+        <a href="/differentiate.html">Дифференцирование</a>
+    </div>
+</header>
+<main>
+    <section class="panel">
+        <div class="row">
+            <div class="stack">
+                <label>Тип фабрики</label>
+                <div class="pill-select" id="factorySelect"></div>
+                <span class="muted">Используется TabulatedFunctionOperationService с выбранной фабрикой.</span>
+            </div>
+            <div class="stack">
+                <label for="login">Логин</label>
+                <input id="login" placeholder="admin" autocomplete="username">
+            </div>
+            <div class="stack">
+                <label for="password">Пароль</label>
+                <input id="password" type="password" placeholder="пароль" autocomplete="current-password">
+            </div>
+            <div class="stack">
+                <label>&nbsp;</label>
+                <button class="primary" onclick="applyCredentials()">Сохранить доступ</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel" style="margin-top:16px;">
+        <div class="grid">
+            <div class="stack">
+                <div class="badge">Первый операнд</div>
+                <div class="actions" style="justify-content:flex-start;">
+                    <button class="secondary" onclick="openArrayModal('left')">Создать из массива</button>
+                    <button class="secondary" onclick="openMathModal('left')">Создать из функции</button>
+                    <button class="ghost" onclick="loadFromFile('left')">Загрузить</button>
+                    <button class="ghost" onclick="saveToFile('left')">Сохранить</button>
+                </div>
+                <div class="table-container">
+                    <table id="leftTable"><thead><tr><th>#</th><th>x</th><th>y</th></tr></thead><tbody></tbody></table>
+                </div>
+            </div>
+            <div class="stack">
+                <div class="badge">Второй операнд</div>
+                <div class="actions" style="justify-content:flex-start;">
+                    <button class="secondary" onclick="openArrayModal('right')">Создать из массива</button>
+                    <button class="secondary" onclick="openMathModal('right')">Создать из функции</button>
+                    <button class="ghost" onclick="loadFromFile('right')">Загрузить</button>
+                    <button class="ghost" onclick="saveToFile('right')">Сохранить</button>
+                </div>
+                <div class="table-container">
+                    <table id="rightTable"><thead><tr><th>#</th><th>x</th><th>y</th></tr></thead><tbody></tbody></table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel" style="margin-top:16px;">
+        <div class="badge">Результат</div>
+        <div class="actions" style="justify-content:flex-start;">
+            <button class="primary" onclick="operate('add')">Сложить</button>
+            <button class="primary" onclick="operate('sub')">Вычесть</button>
+            <button class="primary" onclick="operate('mul')">Умножить</button>
+            <button class="primary" onclick="operate('div')">Разделить</button>
+            <button class="ghost" onclick="saveToFile('result')">Сохранить результат</button>
+        </div>
+        <div class="table-container">
+            <table id="resultTable"><thead><tr><th>#</th><th>x</th><th>y</th></tr></thead><tbody></tbody></table>
+        </div>
+    </section>
+</main>
+
+<dialog id="arrayModal">
+    <div class="modal-header">Создание из массива</div>
+    <div class="modal-body">
+        <div class="row">
+            <div class="stack">
+                <label for="arrayCount">Количество точек</label>
+                <input id="arrayCount" type="number" min="2" max="500" placeholder="5">
+            </div>
+            <div class="stack" style="align-self:flex-end;">
+                <button class="secondary" onclick="buildModalTable()">Построить таблицу</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table id="arrayModalTable"><thead><tr><th>#</th><th>x</th><th>y</th></tr></thead><tbody></tbody></table>
+        </div>
+    </div>
+    <div class="modal-actions">
+        <button class="ghost" onclick="closeModal(arrayModal)">Отмена</button>
+        <button class="primary" onclick="commitArrayModal()">Создать</button>
+    </div>
+</dialog>
+
+<dialog id="mathModal">
+    <div class="modal-header">Создание из функции</div>
+    <div class="modal-body">
+        <div class="row">
+            <div class="stack">
+                <label for="mathSelect">Функция</label>
+                <select id="mathSelect"></select>
+            </div>
+            <div class="stack">
+                <label for="mathPoints">Количество точек</label>
+                <input id="mathPoints" type="number" min="2" max="10000" value="10">
+            </div>
+        </div>
+        <div class="row">
+            <div class="stack">
+                <label for="mathLeft">Левая граница</label>
+                <input id="mathLeft" type="number" step="any" value="0">
+            </div>
+            <div class="stack">
+                <label for="mathRight">Правая граница</label>
+                <input id="mathRight" type="number" step="any" value="6.28">
+            </div>
+        </div>
+    </div>
+    <div class="modal-actions">
+        <button class="ghost" onclick="closeModal(mathModal)">Отмена</button>
+        <button class="primary" onclick="commitMathModal()">Создать</button>
+    </div>
+</dialog>
+
+<dialog id="errorModal">
+    <div class="modal-header" id="errorTitle">Ошибка</div>
+    <div class="modal-body">
+        <p id="errorMessage" class="error"></p>
+        <p id="errorDetails" class="muted"></p>
+    </div>
+    <div class="modal-actions">
+        <button class="secondary" onclick="errorModal.close()">Закрыть</button>
+    </div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script src="/js/ui-common.js"></script>
+<script>
+    const arrayModal = document.getElementById('arrayModal');
+    const mathModal = document.getElementById('mathModal');
+    let activeTarget = null;
+    let leftPoints = [];
+    let rightPoints = [];
+    let resultPoints = [];
+
+    const renderTable = (id, points, editable = true) => {
+        const tbody = document.querySelector(`#${id} tbody`);
+        tbody.innerHTML = '';
+        points.forEach((p, idx) => {
+            const row = document.createElement('tr');
+            const xCell = `<td>${p.x}</td>`;
+            const yInput = editable
+                ? `<input type="number" step="any" value="${p.y}" onchange="updatePoint('${id}', ${idx}, this.value)">`
+                : `<span>${p.y}</span>`;
+            row.innerHTML = `<td>${idx + 1}</td>${xCell}<td>${yInput}</td>`;
+            tbody.appendChild(row);
+        });
+    };
+
+    const updatePoint = (tableId, index, value) => {
+        const num = safeNumber(value);
+        if (num === null) return errorModal.show('Некорректное значение', 'Введите число для y.');
+        const target = tableId === 'leftTable' ? leftPoints : rightPoints;
+        target[index].y = num;
+    };
+
+    const openArrayModal = (target) => {
+        if (arrayModal.open || mathModal.open) return;
+        activeTarget = target;
+        document.querySelector('#arrayModalTable tbody').innerHTML = '';
+        document.getElementById('arrayCount').value = '';
+        arrayModal.showModal();
+    };
+
+    const buildModalTable = () => {
+        const count = parseInt(document.getElementById('arrayCount').value, 10);
+        if (!Number.isInteger(count) || count < 2) {
+            return errorModal.show('Размер некорректен', 'Введите целое число не менее 2.');
+        }
+        if (count > 500) return errorModal.show('Слишком много точек', 'Максимум 500 точек.');
+        const tbody = document.querySelector('#arrayModalTable tbody');
+        tbody.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${i + 1}</td>` +
+                `<td><input type="number" step="any" placeholder="x${i + 1}"></td>` +
+                `<td><input type="number" step="any" placeholder="y${i + 1}"></td>`;
+            tbody.appendChild(row);
+        }
+    };
+
+    const commitArrayModal = () => {
+        const rows = Array.from(document.querySelectorAll('#arrayModalTable tbody tr'));
+        if (rows.length < 2) return errorModal.show('Нет данных', 'Сначала постройте таблицу.');
+        const points = [];
+        for (const [idx, row] of rows.entries()) {
+            const inputs = row.querySelectorAll('input');
+            const x = safeNumber(inputs[0].value);
+            const y = safeNumber(inputs[1].value);
+            if (x === null || y === null) {
+                return errorModal.show('Некорректная строка', `Строка ${idx + 1}: заполните x и y.`);
+            }
+            points.push({ x, y });
+        }
+        if (activeTarget === 'left') leftPoints = points;
+        if (activeTarget === 'right') rightPoints = points;
+        renderTable(`${activeTarget}Table`, points, true);
+        closeModal(arrayModal);
+    };
+
+    const openMathModal = (target) => {
+        if (arrayModal.open || mathModal.open) return;
+        activeTarget = target;
+        mathModal.showModal();
+    };
+
+    const commitMathModal = () => {
+        const key = document.getElementById('mathSelect').value;
+        const pointsCount = parseInt(document.getElementById('mathPoints').value, 10);
+        const leftBound = safeNumber(document.getElementById('mathLeft').value);
+        const rightBound = safeNumber(document.getElementById('mathRight').value);
+        try {
+            const points = generateFromMath({ key, pointsCount, leftBound, rightBound });
+            if (activeTarget === 'left') leftPoints = points;
+            if (activeTarget === 'right') rightPoints = points;
+            renderTable(`${activeTarget}Table`, points, true);
+            closeModal(mathModal);
+        } catch (e) {
+            errorModal.show('Не удалось создать функцию', e.message);
+        }
+    };
+
+    const operate = (op) => {
+        if (leftPoints.length === 0 || rightPoints.length === 0) {
+            return errorModal.show('Недостаточно данных', 'Создайте обе функции перед операцией.');
+        }
+        if (leftPoints.length !== rightPoints.length) {
+            return errorModal.show('Разная размерность', 'Количество точек и x должны совпадать.');
+        }
+        for (let i = 0; i < leftPoints.length; i++) {
+            if (leftPoints[i].x !== rightPoints[i].x) {
+                return errorModal.show('Несоответствие X', 'Точки должны иметь одинаковые значения x.');
+            }
+        }
+        resultPoints = leftPoints.map((p, idx) => {
+            const a = p.y;
+            const b = rightPoints[idx].y;
+            let y;
+            switch (op) {
+                case 'add': y = a + b; break;
+                case 'sub': y = a - b; break;
+                case 'mul': y = a * b; break;
+                case 'div':
+                    if (b === 0) throw new Error('Деление на ноль в строке ' + (idx + 1));
+                    y = a / b; break;
+                default: y = NaN;
+            }
+            if (!Number.isFinite(y)) throw new Error('Некорректный результат в строке ' + (idx + 1));
+            return { x: p.x, y };
+        });
+        renderTable('resultTable', resultPoints, false);
+        toast('Операция выполнена');
+    };
+
+    const saveToFile = (target) => {
+        let points = target === 'left' ? leftPoints : target === 'right' ? rightPoints : resultPoints;
+        if (!points || points.length === 0) return errorModal.show('Нет данных для сохранения', 'Сначала сформируйте таблицу.');
+        downloadJson(`${target}-function.json`, { factoryType: uiState.factoryType, points });
+    };
+
+    const loadFromFile = (target) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'application/json';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const payload = await readJsonFile(file);
+                const points = payload.points || payload;
+                if (!Array.isArray(points) || points.length < 2) throw new Error('В файле нет точек');
+                points.forEach((p, idx) => {
+                    if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) throw new Error(`Строка ${idx + 1} содержит неверные значения`);
+                });
+                if (target === 'left') leftPoints = points;
+                if (target === 'right') rightPoints = points;
+                renderTable(`${target}Table`, points, true);
+            } catch (err) {
+                errorModal.show('Ошибка загрузки', err.message);
+            }
+        };
+        input.click();
+    };
+
+    const applyCredentials = () => {
+        const login = document.getElementById('login').value.trim();
+        const password = document.getElementById('password').value;
+        if (!login || !password) return errorModal.show('Нет доступа', 'Введите логин и пароль.');
+        persistAuth(login, password);
+        localStorage.setItem('lastLogin', login);
+        toast('Доступ сохранён');
+    };
+
+    const closeModal = (modal) => { if (modal.open) modal.close(); };
+
+    (function init() {
+        document.getElementById('login').value = localStorage.getItem('lastLogin') || '';
+        factoryPills('factorySelect');
+        mathFunctionRegistry.sort((a,b) => a.label.localeCompare(b.label)).forEach(fn => {
+            const option = document.createElement('option');
+            option.value = fn.key;
+            option.textContent = fn.label;
+            document.getElementById('mathSelect').appendChild(option);
+        });
+    })();
+</script>
+</body>
+</html>
