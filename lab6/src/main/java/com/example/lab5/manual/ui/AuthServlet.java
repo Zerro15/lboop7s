@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Optional;
 
 /**
  * Регистрация и авторизация с выдачей JWT.
@@ -30,6 +29,8 @@ public class AuthServlet extends HttpServlet {
             handleRegister(req, resp);
         } else if (path != null && path.contains("login")) {
             handleLogin(req, resp);
+        } else if (path != null && path.contains("guest")) {
+            handleGuest(resp);
         } else {
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
@@ -55,18 +56,15 @@ public class AuthServlet extends HttpServlet {
             ObjectNode payload = objectMapper.readValue(req.getInputStream(), ObjectNode.class);
             String login = payload.get("login").asText();
             String password = payload.get("password").asText();
-            Optional<UserDTO> userOpt = userService.getUserByLogin(login);
-            if (userOpt.isEmpty()) {
-                throw new IllegalArgumentException("Пользователь не найден. Зарегистрируйтесь и выполните вход.");
-            }
-            UserDTO user = userOpt.get();
-            if (!user.getPassword().equals(password)) {
-                throw new IllegalArgumentException("Неверный пароль");
-            }
+            UserDTO user = userService.authenticate(login, password);
             issueToken(resp, user.getLogin(), user.getRole());
         } catch (Exception ex) {
             exceptionResponder.handle(resp, ex);
         }
+    }
+
+    private void handleGuest(HttpServletResponse resp) throws IOException {
+        issueToken(resp, "Гость", "GUEST");
     }
 
     private void issueToken(HttpServletResponse resp, String login, String role) throws IOException {

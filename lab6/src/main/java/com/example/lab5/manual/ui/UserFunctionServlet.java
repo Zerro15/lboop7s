@@ -36,7 +36,14 @@ public class UserFunctionServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            UserDTO user = resolveUser(req);
+            JwtService.UserPrincipal principal = resolvePrincipal(req);
+            if (isGuest(principal)) {
+                resp.setContentType("application/json;charset=UTF-8");
+                resp.getWriter().write("[]");
+                return;
+            }
+
+            UserDTO user = resolveUser(principal);
             List<FunctionDTO> functions = functionService.getFunctionsByUserId(user.getId());
             ArrayNode arrayNode = objectMapper.createArrayNode();
 
@@ -66,7 +73,11 @@ public class UserFunctionServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            UserDTO user = resolveUser(req);
+            JwtService.UserPrincipal principal = resolvePrincipal(req);
+            if (isGuest(principal)) {
+                throw new IllegalArgumentException("В гостевом режиме сохранение графиков недоступно");
+            }
+            UserDTO user = resolveUser(principal);
             ObjectNode payload = objectMapper.readValue(req.getInputStream(), ObjectNode.class);
             String name = payload.hasNonNull("name") ? payload.get("name").asText().trim() : "";
             List<TabulatedPoint> points = payload.has("points")
@@ -105,12 +116,19 @@ public class UserFunctionServlet extends HttpServlet {
         }
     }
 
-    private UserDTO resolveUser(HttpServletRequest req) {
+    private JwtService.UserPrincipal resolvePrincipal(HttpServletRequest req) {
         Object principalObj = req.getAttribute("principal");
         if (!(principalObj instanceof JwtService.UserPrincipal)) {
             throw new IllegalArgumentException("Требуется авторизация");
         }
-        JwtService.UserPrincipal principal = (JwtService.UserPrincipal) principalObj;
+        return (JwtService.UserPrincipal) principalObj;
+    }
+
+    private boolean isGuest(JwtService.UserPrincipal principal) {
+        return principal != null && "GUEST".equalsIgnoreCase(principal.getRole());
+    }
+
+    private UserDTO resolveUser(JwtService.UserPrincipal principal) {
         Optional<UserDTO> user = userService.getUserByLogin(principal.getLogin());
         return user.orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
     }

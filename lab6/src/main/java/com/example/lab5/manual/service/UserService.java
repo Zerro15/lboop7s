@@ -71,6 +71,19 @@ public class UserService {
         return user.isPresent() && user.get().getPassword().equals(password);
     }
 
+    public UserDTO authenticate(String login, String password) {
+        logger.info("Попытка входа для логина {}", login);
+        if (login == null || login.isBlank() || password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Логин и пароль обязательны");
+        }
+
+        Optional<UserDTO> user = userDAO.findByLogin(login);
+        if (user.isEmpty() || !password.equals(user.get().getPassword())) {
+            throw new IllegalArgumentException("Неверный логин или пароль");
+        }
+        return user.get();
+    }
+
     public UserDTO register(String login, String password) {
         logger.info("Регистрация пользователя с логином {}", login);
         if (login == null || login.isBlank() || password == null || password.isBlank()) {

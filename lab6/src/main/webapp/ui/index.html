@@ -342,8 +342,9 @@
             <label for="auth-password">Пароль</label>
             <input id="auth-password" type="password" placeholder="Пароль">
         </div>
-        <div class="actions" style="justify-content: space-between; margin-top:14px;">
+        <div class="actions" style="justify-content: space-between; margin-top:14px; gap:8px; flex-wrap: wrap;">
             <button id="auth-switch" class="secondary">Переключить вход/регистрацию</button>
+            <button id="auth-guest" class="secondary">Войти как гость</button>
             <button id="auth-submit">Продолжить</button>
         </div>
     </div>
@@ -461,6 +462,10 @@
         chip.textContent = role ? `${login} (${role})` : login;
     }
 
+    function isGuest() {
+        return state.role === 'GUEST';
+    }
+
     // Theme toggle
     document.getElementById('toggle-theme').addEventListener('click', () => {
         document.body.classList.toggle('dark');
@@ -472,23 +477,40 @@
         document.getElementById('auth-title').textContent = state.authMode === 'login' ? 'Вход' : 'Регистрация';
     });
 
+    function persistAuth(data) {
+        state.token = data.token;
+        state.login = data.login;
+        state.role = data.role;
+        localStorage.setItem('token', state.token);
+        localStorage.setItem('login', data.login);
+        localStorage.setItem('role', data.role);
+        updateUserChip(data.login, data.role);
+    }
+
+    async function completeAuth(data) {
+        persistAuth(data);
+        await hydrateAfterAuth();
+        closeModal();
+        openModal('graph');
+        redrawChart();
+    }
+
     document.getElementById('auth-submit').addEventListener('click', async () => {
         try {
             const login = document.getElementById('auth-login').value;
             const password = document.getElementById('auth-password').value;
             const endpoint = state.authMode === 'login' ? '/auth/login' : '/auth/register';
             const data = await apiCall(endpoint, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ login, password }) });
-            state.token = data.token;
-            state.login = data.login;
-            state.role = data.role;
-            localStorage.setItem('token', state.token);
-            localStorage.setItem('login', data.login);
-            localStorage.setItem('role', data.role);
-            updateUserChip(data.login, data.role);
-            await hydrateAfterAuth();
-            closeModal();
-            openModal('graph');
-            redrawChart();
+            await completeAuth(data);
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById('auth-guest').addEventListener('click', async () => {
+        try {
+            const data = await apiCall('/auth/guest', { method: 'POST' });
+            await completeAuth(data);
         } catch (err) {
             showError(err.message);
         }
@@ -531,19 +553,23 @@
     }
 
     async function loadSavedFunctions() {
-        const list = await apiCall('/user-functions');
-        state.savedFunctions = list;
+        if (isGuest()) {
+            state.savedFunctions = [];
+        } else {
+            const list = await apiCall('/user-functions');
+            state.savedFunctions = list;
+        }
         const select = document.getElementById('graph-saved');
         select.innerHTML = '';
-        if (list.length === 0) {
+        if (state.savedFunctions.length === 0) {
             const option = document.createElement('option');
             option.disabled = true;
             option.selected = true;
-            option.textContent = 'Нет сохранённых графиков';
+            option.textContent = isGuest() ? 'Гостевой режим: сохранений нет' : 'Нет сохранённых графиков';
             select.appendChild(option);
             return;
         }
-        list.forEach(fn => {
+        state.savedFunctions.forEach(fn => {
             const option = document.createElement('option');
             option.value = fn.id;
             option.textContent = fn.name;
@@ -780,6 +806,7 @@
     document.getElementById('graph-save').addEventListener('click', async () => {
         const name = document.getElementById('graph-name').value.trim();
         const points = state.functions.graph.points || [];
+        if (isGuest()) { showError('В гостевом режиме сохранение недоступно'); return; }
         if (!name) { showError('Укажите имя функции перед сохранением'); return; }
         if (!points.length) { showError('Добавьте точки перед сохранением'); return; }
         try {
@@ -840,7 +867,11 @@
     async function hydrateAfterAuth() {
         await loadFactory();
         await loadFunctionsList();
-        await loadSavedFunctions();
+        if (!isGuest()) {
+            await loadSavedFunctions();
+        } else {
+            state.savedFunctions = [];
+        }
         renderAllTables();
         attachLoaders();
         attachSavers();
