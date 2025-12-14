@@ -33,6 +33,16 @@ public class DatabaseConfig {
         String url = properties.getProperty("database.url");
         String username = properties.getProperty("database.username");
         String password = properties.getProperty("database.password");
+        String driver = properties.getProperty("database.driver");
+
+        try {
+            if (driver != null && !driver.isBlank()) {
+                Class.forName(driver);
+            }
+        } catch (ClassNotFoundException e) {
+            logger.error("JDBC драйвер не найден: {}", driver, e);
+            throw new RuntimeException("JDBC driver not found", e);
+        }
 
         logger.debug("Подключение к базе данных: {}", url);
         return DriverManager.getConnection(url, username, password);

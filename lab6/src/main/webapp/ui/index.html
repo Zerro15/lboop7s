@@ -487,6 +487,8 @@
             updateUserChip(data.login, data.role);
             await hydrateAfterAuth();
             closeModal();
+            openModal('graph');
+            redrawChart();
         } catch (err) {
             showError(err.message);
         }
@@ -849,6 +851,8 @@
             try {
                 updateUserChip(state.login || 'Пользователь', state.role);
                 await hydrateAfterAuth();
+                openModal('graph');
+                redrawChart();
             } catch (err) {
                 showError(err.message);
                 openModal('auth');
