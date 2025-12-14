@@ -350,6 +350,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
+    const apiBase = (() => {
+        const marker = '/ui/';
+        const idx = window.location.pathname.indexOf(marker);
+        const prefix = idx >= 0 ? window.location.pathname.substring(0, idx) : '';
+        return `${prefix}/ui/api`;
+    })();
+
     const state = {
         token: localStorage.getItem('token'),
         authMode: 'login',
@@ -419,6 +426,19 @@
         return res;
     }
 
+    async function apiCall(path, options = {}, expectBlob = false) {
+        const res = await authFetch(`${apiBase}${path}`, options);
+        if (!res.ok) {
+            let message = 'Не удалось выполнить запрос';
+            try {
+                const body = await res.json();
+                if (body && body.message) message = body.message;
+            } catch (_) { /* ignore json parse errors */ }
+            throw new Error(message);
+        }
+        return expectBlob ? res.blob() : res.json();
+    }
+
     function updateUserChip(login = 'Гость', role) {
         const chip = document.getElementById('user-chip');
         chip.textContent = role ? `${login} (${role})` : login;
@@ -436,15 +456,18 @@
     });
 
     document.getElementById('auth-submit').addEventListener('click', async () => {
-        const login = document.getElementById('auth-login').value;
-        const password = document.getElementById('auth-password').value;
-        const endpoint = state.authMode === 'login' ? '/ui/api/auth/login' : '/ui/api/auth/register';
-        const res = await fetch(endpoint, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ login, password }) });
-        if (!res.ok) { const err = await res.json(); showError(err.message || 'Ошибка авторизации'); return; }
-        const data = await res.json();
-        state.token = data.token; localStorage.setItem('token', state.token);
-        updateUserChip(data.login, data.role);
-        closeModal();
+        try {
+            const login = document.getElementById('auth-login').value;
+            const password = document.getElementById('auth-password').value;
+            const endpoint = state.authMode === 'login' ? '/auth/login' : '/auth/register';
+            const data = await apiCall(endpoint, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ login, password }) });
+            state.token = data.token; localStorage.setItem('token', state.token);
+            updateUserChip(data.login, data.role);
+            await hydrateAfterAuth();
+            closeModal();
+        } catch (err) {
+            showError(err.message);
+        }
     });
 
     if (!state.token) {
@@ -453,26 +476,26 @@
 
     // Factory load/save
     async function loadFactory() {
-        const res = await authFetch('/ui/api/settings/factory');
-        const data = await res.json();
+        const data = await apiCall('/settings/factory');
         state.factory = data.type;
         document.getElementById('factory-select').value = data.type;
     }
 
     async function saveFactory() {
-        const type = document.getElementById('factory-select').value;
-        const res = await authFetch('/ui/api/settings/factory', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ type })});
-        if (!res.ok) { showError('Не удалось сохранить фабрику'); return; }
-        state.factory = type;
-        state.saveFormat = document.getElementById('save-format').value;
-        closeModal();
+        try {
+            const type = document.getElementById('factory-select').value;
+            await apiCall('/settings/factory', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ type })});
+            state.factory = type;
+            state.saveFormat = document.getElementById('save-format').value;
+            closeModal();
+        } catch (err) {
+            showError(err.message);
+        }
     }
 
     // Functions list
     async function loadFunctionsList() {
-        const res = await authFetch('/ui/api/functions');
-        if (!res.ok) { showError('Не удалось загрузить список функций'); return; }
-        const names = await res.json();
+        const names = await apiCall('/functions');
         state.functionsList = names;
         const select = document.getElementById('math-function');
         select.innerHTML = '';
@@ -597,12 +620,12 @@
         const xValues = xInputs.map(el => parseFloat(el.value));
         const yValues = yInputs.map(el => parseFloat(el.value));
         if (xValues.some(v => Number.isNaN(v)) || yValues.some(v => Number.isNaN(v))) { showError('Заполните все значения X и Y'); return; }
-        const res = await authFetch('/ui/api/tabulated/array', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ xValues, yValues })});
-        if (!res.ok) { const err = await res.json(); showError(err.message); return; }
-        const points = await res.json();
-        state.functions[state.creationTarget] = { ...state.functions[state.creationTarget], points };
-        renderAllTables();
-        closeModal();
+        try {
+            const points = await apiCall('/tabulated/array', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ xValues, yValues })});
+            state.functions[state.creationTarget] = { ...state.functions[state.creationTarget], points };
+            renderAllTables();
+            closeModal();
+        } catch (err) { showError(err.message); }
     });
 
     document.getElementById('math-submit').addEventListener('click', async () => {
@@ -610,20 +633,18 @@
         const from = document.getElementById('math-from').value;
         const to = document.getElementById('math-to').value;
         const count = Number(document.getElementById('math-count').value);
-        const res = await authFetch('/ui/api/tabulated/math', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ functionName, from, to, count })});
-        if (!res.ok) { const err = await res.json(); showError(err.message); return; }
-        const points = await res.json();
-        state.functions[state.creationTarget] = { ...state.functions[state.creationTarget], points };
-        renderAllTables();
-        closeModal();
+        try {
+            const points = await apiCall('/tabulated/math', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ functionName, from, to, count })});
+            state.functions[state.creationTarget] = { ...state.functions[state.creationTarget], points };
+            renderAllTables();
+            closeModal();
+        } catch (err) { showError(err.message); }
     });
 
     async function performOperation(op) {
         try {
             const body = { operation: op, first: state.functions.opA.points, second: state.functions.opB.points };
-            const res = await authFetch('/ui/api/operations', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
-            if (!res.ok) { const err = await res.json(); showError(err.message); return; }
-            state.functions.result.points = await res.json();
+            state.functions.result.points = await apiCall('/operations', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
             renderAllTables();
         } catch (e) { showError(e.message); }
     }
@@ -632,9 +653,7 @@
 
     document.getElementById('run-derivative').addEventListener('click', async () => {
         try {
-            const res = await authFetch('/ui/api/operations/derivative', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ function: state.functions.diffSource.points })});
-            if (!res.ok) { const err = await res.json(); showError(err.message); return; }
-            state.functions.diffResult.points = await res.json();
+            state.functions.diffResult.points = await apiCall('/operations/derivative', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ function: state.functions.diffSource.points })});
             renderAllTables();
         } catch (e) { showError(e.message); }
     });
@@ -675,10 +694,10 @@
                     if (!input.files.length) return;
                     const form = new FormData();
                     form.append('file', input.files[0]);
-                    const res = await authFetch('/ui/api/function-files/upload', { method:'POST', body: form });
-                    if (!res.ok) { const err = await res.json(); showError(err.message); return; }
-                    state.functions[target].points = await res.json();
-                    renderAllTables();
+                    try {
+                        state.functions[target].points = await apiCall('/function-files/upload', { method:'POST', body: form });
+                        renderAllTables();
+                    } catch (err) { showError(err.message); }
                 };
                 input.click();
             });
@@ -692,13 +711,13 @@
                 const fn = state.functions[target];
                 if (!fn || !fn.points || fn.points.length === 0) { showError('Функция не задана'); return; }
                 const format = state.saveFormat;
-                const res = await authFetch('/ui/api/function-files/download', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ function: fn.points, format })});
-                if (!res.ok) { const err = await res.json(); showError(err.message); return; }
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = `tabulated-function.${format === 'bin' ? 'bin' : format}`; a.click();
-                window.URL.revokeObjectURL(url);
+                try {
+                    const blob = await apiCall('/function-files/download', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ function: fn.points, format })}, true);
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download = `tabulated-function.${format === 'bin' ? 'bin' : format}`; a.click();
+                    window.URL.revokeObjectURL(url);
+                } catch (err) { showError(err.message); }
             });
         });
     }
@@ -707,19 +726,19 @@
     document.getElementById('apply-run').addEventListener('click', async () => {
         const x = parseFloat(document.getElementById('apply-x').value);
         if (Number.isNaN(x)) { showError('Введите корректный X'); return; }
-        const res = await authFetch('/ui/api/operations/apply', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ function: state.functions.graph.points, x })});
-        if (!res.ok) { const err = await res.json(); showError(err.message); return; }
-        const val = await res.json();
-        document.getElementById('apply-result').textContent = val;
+        try {
+            const val = await apiCall('/operations/apply', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ function: state.functions.graph.points, x })});
+            document.getElementById('apply-result').textContent = val;
+        } catch (err) { showError(err.message); }
     });
 
     // Integral
     document.getElementById('integral-run').addEventListener('click', async () => {
         const threads = Number(document.getElementById('integral-threads').value);
-        const res = await authFetch('/ui/api/operations/integral', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ function: state.functions.integral.points, threads })});
-        if (!res.ok) { const err = await res.json(); showError(err.message); return; }
-        const val = await res.json();
-        document.getElementById('integral-result').textContent = val;
+        try {
+            const val = await apiCall('/operations/integral', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ function: state.functions.integral.points, threads })});
+            document.getElementById('integral-result').textContent = val;
+        } catch (err) { showError(err.message); }
     });
 
     // Composite creation
@@ -728,11 +747,11 @@
         const priority = parseInt(document.getElementById('composite-priority').value) || 5;
         const components = Array.from(document.querySelectorAll('#composite-list input[type="checkbox"]:checked')).map(c => c.value);
         if (components.length === 0) { showError('Выберите хотя бы одну функцию'); return; }
-        const res = await authFetch('/ui/api/functions/composite', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, priority, components })});
-        if (!res.ok) { const err = await res.json(); showError(err.message); return; }
-        state.functionsList = await res.json();
-        await loadFunctionsList();
-        closeModal();
+        try {
+            state.functionsList = await apiCall('/functions/composite', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, priority, components })});
+            await loadFunctionsList();
+            closeModal();
+        } catch (err) { showError(err.message); }
     });
 
     // Chart
@@ -751,15 +770,26 @@
     }
 
     // Init
-    document.addEventListener('DOMContentLoaded', async () => {
-        if (state.token) {
-            updateUserChip('Пользователь');
-        }
+    async function hydrateAfterAuth() {
         await loadFactory();
         await loadFunctionsList();
         renderAllTables();
         attachLoaders();
         attachSavers();
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (state.token) {
+            try {
+                updateUserChip('Пользователь');
+                await hydrateAfterAuth();
+            } catch (err) {
+                showError(err.message);
+                openModal('auth');
+            }
+        } else {
+            openModal('auth');
+        }
     });
 </script>
 </body>
