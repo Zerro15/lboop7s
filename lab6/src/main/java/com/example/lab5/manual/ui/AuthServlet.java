@@ -57,8 +57,11 @@ public class AuthServlet extends HttpServlet {
             String login = payload.get("login").asText();
             String password = payload.get("password").asText();
             Optional<String> stored = STORE.getPassword(login);
-            if (stored.isEmpty() || !stored.get().equals(password)) {
-                throw new IllegalArgumentException("Неверная пара логин/пароль");
+            if (stored.isEmpty()) {
+                throw new IllegalArgumentException("Пользователь не найден. Зарегистрируйтесь и выполните вход.");
+            }
+            if (!stored.get().equals(password)) {
+                throw new IllegalArgumentException("Неверный пароль");
             }
             String role = STORE.getRole(login).orElse("USER");
             issueToken(resp, login, role);
