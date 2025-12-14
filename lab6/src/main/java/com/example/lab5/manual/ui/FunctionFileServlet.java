@@ -46,7 +46,15 @@ public class FunctionFileServlet extends HttpServlet {
             if (file == null || file.getSize() == 0) {
                 throw new IllegalArgumentException("Файл не выбран");
             }
-            TabulatedFunction function = FunctionsIO.deserialize(file.getInputStream());
+            String submitted = file.getSubmittedFileName();
+            TabulatedFunction function;
+            if (submitted != null && submitted.endsWith(".json")) {
+                function = FunctionsIO.deserializeJson(file.getInputStream());
+            } else if (submitted != null && submitted.endsWith(".xml")) {
+                function = FunctionsIO.deserializeXml(file.getInputStream());
+            } else {
+                function = FunctionsIO.deserialize(file.getInputStream());
+            }
             resp.setContentType("application/json;charset=UTF-8");
             objectMapper.writeValue(resp.getWriter(), function.getPoints());
         } catch (Exception ex) {
@@ -58,10 +66,24 @@ public class FunctionFileServlet extends HttpServlet {
         try {
             ObjectNode payload = objectMapper.readValue(req.getInputStream(), ObjectNode.class);
             List<TabulatedPoint> points = objectMapper.convertValue(payload.get("function"), new TypeReference<List<TabulatedPoint>>() {});
+            String format = payload.has("format") ? payload.get("format").asText() : "bin";
             TabulatedFunction function = TabulatedFunctionMapper.fromPoints(points, FactoryHolder.getInstance().getFactory());
-            resp.setContentType("application/octet-stream");
-            resp.setHeader("Content-Disposition", "attachment; filename=tabulated-function.bin");
-            FunctionsIO.serialize(function, resp.getOutputStream());
+            switch (format) {
+                case "json":
+                    resp.setContentType("application/json");
+                    resp.setHeader("Content-Disposition", "attachment; filename=tabulated-function.json");
+                    FunctionsIO.serializeJson(function, resp.getOutputStream());
+                    break;
+                case "xml":
+                    resp.setContentType("application/xml");
+                    resp.setHeader("Content-Disposition", "attachment; filename=tabulated-function.xml");
+                    FunctionsIO.serializeXml(function, resp.getOutputStream());
+                    break;
+                default:
+                    resp.setContentType("application/octet-stream");
+                    resp.setHeader("Content-Disposition", "attachment; filename=tabulated-function.bin");
+                    FunctionsIO.serialize(function, resp.getOutputStream());
+            }
         } catch (Exception ex) {
             exceptionResponder.handle(resp, ex);
         }

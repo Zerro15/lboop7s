@@ -1,6 +1,8 @@
 package com.example.lab5.manual.functions.io;
 
 import com.example.lab5.manual.functions.tabulated.TabulatedFunction;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +23,16 @@ public final class FunctionsIO {
         }
     }
 
+    public static void serializeJson(TabulatedFunction function, OutputStream outputStream) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(outputStream, function);
+    }
+
+    public static void serializeXml(TabulatedFunction function, OutputStream outputStream) throws IOException {
+        XmlMapper mapper = new XmlMapper();
+        mapper.writeValue(outputStream, function);
+    }
+
     public static TabulatedFunction deserialize(InputStream inputStream) throws IOException, ClassNotFoundException {
         try (ObjectInputStream ois = new ObjectInputStream(inputStream)) {
             Object obj = ois.readObject();
@@ -29,5 +41,15 @@ public final class FunctionsIO {
             }
             throw new IOException("Некорректный формат файла с табулированной функцией");
         }
+    }
+
+    public static TabulatedFunction deserializeJson(InputStream inputStream) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(inputStream, TabulatedFunction.class);
+    }
+
+    public static TabulatedFunction deserializeXml(InputStream inputStream) throws IOException {
+        XmlMapper mapper = new XmlMapper();
+        return mapper.readValue(inputStream, TabulatedFunction.class);
     }
 }

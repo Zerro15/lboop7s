@@ -15,12 +15,12 @@ import java.io.IOException;
  */
 @WebServlet("/ui/api/functions")
 public class MathFunctionServlet extends HttpServlet {
-    private final MathFunctionRegistry registry = new MathFunctionRegistry();
+    private final MathFunctionRegistry registry = MathFunctionRegistry.getInstance();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json;charset=UTF-8");
-        objectMapper.writeValue(resp.getWriter(), registry.getFunctions().keySet());
+        objectMapper.writeValue(resp.getWriter(), registry.listLocalizedNames());
     }
 }

@@ -8,8 +8,11 @@ import java.io.Serializable;
 public class TabulatedPoint implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private final double x;
+    private double x;
     private double y;
+
+    public TabulatedPoint() {
+    }
 
     public TabulatedPoint(double x, double y) {
         this.x = x;
@@ -18,6 +21,10 @@ public class TabulatedPoint implements Serializable {
 
     public double getX() {
         return x;
+    }
+
+    public void setX(double x) {
+        this.x = x;
     }
 
     public double getY() {

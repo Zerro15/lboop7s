@@ -23,7 +23,7 @@ import java.util.Map;
 @WebServlet("/ui/api/tabulated/math")
 public class TabulatedFromMathServlet extends HttpServlet {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final MathFunctionRegistry registry = new MathFunctionRegistry();
+    private final MathFunctionRegistry registry = MathFunctionRegistry.getInstance();
     private final ExceptionResponder exceptionResponder = new ExceptionResponder();
 
     @Override

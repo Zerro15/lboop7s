@@ -12,44 +12,69 @@
             --muted: #5f6b7c;
             --border: #dfe3ea;
             --danger: #e74c3c;
+            --success: #00a884;
+        }
+        body.dark {
+            --bg: #0f172a;
+            --card: #111827;
+            --primary: #7c3aed;
+            --primary-dark: #5b21b6;
+            --muted: #cbd5e1;
+            --border: #1f2937;
+            --danger: #ef4444;
+            --success: #10b981;
+            color: #e2e8f0;
         }
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: "Inter", Arial, sans-serif; background: var(--bg); color: #1f2d3d; }
-        header { padding: 24px; background: var(--card); border-bottom: 1px solid var(--border); }
-        header h1 { margin: 0 0 6px; }
+        body { margin: 0; font-family: "Inter", Arial, sans-serif; background: var(--bg); color: #1f2d3d; transition: background .2s ease, color .2s ease; }
+        header { padding: 20px 24px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        header h1 { margin: 0 0 4px; }
         header p { margin: 0; color: var(--muted); }
         main { padding: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
         .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.04); }
-        .card h2 { margin-top: 0; margin-bottom: 8px; }
+        .card h2 { margin-top: 0; margin-bottom: 6px; }
         .card p { color: var(--muted); margin-top: 0; }
         button { background: var(--primary); border: none; color: #fff; padding: 10px 16px; border-radius: 10px; cursor: pointer; font-weight: 600; transition: background 0.2s ease; }
         button:hover { background: var(--primary-dark); }
         button.secondary { background: #ecf1f9; color: #1f2d3d; border: 1px solid var(--border); }
+        body.dark button.secondary { background: #1f2937; color: #e2e8f0; }
         button.secondary:hover { background: #e1e8f3; }
         button.danger { background: var(--danger); }
         .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
         .hint { color: var(--muted); font-size: 13px; margin-top: 4px; }
-        .table-wrapper { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+        .table-wrapper { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--card); }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
         th { background: #f1f4fa; text-align: left; font-weight: 600; font-size: 14px; }
-        td input { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; }
+        body.dark th { background: #111827; }
+        td input { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: inherit; }
         .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-        .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
-        .modal { background: #fff; border-radius: 16px; width: min(960px, 95vw); max-height: 90vh; overflow: auto; padding: 20px; box-shadow: 0 18px 40px rgba(0,0,0,0.16); }
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+        .modal { background: var(--card); border-radius: 16px; width: min(1100px, 95vw); max-height: 90vh; overflow: auto; padding: 20px; box-shadow: 0 18px 40px rgba(0,0,0,0.16); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
         .modal-header h3 { margin: 0; }
         .close-btn { background: transparent; border: none; font-size: 20px; color: var(--muted); cursor: pointer; }
         label { font-weight: 600; color: #1f2d3d; }
+        body.dark label { color: #e2e8f0; }
         input, select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+        body.dark input, body.dark select { background: #0b1220; color: #e2e8f0; }
         .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
         .divider { height: 1px; background: var(--border); margin: 14px 0; }
+        .badge { padding: 4px 8px; border-radius: 12px; background: #ecf1f9; color: var(--primary-dark); font-size: 12px; font-weight: 700; }
+        body.dark .badge { background: #1f2937; color: #c084fc; }
+        canvas { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 12px; }
     </style>
 </head>
 <body>
 <header>
-    <h1>Работа с табулированными функциями</h1>
-    <p>Главное окно: открывайте настройки и операции без дублирования окон</p>
+    <div>
+        <h1>Работа с табулированными функциями</h1>
+        <p>Главное окно: открывайте настройки, графики, операции без дублирования окон</p>
+    </div>
+    <div class="row">
+        <div id="user-chip" class="badge">Гость</div>
+        <button id="toggle-theme" class="secondary">Темная тема</button>
+    </div>
 </header>
 <main>
     <div class="card">
@@ -58,7 +83,7 @@
         <button id="open-settings">Открыть настройки</button>
     </div>
     <div class="card">
-        <h2>Операции над функциями</h2>
+        <h2>Операции</h2>
         <p>Сложение, вычитание, умножение и деление двух функций</p>
         <button id="open-operations">Открыть окно операций</button>
     </div>
@@ -67,9 +92,25 @@
         <p>Получение производной табулированной функции</p>
         <button id="open-derivative">Открыть окно дифференцирования</button>
     </div>
+    <div class="card">
+        <h2>График функции</h2>
+        <p>Изучайте табулированную функцию, редактируйте точки и смотрите график</p>
+        <button id="open-graph">Открыть графическое окно</button>
+    </div>
+    <div class="card">
+        <h2>Интеграл</h2>
+        <p>Параллельное вычисление определённого интеграла</p>
+        <button id="open-integral">Открыть окно интеграла</button>
+    </div>
+    <div class="card">
+        <h2>Составные функции</h2>
+        <p>Комбинируйте простые функции и используйте их для табуляции</p>
+        <button id="open-composite">Открыть конструктор функций</button>
+    </div>
 </main>
 
 <div class="modal-backdrop" id="backdrop">
+    <!-- Settings -->
     <div class="modal" id="settings-modal">
         <div class="modal-header"><h3>Настройки фабрики</h3><button class="close-btn" data-close>&times;</button></div>
         <div class="divider"></div>
@@ -80,22 +121,37 @@
                 <option value="LIST">Связный список</option>
             </select>
         </div>
-        <div class="actions" style="margin-top:14px; justify-content: flex-end;">
-            <button class="secondary" data-close>Отмена</button>
-            <button id="save-factory">Сохранить</button>
+        <div class="actions" style="margin-top:14px; justify-content: space-between;">
+            <div class="row">
+                <label for="save-format">Формат сохранения:</label>
+                <select id="save-format">
+                    <option value="bin">Бинарный</option>
+                    <option value="json">JSON</option>
+                    <option value="xml">XML</option>
+                </select>
+            </div>
+            <div>
+                <button class="secondary" data-close>Отмена</button>
+                <button id="save-factory">Сохранить</button>
+            </div>
         </div>
     </div>
 
+    <!-- Operations -->
     <div class="modal" id="operations-modal">
         <div class="modal-header"><h3>Базовые операции</h3><button class="close-btn" data-close>&times;</button></div>
-        <p class="hint">Создавайте функции из массивов или из другой функции, загружайте/сохраняйте и редактируйте значения Y</p>
+        <p class="hint">Создавайте функции из массивов или из другой функции, загружайте/сохраняйте, редактируйте Y. Кнопки вставки/удаления доступны для Insertable/Removable.</p>
         <div class="grid-2">
             <div>
                 <h4>Первый операнд</h4>
                 <div id="table-a" class="table-wrapper"></div>
                 <div class="actions">
-                    <button data-create-array="opA">Создать из массивов</button>
-                    <button data-create-math="opA" class="secondary">Создать из функции</button>
+                    <button data-create-array="opA">Из массивов</button>
+                    <button data-create-math="opA" class="secondary">Из функции</button>
+                    <button data-insert="opA" class="secondary">Вставка</button>
+                    <button data-remove="opA" class="secondary">Удалить</button>
+                </div>
+                <div class="actions">
                     <button data-load="opA" class="secondary">Загрузить</button>
                     <button data-save="opA" class="secondary">Сохранить</button>
                 </div>
@@ -104,8 +160,12 @@
                 <h4>Второй операнд</h4>
                 <div id="table-b" class="table-wrapper"></div>
                 <div class="actions">
-                    <button data-create-array="opB">Создать из массивов</button>
-                    <button data-create-math="opB" class="secondary">Создать из функции</button>
+                    <button data-create-array="opB">Из массивов</button>
+                    <button data-create-math="opB" class="secondary">Из функции</button>
+                    <button data-insert="opB" class="secondary">Вставка</button>
+                    <button data-remove="opB" class="secondary">Удалить</button>
+                </div>
+                <div class="actions">
                     <button data-load="opB" class="secondary">Загрузить</button>
                     <button data-save="opB" class="secondary">Сохранить</button>
                 </div>
@@ -123,16 +183,21 @@
         </div>
     </div>
 
+    <!-- Derivative -->
     <div class="modal" id="derivative-modal">
         <div class="modal-header"><h3>Дифференцирование функции</h3><button class="close-btn" data-close>&times;</button></div>
-        <p class="hint">Левая таблица редактируется, правая — результат вычисления производной.</p>
+        <p class="hint">Левая таблица редактируется (Insertable/Removable), правая — результат вычисления производной.</p>
         <div class="grid-2">
             <div>
                 <h4>Исходная функция</h4>
                 <div id="table-derivative-src" class="table-wrapper"></div>
                 <div class="actions">
-                    <button data-create-array="diffSource">Создать из массивов</button>
-                    <button data-create-math="diffSource" class="secondary">Создать из функции</button>
+                    <button data-create-array="diffSource">Из массивов</button>
+                    <button data-create-math="diffSource" class="secondary">Из функции</button>
+                    <button data-insert="diffSource" class="secondary">Вставка</button>
+                    <button data-remove="diffSource" class="secondary">Удалить</button>
+                </div>
+                <div class="actions">
                     <button data-load="diffSource" class="secondary">Загрузить</button>
                     <button data-save="diffSource" class="secondary">Сохранить</button>
                 </div>
@@ -148,6 +213,82 @@
         </div>
     </div>
 
+    <!-- Graph modal -->
+    <div class="modal" id="graph-modal">
+        <div class="modal-header"><h3>График табулированной функции</h3><button class="close-btn" data-close>&times;</button></div>
+        <div class="grid-2">
+            <div>
+                <div id="table-graph" class="table-wrapper"></div>
+                <div class="actions">
+                    <button data-create-array="graph">Из массивов</button>
+                    <button data-create-math="graph" class="secondary">Из функции</button>
+                    <button data-insert="graph" class="secondary">Вставка</button>
+                    <button data-remove="graph" class="secondary">Удалить</button>
+                </div>
+                <div class="actions">
+                    <button data-load="graph" class="secondary">Загрузить</button>
+                    <button data-save="graph" class="secondary">Сохранить</button>
+                </div>
+                <div class="actions">
+                    <input id="apply-x" type="number" step="0.1" placeholder="X для вычисления">
+                    <button id="apply-run">Вычислить apply()</button>
+                    <span id="apply-result" class="badge">—</span>
+                </div>
+            </div>
+            <div>
+                <canvas id="graph-canvas" height="320"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Integral modal -->
+    <div class="modal" id="integral-modal">
+        <div class="modal-header"><h3>Определённый интеграл</h3><button class="close-btn" data-close>&times;</button></div>
+        <div class="grid-2">
+            <div>
+                <div id="table-integral" class="table-wrapper"></div>
+                <div class="actions">
+                    <button data-create-array="integral">Из массивов</button>
+                    <button data-create-math="integral" class="secondary">Из функции</button>
+                    <button data-insert="integral" class="secondary">Вставка</button>
+                    <button data-remove="integral" class="secondary">Удалить</button>
+                </div>
+                <div class="actions">
+                    <button data-load="integral" class="secondary">Загрузить</button>
+                    <button data-save="integral" class="secondary">Сохранить</button>
+                </div>
+            </div>
+            <div>
+                <div class="row">
+                    <label for="integral-threads">Количество потоков</label>
+                    <input id="integral-threads" type="number" min="1" max="16" value="2">
+                    <button id="integral-run">Вычислить интеграл</button>
+                </div>
+                <div class="hint">Значение:</div>
+                <div class="badge" id="integral-result">—</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Composite modal -->
+    <div class="modal" id="composite-modal">
+        <div class="modal-header"><h3>Составная функция</h3><button class="close-btn" data-close>&times;</button></div>
+        <div class="grid-2" style="margin-top:12px;">
+            <label for="composite-name">Локализованное имя</label>
+            <input id="composite-name" placeholder="Например, Квадрат синуса">
+            <label for="composite-priority">Приоритет отображения</label>
+            <input id="composite-priority" type="number" value="5">
+        </div>
+        <div class="divider"></div>
+        <p class="hint">Выберите функции (применяются справа налево, как композиция).</p>
+        <div id="composite-list" style="max-height:220px; overflow:auto; border:1px solid var(--border); border-radius:12px; padding:8px;"></div>
+        <div class="actions" style="justify-content: flex-end;">
+            <button class="secondary" data-close>Отмена</button>
+            <button id="composite-save">Создать и добавить в список</button>
+        </div>
+    </div>
+
+    <!-- Create from arrays -->
     <div class="modal" id="create-array-modal">
         <div class="modal-header"><h3>Создание функции из массивов</h3><button class="close-btn" data-close>&times;</button></div>
         <div class="row" style="margin: 10px 0;">
@@ -163,6 +304,7 @@
         </div>
     </div>
 
+    <!-- Create from math function -->
     <div class="modal" id="create-math-modal">
         <div class="modal-header"><h3>Создание из другой функции</h3><button class="close-btn" data-close>&times;</button></div>
         <div class="grid-2" style="margin-top:10px;">
@@ -181,6 +323,22 @@
         </div>
     </div>
 
+    <!-- Auth modal -->
+    <div class="modal" id="auth-modal">
+        <div class="modal-header"><h3 id="auth-title">Вход</h3></div>
+        <div class="grid-2" style="margin-top:10px;">
+            <label for="auth-login">Логин</label>
+            <input id="auth-login" placeholder="login">
+            <label for="auth-password">Пароль</label>
+            <input id="auth-password" type="password" placeholder="Пароль">
+        </div>
+        <div class="actions" style="justify-content: space-between; margin-top:14px;">
+            <button id="auth-switch" class="secondary">Переключить вход/регистрацию</button>
+            <button id="auth-submit">Продолжить</button>
+        </div>
+    </div>
+
+    <!-- Error modal -->
     <div class="modal" id="error-modal">
         <div class="modal-header"><h3>Ошибка</h3><button class="close-btn" data-close>&times;</button></div>
         <p id="error-message"></p>
@@ -190,14 +348,26 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
     const state = {
+        token: localStorage.getItem('token'),
+        authMode: 'login',
         factory: 'ARRAY',
+        functionsList: [],
+        saveFormat: 'bin',
         functions: {
-            opA: [], opB: [], result: [], diffSource: [], diffResult: []
+            opA: { points: [], insertable: true, removable: true },
+            opB: { points: [], insertable: true, removable: true },
+            result: { points: [], insertable: false, removable: false },
+            diffSource: { points: [], insertable: true, removable: true },
+            diffResult: { points: [], insertable: false, removable: false },
+            graph: { points: [], insertable: true, removable: true },
+            integral: { points: [], insertable: true, removable: true }
         },
         creationTarget: null,
-        openModalId: null
+        openModalId: null,
+        chart: null
     };
 
     const backdrop = document.getElementById('backdrop');
@@ -207,7 +377,11 @@
         derivative: document.getElementById('derivative-modal'),
         createArray: document.getElementById('create-array-modal'),
         createMath: document.getElementById('create-math-modal'),
-        error: document.getElementById('error-modal')
+        error: document.getElementById('error-modal'),
+        graph: document.getElementById('graph-modal'),
+        integral: document.getElementById('integral-modal'),
+        composite: document.getElementById('composite-modal'),
+        auth: document.getElementById('auth-modal')
     };
 
     function openModal(id) {
@@ -230,8 +404,56 @@
         openModal('error');
     }
 
+    async function authFetch(url, options = {}) {
+        const headers = options.headers || {};
+        if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
+        options.headers = headers;
+        const res = await fetch(url, options);
+        if (res.status === 401) {
+            localStorage.removeItem('token');
+            state.token = null;
+            updateUserChip();
+            openModal('auth');
+            throw new Error('Требуется авторизация');
+        }
+        return res;
+    }
+
+    function updateUserChip(login = 'Гость', role) {
+        const chip = document.getElementById('user-chip');
+        chip.textContent = role ? `${login} (${role})` : login;
+    }
+
+    // Theme toggle
+    document.getElementById('toggle-theme').addEventListener('click', () => {
+        document.body.classList.toggle('dark');
+    });
+
+    // Auth logic
+    document.getElementById('auth-switch').addEventListener('click', () => {
+        state.authMode = state.authMode === 'login' ? 'register' : 'login';
+        document.getElementById('auth-title').textContent = state.authMode === 'login' ? 'Вход' : 'Регистрация';
+    });
+
+    document.getElementById('auth-submit').addEventListener('click', async () => {
+        const login = document.getElementById('auth-login').value;
+        const password = document.getElementById('auth-password').value;
+        const endpoint = state.authMode === 'login' ? '/ui/api/auth/login' : '/ui/api/auth/register';
+        const res = await fetch(endpoint, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ login, password }) });
+        if (!res.ok) { const err = await res.json(); showError(err.message || 'Ошибка авторизации'); return; }
+        const data = await res.json();
+        state.token = data.token; localStorage.setItem('token', state.token);
+        updateUserChip(data.login, data.role);
+        closeModal();
+    });
+
+    if (!state.token) {
+        openModal('auth');
+    }
+
+    // Factory load/save
     async function loadFactory() {
-        const res = await fetch('/ui/api/settings/factory');
+        const res = await authFetch('/ui/api/settings/factory');
         const data = await res.json();
         state.factory = data.type;
         document.getElementById('factory-select').value = data.type;
@@ -239,31 +461,51 @@
 
     async function saveFactory() {
         const type = document.getElementById('factory-select').value;
-        const res = await fetch('/ui/api/settings/factory', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ type })});
+        const res = await authFetch('/ui/api/settings/factory', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ type })});
         if (!res.ok) { showError('Не удалось сохранить фабрику'); return; }
         state.factory = type;
+        state.saveFormat = document.getElementById('save-format').value;
         closeModal();
     }
 
+    // Functions list
     async function loadFunctionsList() {
-        const res = await fetch('/ui/api/functions');
+        const res = await authFetch('/ui/api/functions');
         if (!res.ok) { showError('Не удалось загрузить список функций'); return; }
         const names = await res.json();
+        state.functionsList = names;
         const select = document.getElementById('math-function');
         select.innerHTML = '';
         names.forEach(name => {
             const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            select.appendChild(option);
+            option.value = name; option.textContent = name; select.appendChild(option);
+        });
+        renderCompositeList();
+    }
+
+    function renderCompositeList() {
+        const container = document.getElementById('composite-list');
+        container.innerHTML = '';
+        state.functionsList.forEach(name => {
+            const row = document.createElement('div');
+            row.className = 'row';
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.value = name;
+            row.appendChild(input);
+            const label = document.createElement('span');
+            label.textContent = name;
+            row.appendChild(label);
+            container.appendChild(row);
         });
     }
 
+    // Table rendering
     function renderTable(target, elementId, editableY) {
         const wrapper = document.getElementById(elementId);
         wrapper.innerHTML = '';
-        const points = state.functions[target];
-        if (!points || points.length === 0) {
+        const fn = state.functions[target];
+        if (!fn || !fn.points || fn.points.length === 0) {
             wrapper.innerHTML = '<div class="hint" style="padding:12px;">Функция не задана</div>';
             return;
         }
@@ -271,7 +513,7 @@
         const head = document.createElement('tr');
         head.innerHTML = '<th>X</th><th>Y</th>';
         table.appendChild(head);
-        points.forEach((pt, idx) => {
+        fn.points.forEach((pt, idx) => {
             const row = document.createElement('tr');
             const xCell = document.createElement('td');
             xCell.textContent = pt.x;
@@ -281,7 +523,7 @@
                 input.type = 'number';
                 input.value = pt.y;
                 input.addEventListener('input', (e) => {
-                    state.functions[target][idx].y = parseFloat(e.target.value);
+                    state.functions[target].points[idx].y = parseFloat(e.target.value);
                 });
                 yCell.appendChild(input);
             } else {
@@ -300,6 +542,9 @@
         renderTable('result', 'table-result', false);
         renderTable('diffSource', 'table-derivative-src', true);
         renderTable('diffResult', 'table-derivative-res', false);
+        renderTable('graph', 'table-graph', true);
+        renderTable('integral', 'table-integral', true);
+        redrawChart();
     }
 
     function prepareCreate(target, mode) {
@@ -311,9 +556,13 @@
         }
     }
 
+    // UI bindings
     document.getElementById('open-settings').addEventListener('click', () => openModal('settings'));
     document.getElementById('open-operations').addEventListener('click', () => openModal('operations'));
     document.getElementById('open-derivative').addEventListener('click', () => openModal('derivative'));
+    document.getElementById('open-graph').addEventListener('click', () => { openModal('graph'); redrawChart(); });
+    document.getElementById('open-integral').addEventListener('click', () => openModal('integral'));
+    document.getElementById('open-composite').addEventListener('click', () => openModal('composite'));
     document.getElementById('save-factory').addEventListener('click', saveFactory);
 
     document.querySelectorAll('[data-create-array]').forEach(btn => {
@@ -335,11 +584,8 @@
         table.appendChild(head);
         for (let i = 0; i < count; i++) {
             const row = document.createElement('tr');
-            const xCell = document.createElement('td');
-            const yCell = document.createElement('td');
-            xCell.innerHTML = `<input type="number" step="0.1" class="x-input" placeholder="X${i+1}">`;
-            yCell.innerHTML = `<input type="number" step="0.1" class="y-input" placeholder="Y${i+1}">`;
-            row.appendChild(xCell); row.appendChild(yCell); table.appendChild(row);
+            row.innerHTML = `<td><input type="number" step="0.1" class="x-input" placeholder="X${i+1}"></td><td><input type="number" step="0.1" class="y-input" placeholder="Y${i+1}"></td>`;
+            table.appendChild(row);
         }
         wrapper.appendChild(table);
     });
@@ -351,10 +597,10 @@
         const xValues = xInputs.map(el => parseFloat(el.value));
         const yValues = yInputs.map(el => parseFloat(el.value));
         if (xValues.some(v => Number.isNaN(v)) || yValues.some(v => Number.isNaN(v))) { showError('Заполните все значения X и Y'); return; }
-        const res = await fetch('/ui/api/tabulated/array', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ xValues, yValues })});
+        const res = await authFetch('/ui/api/tabulated/array', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ xValues, yValues })});
         if (!res.ok) { const err = await res.json(); showError(err.message); return; }
         const points = await res.json();
-        state.functions[state.creationTarget] = points;
+        state.functions[state.creationTarget] = { ...state.functions[state.creationTarget], points };
         renderAllTables();
         closeModal();
     });
@@ -364,20 +610,20 @@
         const from = document.getElementById('math-from').value;
         const to = document.getElementById('math-to').value;
         const count = Number(document.getElementById('math-count').value);
-        const res = await fetch('/ui/api/tabulated/math', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ functionName, from, to, count })});
+        const res = await authFetch('/ui/api/tabulated/math', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ functionName, from, to, count })});
         if (!res.ok) { const err = await res.json(); showError(err.message); return; }
         const points = await res.json();
-        state.functions[state.creationTarget] = points;
+        state.functions[state.creationTarget] = { ...state.functions[state.creationTarget], points };
         renderAllTables();
         closeModal();
     });
 
     async function performOperation(op) {
         try {
-            const body = { operation: op, first: state.functions.opA, second: state.functions.opB };
-            const res = await fetch('/ui/api/operations', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+            const body = { operation: op, first: state.functions.opA.points, second: state.functions.opB.points };
+            const res = await authFetch('/ui/api/operations', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
             if (!res.ok) { const err = await res.json(); showError(err.message); return; }
-            state.functions.result = await res.json();
+            state.functions.result.points = await res.json();
             renderAllTables();
         } catch (e) { showError(e.message); }
     }
@@ -386,27 +632,52 @@
 
     document.getElementById('run-derivative').addEventListener('click', async () => {
         try {
-            const res = await fetch('/ui/api/operations/derivative', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ function: state.functions.diffSource })});
+            const res = await authFetch('/ui/api/operations/derivative', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ function: state.functions.diffSource.points })});
             if (!res.ok) { const err = await res.json(); showError(err.message); return; }
-            state.functions.diffResult = await res.json();
+            state.functions.diffResult.points = await res.json();
             renderAllTables();
         } catch (e) { showError(e.message); }
     });
 
+    // Insert/remove buttons
+    document.querySelectorAll('[data-insert]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.dataset.insert;
+            const fn = state.functions[target];
+            if (!fn.insertable) return;
+            const x = parseFloat(prompt('Введите X новой точки')); if (Number.isNaN(x)) return;
+            const y = parseFloat(prompt('Введите Y новой точки')); if (Number.isNaN(y)) return;
+            fn.points = fn.points || [];
+            fn.points.push({ x, y });
+            fn.points.sort((a,b) => a.x - b.x);
+            renderAllTables();
+        });
+    });
+    document.querySelectorAll('[data-remove]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.dataset.remove;
+            const fn = state.functions[target];
+            if (!fn.removable || !fn.points || fn.points.length === 0) return;
+            const idx = parseInt(prompt('Введите индекс строки для удаления (начиная с 0)')); if (Number.isNaN(idx)) return;
+            if (idx >= 0 && idx < fn.points.length) { fn.points.splice(idx,1); renderAllTables(); }
+        });
+    });
+
+    // File actions
     function attachLoaders() {
         document.querySelectorAll('[data-load]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const target = btn.dataset.load;
                 const input = document.createElement('input');
                 input.type = 'file';
-                input.accept = '.bin,.dat,.ser';
+                input.accept = '.bin,.dat,.ser,.json,.xml';
                 input.onchange = async () => {
                     if (!input.files.length) return;
                     const form = new FormData();
                     form.append('file', input.files[0]);
-                    const res = await fetch('/ui/api/function-files/upload', { method:'POST', body: form });
+                    const res = await authFetch('/ui/api/function-files/upload', { method:'POST', body: form });
                     if (!res.ok) { const err = await res.json(); showError(err.message); return; }
-                    state.functions[target] = await res.json();
+                    state.functions[target].points = await res.json();
                     renderAllTables();
                 };
                 input.click();
@@ -419,19 +690,71 @@
             btn.addEventListener('click', async () => {
                 const target = btn.dataset.save;
                 const fn = state.functions[target];
-                if (!fn || fn.length === 0) { showError('Функция не задана'); return; }
-                const res = await fetch('/ui/api/function-files/download', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ function: fn })});
+                if (!fn || !fn.points || fn.points.length === 0) { showError('Функция не задана'); return; }
+                const format = state.saveFormat;
+                const res = await authFetch('/ui/api/function-files/download', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ function: fn.points, format })});
                 if (!res.ok) { const err = await res.json(); showError(err.message); return; }
                 const blob = await res.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url; a.download = 'tabulated-function.bin'; a.click();
+                a.href = url; a.download = `tabulated-function.${format === 'bin' ? 'bin' : format}`; a.click();
                 window.URL.revokeObjectURL(url);
             });
         });
     }
 
+    // Apply
+    document.getElementById('apply-run').addEventListener('click', async () => {
+        const x = parseFloat(document.getElementById('apply-x').value);
+        if (Number.isNaN(x)) { showError('Введите корректный X'); return; }
+        const res = await authFetch('/ui/api/operations/apply', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ function: state.functions.graph.points, x })});
+        if (!res.ok) { const err = await res.json(); showError(err.message); return; }
+        const val = await res.json();
+        document.getElementById('apply-result').textContent = val;
+    });
+
+    // Integral
+    document.getElementById('integral-run').addEventListener('click', async () => {
+        const threads = Number(document.getElementById('integral-threads').value);
+        const res = await authFetch('/ui/api/operations/integral', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ function: state.functions.integral.points, threads })});
+        if (!res.ok) { const err = await res.json(); showError(err.message); return; }
+        const val = await res.json();
+        document.getElementById('integral-result').textContent = val;
+    });
+
+    // Composite creation
+    document.getElementById('composite-save').addEventListener('click', async () => {
+        const name = document.getElementById('composite-name').value;
+        const priority = parseInt(document.getElementById('composite-priority').value) || 5;
+        const components = Array.from(document.querySelectorAll('#composite-list input[type="checkbox"]:checked')).map(c => c.value);
+        if (components.length === 0) { showError('Выберите хотя бы одну функцию'); return; }
+        const res = await authFetch('/ui/api/functions/composite', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, priority, components })});
+        if (!res.ok) { const err = await res.json(); showError(err.message); return; }
+        state.functionsList = await res.json();
+        await loadFunctionsList();
+        closeModal();
+    });
+
+    // Chart
+    function redrawChart() {
+        const ctx = document.getElementById('graph-canvas');
+        if (!ctx) return;
+        const pts = (state.functions.graph.points || []).slice().sort((a,b) => a.x - b.x);
+        const labels = pts.map(p => p.x);
+        const data = pts.map(p => p.y);
+        if (state.chart) state.chart.destroy();
+        state.chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets: [{ label: 'f(x)', data, borderColor: '#2d6cdf', backgroundColor: 'rgba(45,108,223,0.2)', fill: true, tension: 0.3 }] },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'x' } }, y: { title: { display: true, text: 'y' } } } }
+        });
+    }
+
+    // Init
     document.addEventListener('DOMContentLoaded', async () => {
+        if (state.token) {
+            updateUserChip('Пользователь');
+        }
         await loadFactory();
         await loadFunctionsList();
         renderAllTables();

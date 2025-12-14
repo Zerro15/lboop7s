@@ -1,6 +1,7 @@
 package com.example.lab5.manual.ui;
 
 import com.example.lab5.manual.config.FactoryHolder;
+import com.example.lab5.manual.functions.operations.ParallelIntegralCalculator;
 import com.example.lab5.manual.functions.operations.TabulatedDifferentialOperator;
 import com.example.lab5.manual.functions.operations.TabulatedFunctionOperationService;
 import com.example.lab5.manual.functions.tabulated.TabulatedFunction;
@@ -32,12 +33,32 @@ public class OperationsServlet extends HttpServlet {
             ObjectNode payload = objectMapper.readValue(req.getInputStream(), ObjectNode.class);
             TabulatedFunctionOperationService ops = new TabulatedFunctionOperationService(FactoryHolder.getInstance().getFactory());
             TabulatedDifferentialOperator differentialOperator = new TabulatedDifferentialOperator(FactoryHolder.getInstance().getFactory());
+            ParallelIntegralCalculator integralCalculator = new ParallelIntegralCalculator();
 
             if (path != null && path.contains("derivative")) {
                 List<TabulatedPoint> sourcePoints = objectMapper.convertValue(payload.get("function"), new TypeReference<List<TabulatedPoint>>() {});
                 TabulatedFunction source = TabulatedFunctionMapper.fromPoints(sourcePoints, FactoryHolder.getInstance().getFactory());
                 TabulatedFunction result = differentialOperator.differentiate(source);
                 writeFunction(resp, result);
+                return;
+            }
+
+            if (path != null && path.contains("apply")) {
+                List<TabulatedPoint> sourcePoints = objectMapper.convertValue(payload.get("function"), new TypeReference<List<TabulatedPoint>>() {});
+                TabulatedFunction source = TabulatedFunctionMapper.fromPoints(sourcePoints, FactoryHolder.getInstance().getFactory());
+                double x = payload.get("x").asDouble();
+                resp.setContentType("application/json;charset=UTF-8");
+                resp.getWriter().write(objectMapper.writeValueAsString(source.apply(x)));
+                return;
+            }
+
+            if (path != null && path.contains("integral")) {
+                List<TabulatedPoint> sourcePoints = objectMapper.convertValue(payload.get("function"), new TypeReference<List<TabulatedPoint>>() {});
+                TabulatedFunction source = TabulatedFunctionMapper.fromPoints(sourcePoints, FactoryHolder.getInstance().getFactory());
+                int threads = payload.get("threads").asInt();
+                double value = integralCalculator.integrate(source, threads);
+                resp.setContentType("application/json;charset=UTF-8");
+                resp.getWriter().write(objectMapper.writeValueAsString(value));
                 return;
             }
 
