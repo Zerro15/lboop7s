@@ -48,9 +48,18 @@ public class DatabaseConfig {
 
     private static HikariDataSource initializeDataSource() {
         String url = resolveJdbcUrl();
-        String username = firstNonBlank(System.getenv("DB_USERNAME"), properties.getProperty("database.username"), "postgres");
-        String password = firstNonBlank(System.getenv("DB_PASSWORD"), properties.getProperty("database.password"), "password");
-        String driver = firstNonBlank(System.getenv("DB_DRIVER"), properties.getProperty("database.driver"), "org.postgresql.Driver");
+        String username = firstNonBlank(
+                System.getenv("DB_USERNAME"),
+                getProperty("db.username", "database.username"),
+                "lab5_user");
+        String password = firstNonBlank(
+                System.getenv("DB_PASSWORD"),
+                getProperty("db.password", "database.password"),
+                "lab5_password");
+        String driver = firstNonBlank(
+                System.getenv("DB_DRIVER"),
+                getProperty("db.driver-class", "db.driver", "database.driver"),
+                "org.postgresql.Driver");
 
         logger.info("Настройка подключения к базе данных: url={}, user={}", url, username);
         try {
@@ -65,12 +74,16 @@ public class DatabaseConfig {
         config.setUsername(username);
         config.setPassword(password);
         config.setDriverClassName(driver);
-        config.setMaximumPoolSize(5);
-        config.setConnectionTimeout(10_000);
+        config.setPoolName("manual-ui-pool");
+
+        config.setMaximumPoolSize(intProp("db.pool.maximum-pool-size", 10));
+        config.setMinimumIdle(intProp("db.pool.minimum-idle", 2));
+        config.setIdleTimeout(longProp("db.pool.idle-timeout", 300_000));
+        config.setConnectionTimeout(longProp("db.pool.connection-timeout", 20_000));
+        config.setMaxLifetime(longProp("db.pool.max-lifetime", 1_200_000));
+        config.setLeakDetectionThreshold(longProp("db.pool.leak-detection-threshold", 60_000));
         config.setValidationTimeout(5_000);
         config.setInitializationFailTimeout(10_000);
-        config.setPoolName("manual-ui-pool");
-        config.setLeakDetectionThreshold(15_000);
 
         try {
             return new HikariDataSource(config);
@@ -81,18 +94,15 @@ public class DatabaseConfig {
     }
 
     private static String resolveJdbcUrl() {
-        String explicitUrl = System.getenv("DB_URL");
-        if (explicitUrl != null && !explicitUrl.isBlank()) {
-            return explicitUrl;
-        }
-        explicitUrl = properties.getProperty("database.url");
+        String explicitUrl = firstNonBlank(System.getenv("DB_URL"),
+                getProperty("db.url", "database.url"));
         if (explicitUrl != null && !explicitUrl.isBlank()) {
             return explicitUrl;
         }
 
-        String host = firstNonBlank(System.getenv("DB_HOST"), properties.getProperty("database.host"), "postgres");
-        String port = firstNonBlank(System.getenv("DB_PORT"), properties.getProperty("database.port"), "5432");
-        String db = firstNonBlank(System.getenv("DB_NAME"), properties.getProperty("database.name"), "lab5db");
+        String host = firstNonBlank(System.getenv("DB_HOST"), getProperty("db.host", "database.host"), "localhost");
+        String port = firstNonBlank(System.getenv("DB_PORT"), getProperty("db.port", "database.port"), "5432");
+        String db = firstNonBlank(System.getenv("DB_NAME"), getProperty("db.name", "database.name"), "lab5_db");
         return String.format("jdbc:postgresql://%s:%s/%s", host, port, db);
     }
 
@@ -103,5 +113,41 @@ public class DatabaseConfig {
             }
         }
         return null;
+    }
+
+    private static String getProperty(String... keys) {
+        for (String key : keys) {
+            String value = properties.getProperty(key);
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private static int intProp(String key, int defaultValue) {
+        String value = getProperty(key);
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            logger.warn("Некорректное целочисленное значение {} для {}, использую {}", value, key, defaultValue);
+            return defaultValue;
+        }
+    }
+
+    private static long longProp(String key, long defaultValue) {
+        String value = getProperty(key);
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            logger.warn("Некорректное числовое значение {} для {}, использую {}", value, key, defaultValue);
+            return defaultValue;
+        }
     }
 }
