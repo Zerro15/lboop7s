@@ -218,8 +218,11 @@
             <button type="button" id="open-factory-window">Настроить фабрику</button>
         </div>
         <div class="actions">
-            <button type="button" id="open-array-window">Окно создания из массивов</button>
-            <button type="button" id="open-math-window">Окно табулирования функции</button>
+            <button type="button" id="open-array-window">Создать функцию (массивы)</button>
+            <button type="button" id="open-math-window">Создать функцию (формула)</button>
+            <button type="button" id="open-operations-window">Операции над функциями</button>
+            <button type="button" id="open-diff-window">Дифференцирование функции</button>
+            <button type="button" class="secondary" id="open-about-window">О программе</button>
         </div>
     </div>
 
@@ -344,6 +347,45 @@
                 <button type="button" class="secondary" data-close-modal="factory-window">Закрыть окно</button>
             </div>
         </form>
+    </div>
+
+    <div class="modal window hidden" data-modal="operations-window">
+        <div class="modal-header">
+            <h3>Окно бинарных операций</h3>
+            <button type="button" class="close-btn" data-close-modal="operations-window">×</button>
+        </div>
+        <p>Здесь будут выполняться сложение, умножение и другие операции над табулированными функциями.
+            Окно доступно только в единственном экземпляре и поддерживает модальный режим.</p>
+        <div class="status info">Функциональность будет добавлена в следующих задачах.</div>
+        <div class="actions">
+            <button type="button" class="secondary" data-close-modal="operations-window">Закрыть окно</button>
+        </div>
+    </div>
+
+    <div class="modal window hidden" data-modal="diff-window">
+        <div class="modal-header">
+            <h3>Окно дифференцирования</h3>
+            <button type="button" class="close-btn" data-close-modal="diff-window">×</button>
+        </div>
+        <p>Задайте исходную функцию и получите ее табулированную производную. Окно открывается модально и не
+            допускает дубликатов.</p>
+        <div class="status info">Интерфейс дифференцирования будет реализован далее.</div>
+        <div class="actions">
+            <button type="button" class="secondary" data-close-modal="diff-window">Закрыть окно</button>
+        </div>
+    </div>
+
+    <div class="modal window hidden" data-modal="about-window">
+        <div class="modal-header">
+            <h3>О программе</h3>
+            <button type="button" class="close-btn" data-close-modal="about-window">×</button>
+        </div>
+        <p>Центр управления табулированными функциями объединяет создание из массивов, табулирование существующих
+            математических функций и настройки фабрик в единый модальный интерфейс.</p>
+        <p>Каждое окно открывается единожды: при повторном выборе существующий диалог поднимается на передний план.</p>
+        <div class="actions">
+            <button type="button" class="secondary" data-close-modal="about-window">Закрыть окно</button>
+        </div>
     </div>
 </div>
 
@@ -584,6 +626,9 @@
         syncFactoryDisplay();
         modalManager.open('factory-window');
     });
+    document.getElementById('open-operations-window').addEventListener('click', () => modalManager.open('operations-window'));
+    document.getElementById('open-diff-window').addEventListener('click', () => modalManager.open('diff-window'));
+    document.getElementById('open-about-window').addEventListener('click', () => modalManager.open('about-window'));
 
     document.getElementById('arrays-form').addEventListener('submit', async (event) => {
         event.preventDefault();
