@@ -25,7 +25,7 @@
             margin: 0;
         }
         h2 {
-            margin-top: 32px;
+            margin-top: 0;
         }
         .card {
             background: #fff;
@@ -85,7 +85,7 @@
             flex-wrap: wrap;
         }
         .status {
-            margin-top: 18px;
+            margin-top: 8px;
             padding: 12px;
             border-radius: 8px;
         }
@@ -116,7 +116,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+        }
+        #window-overlay {
+            z-index: 900;
+        }
+        #modal-overlay {
+            z-index: 1200;
         }
         .modal {
             background: #fff;
@@ -125,6 +130,11 @@
             max-width: 420px;
             width: 90%;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        .modal.window {
+            max-width: 760px;
+            width: 95%;
         }
         .modal h3 {
             margin-top: 0;
@@ -132,18 +142,102 @@
         .hidden {
             display: none;
         }
+        .modal.highlight {
+            box-shadow: 0 0 0 3px rgba(11, 101, 194, 0.3), 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        .close-btn {
+            width: auto;
+            padding: 6px 10px;
+            font-size: 16px;
+            border-radius: 6px;
+            background: #e5e7eb;
+            color: #1f2933;
+        }
+        .chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        .chip {
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            color: #3730a3;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-weight: bold;
+        }
+        .factory-option {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-top: 8px;
+        }
+        .factory-summary {
+            flex: 1;
+        }
+        .factory-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .factory-badge {
+            display: inline-block;
+            background: #ecfdf3;
+            border: 1px solid #bbf7d0;
+            color: #065f46;
+            padding: 4px 8px;
+            border-radius: 8px;
+            margin-top: 6px;
+        }
+        .factory-badge.hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
 <header>
-    <h1>Создание TabulatedFunction</h1>
-    <p>Два сценария: из массивов точек и из математической функции</p>
+    <h1>Центр управления табулированными функциями</h1>
+    <p>Настройте фабрику и открывайте модальные окна для операций.</p>
 </header>
 <main>
     <div class="card">
-        <h2>Создание из массивов точек</h2>
-        <p>Укажите пользователя, имя функции, тип фабрики и набор точек (минимум две).</p>
+        <h2>Главное управление</h2>
+        <p>Выберите активную фабрику и открывайте только одно окно каждого типа. Повторное открытие вернет уже
+            существующее окно на передний план.</p>
+        <div class="chip-row">
+            <div class="chip">Активная фабрика: <span data-active-factory-label th:text="${activeFactoryLabel}"></span></div>
+            <button type="button" id="open-factory-window">Настроить фабрику</button>
+        </div>
+        <div class="actions">
+            <button type="button" id="open-array-window">Окно создания из массивов</button>
+            <button type="button" id="open-math-window">Окно табулирования функции</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Текущий статус</h2>
+        <div id="status" class="status info">Статус операций будет отображаться здесь.</div>
+    </div>
+</main>
+
+<div id="window-overlay" class="overlay hidden" role="presentation">
+    <div class="modal window hidden" data-modal="arrays-window">
+        <div class="modal-header">
+            <h3>Создание из массивов точек</h3>
+            <button type="button" class="close-btn" data-close-modal="arrays-window">×</button>
+        </div>
+        <p>Активная фабрика: <strong data-active-factory-label></strong></p>
         <form id="arrays-form">
+            <input type="hidden" id="arrays-factory" name="factoryType" data-active-factory-input>
             <div class="form-grid">
                 <div>
                     <label for="arrays-user">ID пользователя</label>
@@ -152,15 +246,6 @@
                 <div>
                     <label for="arrays-name">Название функции</label>
                     <input type="text" id="arrays-name" name="name" required placeholder="Например, Точки вручную">
-                </div>
-                <div>
-                    <label for="arrays-factory">Тип фабрики</label>
-                    <select id="arrays-factory" name="factoryType" required>
-                        <option value="" disabled selected>Выберите тип</option>
-                        <option th:each="factory : ${factoryTypes}"
-                                th:value="${factory}"
-                                th:text="${factory}"></option>
-                    </select>
                 </div>
                 <div>
                     <label for="points-count-input">Количество точек</label>
@@ -186,14 +271,19 @@
             </table>
             <div class="actions">
                 <button type="submit">Создать функцию</button>
+                <button type="button" class="secondary" data-close-modal="arrays-window">Закрыть окно</button>
             </div>
         </form>
     </div>
 
-    <div class="card">
-        <h2>Создание из математической функции</h2>
-        <p>Выберите готовую математическую функцию и задайте параметры табулирования.</p>
+    <div class="modal window hidden" data-modal="math-window">
+        <div class="modal-header">
+            <h3>Создание через математическую функцию</h3>
+            <button type="button" class="close-btn" data-close-modal="math-window">×</button>
+        </div>
+        <p>Активная фабрика: <strong data-active-factory-label></strong></p>
         <form id="math-form">
+            <input type="hidden" id="math-factory" name="factoryType" data-active-factory-input>
             <div class="form-grid">
                 <div>
                     <label for="math-user">ID пользователя</label>
@@ -224,24 +314,38 @@
                     <label for="right-bound">Правая граница</label>
                     <input type="number" step="any" id="right-bound" name="rightBound" required value="1">
                 </div>
-                <div>
-                    <label for="math-factory">Тип фабрики</label>
-                    <select id="math-factory" name="factoryType" required>
-                        <option value="" disabled selected>Выберите тип</option>
-                        <option th:each="factory : ${factoryTypes}"
-                                th:value="${factory}"
-                                th:text="${factory}"></option>
-                    </select>
-                </div>
             </div>
             <div class="actions">
                 <button type="submit">Создать по формуле</button>
+                <button type="button" class="secondary" data-close-modal="math-window">Закрыть окно</button>
             </div>
         </form>
     </div>
 
-    <div id="status" class="status info">Статус операций будет отображаться здесь.</div>
-</main>
+    <div class="modal window hidden" data-modal="factory-window">
+        <div class="modal-header">
+            <h3>Настройка фабрики табулированных функций</h3>
+            <button type="button" class="close-btn" data-close-modal="factory-window">×</button>
+        </div>
+        <p>Выберите единственную активную фабрику. При повторном открытии окна используется существующий экземпляр.</p>
+        <form id="factory-form">
+            <div class="factory-list">
+                <label class="factory-option" th:each="factory : ${factoryTypes}" th:attr="data-factory-key=${factory.key}">
+                    <input type="radio" name="factoryKey" th:value="${factory.key}" th:checked="${factory.active}">
+                    <div class="factory-summary">
+                        <div class="factory-title" th:text="${factory.label}"></div>
+                        <div class="factory-description" th:text="${factory.description}"></div>
+                        <span class="factory-badge" th:classappend="${factory.active} ? '' : ' hidden'">Текущая</span>
+                    </div>
+                </label>
+            </div>
+            <div class="actions">
+                <button type="submit">Сделать активной</button>
+                <button type="button" class="secondary" data-close-modal="factory-window">Закрыть окно</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <div id="modal-overlay" class="overlay hidden" role="dialog" aria-modal="true">
     <div class="modal">
@@ -256,17 +360,69 @@
 
 <script th:inline="javascript">
     const mathFunctions = /*[[${mathFunctions}]]*/ [];
+    let factoryState = /*[[${factoryState}]]*/ { factories: [], activeKey: 'array' };
+    let factoryTypes = factoryState.factories || [];
+    let activeFactoryKey = factoryState.activeKey || 'array';
+
     const statusPanel = document.getElementById('status');
-    const overlay = document.getElementById('modal-overlay');
+    const errorOverlay = document.getElementById('modal-overlay');
     const modalMessage = document.getElementById('modal-message');
     const confirmModalBtn = document.getElementById('confirm-modal');
     const closeModalBtn = document.getElementById('close-modal');
+
+    const windowOverlay = document.getElementById('window-overlay');
     const pointsTable = document.getElementById('points-table');
     const pointsBody = document.getElementById('points-body');
     const pointsCountInput = document.getElementById('points-count-input');
     const pointsCountError = document.getElementById('points-count-error');
     const MAX_POINTS = 1000;
     let confirmHandler = null;
+
+    const modalManager = {
+        openModals: new Map(),
+        zIndex: 1100,
+        open(id) {
+            const modal = document.querySelector(`[data-modal="${id}"]`);
+            if (!modal) {
+                return;
+            }
+            if (this.openModals.has(id)) {
+                this.focus(id);
+                return;
+            }
+            windowOverlay.classList.remove('hidden');
+            modal.classList.remove('hidden');
+            modal.style.zIndex = `${++this.zIndex}`;
+            this.openModals.set(id, modal);
+            document.body.style.overflow = 'hidden';
+        },
+        close(id) {
+            const modal = this.openModals.get(id);
+            if (!modal) {
+                return;
+            }
+            modal.classList.add('hidden');
+            this.openModals.delete(id);
+            if (this.openModals.size === 0) {
+                windowOverlay.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        },
+        focus(id) {
+            const modal = this.openModals.get(id);
+            if (!modal) {
+                return;
+            }
+            this.zIndex += 1;
+            modal.style.zIndex = `${this.zIndex}`;
+            modal.classList.add('highlight');
+            setTimeout(() => modal.classList.remove('highlight'), 300);
+        }
+    };
+
+    document.querySelectorAll('[data-close-modal]').forEach((button) => {
+        button.addEventListener('click', () => modalManager.close(button.dataset.closeModal));
+    });
 
     function showStatus(message, type = 'info') {
         statusPanel.textContent = message;
@@ -286,7 +442,7 @@
         }
 
         closeModalBtn.textContent = closeText || 'Закрыть';
-        overlay.classList.remove('hidden');
+        errorOverlay.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     }
 
@@ -295,8 +451,10 @@
     }
 
     function hideErrorModal() {
-        overlay.classList.add('hidden');
-        document.body.style.overflow = 'auto';
+        errorOverlay.classList.add('hidden');
+        if (modalManager.openModals.size === 0) {
+            document.body.style.overflow = 'auto';
+        }
         confirmHandler = null;
     }
 
@@ -393,6 +551,40 @@
         throw new Error(errorMessage);
     }
 
+    function getFactoryLabel(key) {
+        const match = factoryTypes.find((factory) => factory.key === key);
+        return match ? match.label : key;
+    }
+
+    function syncFactoryDisplay() {
+        document.querySelectorAll('[data-active-factory-label]').forEach((element) => {
+            element.textContent = getFactoryLabel(activeFactoryKey);
+        });
+        document.querySelectorAll('[data-active-factory-input]').forEach((input) => {
+            input.value = activeFactoryKey;
+        });
+        document.querySelectorAll('[data-factory-key]').forEach((container) => {
+            const key = container.dataset.factoryKey;
+            const badge = container.querySelector('.factory-badge');
+            const radio = container.querySelector('input[name="factoryKey"]');
+            if (radio) {
+                radio.checked = key === activeFactoryKey;
+            }
+            if (badge) {
+                badge.classList.toggle('hidden', key !== activeFactoryKey);
+            }
+        });
+    }
+
+    syncFactoryDisplay();
+
+    document.getElementById('open-array-window').addEventListener('click', () => modalManager.open('arrays-window'));
+    document.getElementById('open-math-window').addEventListener('click', () => modalManager.open('math-window'));
+    document.getElementById('open-factory-window').addEventListener('click', () => {
+        syncFactoryDisplay();
+        modalManager.open('factory-window');
+    });
+
     document.getElementById('arrays-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         const userId = Number(document.getElementById('arrays-user').value);
@@ -429,6 +621,7 @@
             });
             const data = await handleResponse(response);
             showStatus(`Функция создана (ID: ${data.id}, имя: ${data.name}).`, 'success');
+            modalManager.close('arrays-window');
         } catch (e) {
             // Ошибка уже отображена модально
         }
@@ -471,6 +664,31 @@
             const descriptor = mathFunctions.find((f) => f.key === data.mathFunctionKey);
             const label = descriptor ? descriptor.label : data.mathFunctionKey;
             showStatus(`Функция ${label} табулирована (ID: ${data.id}) в ${payload.pointsCount} точках.`, 'success');
+            modalManager.close('math-window');
+        } catch (e) {
+            // Ошибка уже отображена модально
+        }
+    });
+
+    document.getElementById('factory-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const selected = document.querySelector('input[name="factoryKey"]:checked');
+        if (!selected) {
+            showErrorModal('Выберите тип фабрики.');
+            return;
+        }
+        try {
+            const response = await fetch('/ui/api/factories/activate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: selected.value })
+            });
+            factoryState = await handleResponse(response);
+            factoryTypes = factoryState.factories || [];
+            activeFactoryKey = factoryState.activeKey || selected.value;
+            syncFactoryDisplay();
+            showStatus(`Активная фабрика: ${getFactoryLabel(activeFactoryKey)}.`, 'success');
+            modalManager.close('factory-window');
         } catch (e) {
             // Ошибка уже отображена модально
         }

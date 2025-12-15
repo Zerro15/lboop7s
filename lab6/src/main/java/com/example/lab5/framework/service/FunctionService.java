@@ -7,7 +7,6 @@ import com.example.lab5.framework.entity.User;
 import com.example.lab5.framework.repository.FunctionRepository;
 import com.example.lab5.framework.repository.PointRepository;
 import com.example.lab5.framework.repository.UserRepository;
-import com.example.lab5.functions.ArrayTabulatedFunctionFactory;
 import com.example.lab5.functions.MathFunction;
 import com.example.lab5.functions.TabulatedFunction;
 import com.example.lab5.functions.TabulatedFunctionFactory;
@@ -37,7 +36,8 @@ public class FunctionService {
     @Autowired
     private MathFunctionService mathFunctionService;
 
-    private final TabulatedFunctionFactory tabulatedFunctionFactory = new ArrayTabulatedFunctionFactory();
+    @Autowired
+    private TabulatedFunctionFactoryHolder factoryHolder;
 
     // Существующие методы...
 
@@ -71,33 +71,37 @@ public class FunctionService {
                 });
 
         // Создаем функцию
+        String effectiveFactoryKey = factoryHolder.resolveKey(factoryType);
+        TabulatedFunctionFactory chosenFactory = factoryHolder.resolveFactory(factoryType);
+
+        double[] xValues = pointsData.stream().mapToDouble(CreateFromArraysRequest.PointData::getX).toArray();
+        double[] yValues = pointsData.stream().mapToDouble(CreateFromArraysRequest.PointData::getY).toArray();
+
+        TabulatedFunction tabulatedFunction = chosenFactory.create(xValues, yValues);
+
+        double[] resolvedX = tabulatedFunction.getXValues();
+        double[] resolvedY = tabulatedFunction.getYValues();
         Function function = new Function();
         function.setName(name);
         function.setUser(user);
         function.setSignature("tabulated");
-        function.setFactoryType(factoryType);
+        function.setFactoryType(effectiveFactoryKey);
         function.setCreationMethod("from_arrays");
-        function.setPointsCount(pointsData.size());
-
-        // Находим min/max X для границ
-        double minX = pointsData.stream().mapToDouble(CreateFromArraysRequest.PointData::getX).min().orElse(0);
-        double maxX = pointsData.stream().mapToDouble(CreateFromArraysRequest.PointData::getX).max().orElse(0);
-        function.setLeftBound(minX);
-        function.setRightBound(maxX);
+        function.setPointsCount(resolvedX.length);
+        function.setLeftBound(resolvedX[0]);
+        function.setRightBound(resolvedX[resolvedX.length - 1]);
 
         Function savedFunction = functionRepository.save(function);
         logger.info("Функция создана с ID: {}", savedFunction.getId());
-
-        // Создаем точки
-        for (CreateFromArraysRequest.PointData pointData : pointsData) {
+        for (int i = 0; i < resolvedX.length; i++) {
             Point point = new Point();
-            point.setXValue(pointData.getX());
-            point.setYValue(pointData.getY());
+            point.setXValue(resolvedX[i]);
+            point.setYValue(resolvedY[i]);
             point.setFunction(savedFunction);
             pointRepository.save(point);
         }
 
-        logger.info("Создано {} точек для функции {}", pointsData.size(), savedFunction.getId());
+        logger.info("Создано {} точек для функции {}", resolvedX.length, savedFunction.getId());
         return savedFunction;
     }
 
@@ -123,12 +127,15 @@ public class FunctionService {
         }
 
         // Создаем функцию
+        String effectiveFactoryKey = factoryHolder.resolveKey(factoryType);
+        TabulatedFunctionFactory chosenFactory = factoryHolder.resolveFactory(factoryType);
+
         Function function = new Function();
         function.setName(name);
         function.setUser(user);
         function.setSignature("math_function_tabulated");
         function.setMathFunctionKey(mathFunctionKey);
-        function.setFactoryType(factoryType);
+        function.setFactoryType(effectiveFactoryKey);
         function.setCreationMethod("from_math_function");
         function.setPointsCount(pointsCount);
         function.setLeftBound(leftBound);
@@ -142,7 +149,7 @@ public class FunctionService {
             throw new IllegalArgumentException("Неизвестная математическая функция: " + mathFunctionKey);
         }
 
-        TabulatedFunction tabulated = tabulatedFunctionFactory.create(mathFunction, leftBound, rightBound, pointsCount);
+        TabulatedFunction tabulated = chosenFactory.create(mathFunction, leftBound, rightBound, pointsCount);
 
         double[] xValues = tabulated.getXValues();
         double[] yValues = tabulated.getYValues();
