@@ -1,15 +1,6 @@
 package com.example.lab5.framework.controller;
 
-// Удалите import com.example.lab5.framework.dto.*;
-// Добавьте явные импорты:
-
-import com.example.lab5.framework.dto.CompositeCreateRequest;
-import com.example.lab5.framework.dto.CompositeDeleteRequest;
-import com.example.lab5.framework.dto.CompositeRenameRequest;
-import com.example.lab5.framework.dto.MathFunctionDTO;
-import com.example.lab5.framework.dto.MathFunctionGroupsResponse;
-import com.example.lab5.framework.dto.PreviewRequest;
-import com.example.lab5.framework.dto.PreviewResponse;
+import com.example.lab5.framework.dto.*;
 import com.example.lab5.framework.service.MathFunctionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/math-functions")
+@RequestMapping("/api/v1")  // ИЗМЕНИТЕ эту строку
 public class MathFunctionController {
 
     private final MathFunctionService mathFunctionService;
@@ -29,25 +20,33 @@ public class MathFunctionController {
         this.mathFunctionService = mathFunctionService;
     }
 
-    @GetMapping
+    // ДОБАВЬТЕ этот метод для фронтенда
+    @GetMapping("/math/all-functions")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public List<MathFunctionDTO> getAllMathFunctions() {
         return mathFunctionService.getAllMathFunctions();
     }
 
-    @GetMapping("/map")
+    // Переименуйте старый метод, чтобы избежать конфликта
+    @GetMapping("/math-functions/list")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    public List<MathFunctionDTO> getAllMathFunctionsInternal() {
+        return mathFunctionService.getAllMathFunctions();
+    }
+
+    @GetMapping("/math-functions/map")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public Map<String, MathFunctionDTO> getFunctionMap() {
         return mathFunctionService.getFunctionMap();
     }
 
-    @GetMapping("/groups")
+    @GetMapping("/math-functions/groups")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public MathFunctionGroupsResponse getFunctionGroups() {
         return mathFunctionService.describeGroups();
     }
 
-    @PostMapping("/preview")
+    @PostMapping("/math-functions/preview")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public PreviewResponse previewMathFunction(@RequestBody PreviewRequest request) {
         return mathFunctionService.previewMathFunction(
@@ -58,7 +57,7 @@ public class MathFunctionController {
         );
     }
 
-    @PostMapping("/composite")
+    @PostMapping("/math-functions/composite")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public MathFunctionGroupsResponse createComposite(@RequestBody CompositeCreateRequest request) {
         mathFunctionService.createComposite(
@@ -69,7 +68,7 @@ public class MathFunctionController {
         return mathFunctionService.describeGroups();
     }
 
-    @PostMapping("/composite/rename")
+    @PostMapping("/math-functions/composite/rename")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public MathFunctionGroupsResponse renameComposite(@RequestBody CompositeRenameRequest request) {
         mathFunctionService.renameComposite(
@@ -79,7 +78,7 @@ public class MathFunctionController {
         return mathFunctionService.describeGroups();
     }
 
-    @DeleteMapping("/composite")
+    @DeleteMapping("/math-functions/composite")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public MathFunctionGroupsResponse deleteComposite(@RequestBody CompositeDeleteRequest request) {
         mathFunctionService.deleteComposite(request.getName());
