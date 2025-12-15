@@ -381,6 +381,7 @@
             <button type="button" id="open-explorer-window"><span class="icon">📊</span>Графический анализ функции</button>
             <button type="button" id="open-operations-window"><span class="icon">🧮</span>Операции над функциями</button>
             <button type="button" id="open-diff-window"><span class="icon">🔀</span>Дифференцирование функции</button>
+            <button type="button" id="open-integral-window"><span class="icon">🧵</span>Параллельный интеграл</button>
             <button type="button" id="open-factory-window"><span class="icon">⚙️</span>Настройки</button>
             <button type="button" class="secondary" id="open-about-window"><span class="icon">ℹ️</span>О программе</button>
         </div>
@@ -703,6 +704,51 @@
         </div>
     </div>
 
+    <div class="modal window hidden" data-modal="integral-window">
+        <div class="modal-header">
+            <h3>Параллельное вычисление интеграла</h3>
+            <button type="button" class="close-btn" data-close-modal="integral-window">×</button>
+        </div>
+        <p>Выберите табулированную функцию, задайте число потоков и вычислите определенный интеграл параллельно.</p>
+        <div class="operations-grid">
+            <div class="operations-panel" id="integral-source-panel">
+                <h4>Функция для интегрирования</h4>
+                <table class="table" aria-label="Функция для интегрирования" id="integral-table">
+                    <thead><tr><th>X</th><th>Y</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="inline-actions">
+                    <button type="button" data-create-target="INTEGRAL"><span class="icon">➕</span>Создать…</button>
+                    <label class="secondary" style="padding: 10px; cursor: pointer;">
+                        <span class="icon">📂</span>Загрузить…
+                        <input type="file" accept=".json,.xml,.dat,.csv,application/json,text/csv" data-load-target="INTEGRAL" class="hidden">
+                    </label>
+                    <div class="spacer"></div>
+                    <button type="button" class="secondary" data-save-target="INTEGRAL"><span class="icon">💾</span>Сохранить…</button>
+                    <button type="button" class="secondary" data-clear-target="INTEGRAL"><span class="icon">🧹</span>Очистить</button>
+                </div>
+                <div class="mini-note">Y можно редактировать; после изменений интеграл пересчитывайте заново.</div>
+                <div class="table-meta"><span class="label">Имя/файл:</span> <span data-slot-label="INTEGRAL">—</span></div>
+            </div>
+            <div class="operations-panel">
+                <h4>Параметры и результат</h4>
+                <div class="stacked-form">
+                    <label for="integral-threads">Количество потоков (1–16)</label>
+                    <input type="number" id="integral-threads" min="1" max="16" value="4" step="1">
+                    <small class="hint">При вводе значения выше 16 появится предупреждение.</small>
+                    <div class="actions">
+                        <button type="button" id="integral-compute"><span class="icon">🧵</span>Вычислить интеграл</button>
+                    </div>
+                    <label for="integral-result">Результат</label>
+                    <input type="text" id="integral-result" readonly placeholder="Появится после вычисления">
+                </div>
+            </div>
+        </div>
+        <div class="actions">
+            <button type="button" class="secondary" data-close-modal="integral-window">Закрыть окно</button>
+        </div>
+    </div>
+
     <div class="modal window hidden" data-modal="about-window">
         <div class="modal-header">
             <h3>О программе</h3>
@@ -798,6 +844,8 @@
     const insertSlotInput = document.getElementById('insert-slot');
     const insertXInput = document.getElementById('insert-x');
     const insertYInput = document.getElementById('insert-y');
+    const integralThreadsInput = document.getElementById('integral-threads');
+    const integralResultOutput = document.getElementById('integral-result');
     let explorerChart = null;
     let insertTarget = null;
 
@@ -815,18 +863,21 @@
         DIFF_SOURCE: null,
         DIFF_RESULT: null,
         EXPLORER: null,
+        INTEGRAL: null,
     };
     const dirtySlots = {
         A: false,
         B: false,
         DIFF_SOURCE: false,
         EXPLORER: false,
+        INTEGRAL: false,
     };
     const selectedRows = {
         A: null,
         B: null,
         DIFF_SOURCE: null,
         EXPLORER: null,
+        INTEGRAL: null,
     };
     const recentFiles = [];
     const slotConfig = {
@@ -835,7 +886,8 @@
         RESULT: { tableId: 'result-table', editable: false },
         DIFF_SOURCE: { tableId: 'diff-source-table', editable: true },
         DIFF_RESULT: { tableId: 'diff-result-table', editable: false },
-        EXPLORER: { tableId: 'explorer-table', editable: true }
+        EXPLORER: { tableId: 'explorer-table', editable: true },
+        INTEGRAL: { tableId: 'integral-table', editable: true }
     };
 
     const modalManager = {
@@ -884,6 +936,7 @@
         'operations-window': ['A', 'B'],
         'diff-window': ['DIFF_SOURCE'],
         'explorer-window': ['EXPLORER'],
+        'integral-window': ['INTEGRAL'],
     };
 
     function hasDirtySlots(modalId) {
@@ -1012,6 +1065,7 @@
             B: 'Операнд B',
             DIFF_SOURCE: 'Исходная функция',
             EXPLORER: 'Исследуемая функция',
+            INTEGRAL: 'Функция для интеграла',
         };
         return titles[slot] || slot;
     }
@@ -1378,6 +1432,9 @@
         if (Object.prototype.hasOwnProperty.call(selectedRows, slot)) {
             selectedRows[slot] = null;
         }
+        if (slot === 'INTEGRAL' && integralResultOutput) {
+            integralResultOutput.value = '';
+        }
         if (slot === 'DIFF_SOURCE') {
             functionsState.DIFF_RESULT = null;
             renderSlot('DIFF_RESULT');
@@ -1399,6 +1456,9 @@
         renderSlot(slot);
         if (slot === 'EXPLORER') {
             updateExplorerChart();
+        }
+        if (slot === 'INTEGRAL' && integralResultOutput) {
+            integralResultOutput.value = '';
         }
         syncMutationControls(slot);
         showStatus(`Область ${slot} очищена.`, 'info');
@@ -1444,6 +1504,9 @@
         }
         if (target === 'EXPLORER') {
             return 'explorer-window';
+        }
+        if (target === 'INTEGRAL') {
+            return 'integral-window';
         }
         return null;
     }
@@ -1823,6 +1886,48 @@
         }
     }
 
+    async function computeIntegral() {
+        const slot = 'INTEGRAL';
+        if (!functionsState[slot]) {
+            showErrorModal('Сначала загрузите или создайте функцию для интегрирования.');
+            return;
+        }
+        if (!ensureSlotValid(slot)) {
+            return;
+        }
+        const threads = Number(integralThreadsInput.value);
+        if (!Number.isInteger(threads) || threads < 1) {
+            showErrorModal('Количество потоков должно быть целым числом от 1 до 16.');
+            return;
+        }
+        if (threads > 16) {
+            showModal('Максимум поддерживается 16 потоков. Укажите меньшее значение.', { closeText: 'Понятно' });
+            return;
+        }
+
+        try {
+            setLoading(true, 'Вычисление интеграла…');
+            const response = await fetch('/ui/api/tabulated-functions/integration', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    function: functionsState[slot],
+                    threads,
+                    factoryType: functionsState[slot].factoryType || activeFactoryKey,
+                }),
+            });
+            const data = await handleResponse(response);
+            if (integralResultOutput) {
+                integralResultOutput.value = String(data.result);
+            }
+            showStatus(`Интеграл вычислен с использованием ${threads} потоков.`, 'success');
+        } catch (e) {
+            // ошибка уже показана
+        } finally {
+            setLoading(false);
+        }
+    }
+
     function syncFactoryDisplay() {
         document.querySelectorAll('[data-active-factory-label]').forEach((element) => {
             element.textContent = getFactoryLabel(activeFactoryKey);
@@ -1858,6 +1963,7 @@
     document.getElementById('open-explorer-window').addEventListener('click', () => modalManager.open('explorer-window'));
     document.getElementById('open-operations-window').addEventListener('click', () => modalManager.open('operations-window'));
     document.getElementById('open-diff-window').addEventListener('click', () => modalManager.open('diff-window'));
+    document.getElementById('open-integral-window').addEventListener('click', () => modalManager.open('integral-window'));
     document.getElementById('open-about-window').addEventListener('click', () => modalManager.open('about-window'));
 
     document.querySelectorAll('[data-create-target]').forEach((button) => {
@@ -1876,6 +1982,10 @@
     if (evaluateButton) {
         evaluateButton.addEventListener('click', () => evaluateExplorer());
     }
+    const integralButton = document.getElementById('integral-compute');
+    if (integralButton) {
+        integralButton.addEventListener('click', () => computeIntegral());
+    }
 
     bindFileLoading();
     bindSaving();
@@ -1888,6 +1998,7 @@
     renderSlot('DIFF_SOURCE');
     renderSlot('DIFF_RESULT');
     renderSlot('EXPLORER');
+    renderSlot('INTEGRAL');
     updateExplorerChart();
 
     document.getElementById('arrays-form').addEventListener('submit', async (event) => {
