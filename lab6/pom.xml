@@ -73,6 +73,13 @@
             <version>4.4.0</version>
         </dependency>
 
+        <!-- Пароли и хеширование -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
+
         <!-- Тестирование -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

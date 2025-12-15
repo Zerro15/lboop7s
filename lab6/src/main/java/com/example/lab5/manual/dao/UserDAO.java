@@ -32,6 +32,9 @@ public class UserDAO {
                 throw new SQLException("Создание пользователя не удалось, ID не получен");
             }
         } catch (SQLException e) {
+            if ("23505".equals(e.getSQLState())) {
+                throw new IllegalArgumentException("Пользователь уже существует");
+            }
             throw databaseError("Ошибка при создании пользователя: " + user.getLogin(), e);
         }
     }

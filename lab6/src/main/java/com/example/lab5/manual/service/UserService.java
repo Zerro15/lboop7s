@@ -2,6 +2,8 @@ package com.example.lab5.manual.service;
 
 import com.example.lab5.manual.dao.UserDAO;
 import com.example.lab5.manual.dto.UserDTO;
+import com.example.lab5.manual.exception.AuthenticationException;
+import com.example.lab5.manual.service.PasswordService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +24,8 @@ public class UserService {
 
     public Long createUser(String login, String role, String password) {
         logger.info("Создание пользователя: login={}, role={}", login, role);
-        UserDTO user = new UserDTO(login, role, password);
+        validateCredentials(login, password);
+        UserDTO user = new UserDTO(login.trim(), role, encodeIfNeeded(password));
         return userDAO.createUser(user);
     }
 
@@ -53,7 +56,7 @@ public class UserService {
             UserDTO user = existingUser.get();
             user.setLogin(login);
             user.setRole(role);
-            user.setPassword(password);
+            user.setPassword(encodeIfNeeded(password));
             return userDAO.updateUser(user);
         }
         logger.warn("Пользователь с ID {} не найден для обновления", id);
@@ -65,39 +68,45 @@ public class UserService {
         return userDAO.deleteUser(id);
     }
 
-    public boolean validateUserCredentials(String login, String password) {
-        logger.debug("Проверка учетных данных для пользователя: {}", login);
-        Optional<UserDTO> user = userDAO.findByLogin(login);
-        return user.isPresent() && user.get().getPassword().equals(password);
-    }
-
     public UserDTO authenticate(String login, String password) {
         logger.info("Попытка входа для логина {}", login);
-        if (login == null || login.isBlank() || password == null || password.isBlank()) {
-            throw new IllegalArgumentException("Логин и пароль обязательны");
-        }
+        validateCredentials(login, password);
 
         Optional<UserDTO> user = userDAO.findByLogin(login);
-        if (user.isEmpty() || !password.equals(user.get().getPassword())) {
-            throw new IllegalArgumentException("Неверный логин или пароль");
+        if (user.isEmpty() || !PasswordService.matches(password, user.get().getPassword())) {
+            throw new AuthenticationException("Неверный логин или пароль");
         }
         return user.get();
     }
 
     public UserDTO register(String login, String password) {
         logger.info("Регистрация пользователя с логином {}", login);
-        if (login == null || login.isBlank() || password == null || password.isBlank()) {
-            throw new IllegalArgumentException("Логин и пароль обязательны");
+        validateCredentials(login, password);
+        if (password.length() < 6) {
+            throw new IllegalArgumentException("Пароль должен содержать не менее 6 символов");
         }
 
-        Optional<UserDTO> existing = userDAO.findByLogin(login);
+        Optional<UserDTO> existing = userDAO.findByLogin(login.trim());
         if (existing.isPresent()) {
             throw new IllegalArgumentException("Пользователь уже существует");
         }
 
-        UserDTO user = new UserDTO(login, "USER", password);
+        UserDTO user = new UserDTO(login.trim(), "USER", PasswordService.hash(password));
         Long id = userDAO.createUser(user);
         user.setId(id);
         return user;
+    }
+
+    private void validateCredentials(String login, String password) {
+        if (login == null || login.isBlank() || password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Логин и пароль обязательны");
+        }
+    }
+
+    private String encodeIfNeeded(String password) {
+        if (password.startsWith("$2a$") || password.startsWith("$2b$") || password.startsWith("$2y$")) {
+            return password;
+        }
+        return PasswordService.hash(password);
     }
 }

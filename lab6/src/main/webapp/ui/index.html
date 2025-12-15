@@ -425,21 +425,26 @@
         openModal('error');
     }
 
+    function resetAuthState() {
+        state.token = null;
+        state.login = null;
+        state.role = null;
+        localStorage.removeItem('token');
+        localStorage.removeItem('login');
+        localStorage.removeItem('role');
+        updateUserChip();
+    }
+
     async function authFetch(url, options = {}) {
         const headers = options.headers || {};
         if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
         options.headers = headers;
         const res = await fetch(url, options);
-        if (res.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('login');
-            localStorage.removeItem('role');
-            state.token = null;
-            state.login = null;
-            state.role = null;
-            updateUserChip();
+        const isAuthRequest = url.includes('/auth/');
+        if ((res.status === 401 || res.status === 403) && !isAuthRequest) {
+            resetAuthState();
             openModal('auth');
-            throw new Error('Требуется авторизация');
+            throw new Error(res.status === 403 ? 'Недостаточно прав' : 'Требуется авторизация');
         }
         return res;
     }
@@ -497,12 +502,14 @@
 
     document.getElementById('auth-submit').addEventListener('click', async () => {
         try {
+            resetAuthState();
             const login = document.getElementById('auth-login').value;
             const password = document.getElementById('auth-password').value;
             const endpoint = state.authMode === 'login' ? '/auth/login' : '/auth/register';
             const data = await apiCall(endpoint, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ login, password }) });
             await completeAuth(data);
         } catch (err) {
+            resetAuthState();
             showError(err.message);
         }
     });

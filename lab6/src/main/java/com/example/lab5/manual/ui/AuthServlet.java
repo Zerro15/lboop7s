@@ -39,12 +39,13 @@ public class AuthServlet extends HttpServlet {
     private void handleRegister(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
             ObjectNode payload = objectMapper.readValue(req.getInputStream(), ObjectNode.class);
-            String login = payload.get("login").asText();
-            String password = payload.get("password").asText();
+            String login = payload.path("login").asText("").trim();
+            String password = payload.path("password").asText("");
             if (login.isBlank() || password.isBlank()) {
                 throw new IllegalArgumentException("Логин и пароль обязательны");
             }
             UserDTO user = userService.register(login, password);
+            resp.setStatus(HttpServletResponse.SC_CREATED);
             issueToken(resp, user.getLogin(), user.getRole());
         } catch (Exception ex) {
             exceptionResponder.handle(resp, ex);
@@ -54,9 +55,10 @@ public class AuthServlet extends HttpServlet {
     private void handleLogin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
             ObjectNode payload = objectMapper.readValue(req.getInputStream(), ObjectNode.class);
-            String login = payload.get("login").asText();
-            String password = payload.get("password").asText();
+            String login = payload.path("login").asText("").trim();
+            String password = payload.path("password").asText("");
             UserDTO user = userService.authenticate(login, password);
+            resp.setStatus(HttpServletResponse.SC_OK);
             issueToken(resp, user.getLogin(), user.getRole());
         } catch (Exception ex) {
             exceptionResponder.handle(resp, ex);

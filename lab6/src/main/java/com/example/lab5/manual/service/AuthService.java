@@ -3,6 +3,7 @@ package com.example.lab5.manual.service;
 import com.example.lab5.manual.dao.UserDAO;
 import com.example.lab5.manual.dto.UserDTO;
 import com.example.lab5.manual.logging.SecurityLogger;
+import com.example.lab5.manual.service.PasswordService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,7 @@ public class AuthService {
             }
 
             UserDTO user = userOpt.get();
-            boolean authenticated = user.getPassword().equals(password);
+            boolean authenticated = PasswordService.matches(password, user.getPassword());
 
             if (authenticated) {
                 logger.info("User authenticated: {} with role: {} from IP: {}", login, user.getRole(), clientIP);
