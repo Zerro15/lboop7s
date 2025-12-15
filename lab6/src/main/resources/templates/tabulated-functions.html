@@ -68,6 +68,9 @@
             color: #1f2933;
             border: 1px solid #d1d5db;
         }
+        button .icon {
+            margin-right: 6px;
+        }
         .table {
             width: 100%;
             border-collapse: collapse;
@@ -98,6 +101,83 @@
             background: #eef2ff;
             color: #3730a3;
             border: 1px solid #c7d2fe;
+        }
+        .status-bar {
+            background: #e5f0ff;
+            border: 1px solid #c7d2fe;
+            padding: 10px 14px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-top: 12px;
+        }
+        .divider {
+            border-top: 1px solid #e5e7eb;
+            margin: 12px 0;
+        }
+        .recent-list {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+        .recent-list li {
+            padding: 6px 0;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            align-items: center;
+        }
+        .recent-list span.name {
+            font-weight: bold;
+        }
+        .recent-list span.meta {
+            color: #6b7280;
+            font-size: 12px;
+        }
+        .loading-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            color: #0b65c2;
+            font-weight: bold;
+        }
+        .loading-indicator.active {
+            display: inline-flex;
+        }
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 3px solid #c7d2fe;
+            border-top-color: #0b65c2;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .table-meta {
+            margin-top: 6px;
+            color: #4b5563;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        .table-meta .label {
+            font-weight: bold;
+        }
+        .input-error {
+            border-color: #b91c1c;
+            background: #fef2f2;
+        }
+        .inline-actions .spacer {
+            width: 1px;
+            background: #e5e7eb;
+            align-self: stretch;
         }
         .field-error {
             color: #b91c1c;
@@ -244,17 +324,27 @@
         <h2>Главное управление</h2>
         <p>Выберите активную фабрику и открывайте только одно окно каждого типа. Повторное открытие вернет уже
             существующее окно на передний план.</p>
-        <div class="chip-row">
-            <div class="chip">Активная фабрика: <span data-active-factory-label th:text="${activeFactoryLabel}"></span></div>
-            <button type="button" id="open-factory-window">Настроить фабрику</button>
+        <div class="status-bar">
+            <div><strong>Текущая фабрика:</strong> <span data-active-factory-label th:text="${activeFactoryLabel}"></span></div>
+            <div class="loading-indicator" id="global-loading"><span class="spinner"></span> <span id="loading-text">Выполнение…</span></div>
         </div>
         <div class="actions">
-            <button type="button" id="open-array-window">Создать функцию (массивы)</button>
-            <button type="button" id="open-math-window">Создать функцию (формула)</button>
-            <button type="button" id="open-operations-window">Операции над функциями</button>
-            <button type="button" id="open-diff-window">Дифференцирование функции</button>
-            <button type="button" class="secondary" id="open-about-window">О программе</button>
+            <button type="button" id="open-array-window"><span class="icon">📄</span>Создать функцию (массивы)</button>
+            <button type="button" id="open-math-window"><span class="icon">📐</span>Создать функцию (формула)</button>
+            <button type="button" id="open-operations-window"><span class="icon">🧮</span>Операции над функциями</button>
+            <button type="button" id="open-diff-window"><span class="icon">🔀</span>Дифференцирование функции</button>
+            <button type="button" id="open-factory-window"><span class="icon">⚙️</span>Настройки</button>
+            <button type="button" class="secondary" id="open-about-window"><span class="icon">ℹ️</span>О программе</button>
         </div>
+        <div class="divider"></div>
+        <div>
+            <div class="chip">Последние действия отображаются ниже.</div>
+            <h4>Последние открытые файлы</h4>
+            <ul class="recent-list" id="recent-files">
+                <li><span class="meta">Список пуст</span></li>
+            </ul>
+        </div>
+        <div id="status" class="status info">Статус операций будет отображаться здесь.</div>
     </div>
 
     <div class="card">
@@ -397,14 +487,17 @@
                     <tbody></tbody>
                 </table>
                 <div class="inline-actions">
-                    <button type="button" data-create-target="A">Создать…</button>
+                    <button type="button" data-create-target="A"><span class="icon">➕</span>Создать…</button>
                     <label class="secondary" style="padding: 10px; cursor: pointer;">
-                        Загрузить…
+                        <span class="icon">📂</span>Загрузить…
                         <input type="file" accept="application/json" data-load-target="A" class="hidden">
                     </label>
-                    <button type="button" class="secondary" data-save-target="A">Сохранить…</button>
+                    <div class="spacer"></div>
+                    <button type="button" class="secondary" data-save-target="A"><span class="icon">💾</span>Сохранить…</button>
+                    <button type="button" class="secondary" data-clear-target="A"><span class="icon">🧹</span>Очистить</button>
                 </div>
                 <div class="mini-note">Y редактируемые. Изменения применяются сразу.</div>
+                <div class="table-meta"><span class="label">Файл/имя:</span> <span data-slot-label="A">—</span></div>
             </div>
 
             <div class="operations-panel" id="operand-b-panel">
@@ -414,14 +507,17 @@
                     <tbody></tbody>
                 </table>
                 <div class="inline-actions">
-                    <button type="button" data-create-target="B">Создать…</button>
+                    <button type="button" data-create-target="B"><span class="icon">➕</span>Создать…</button>
                     <label class="secondary" style="padding: 10px; cursor: pointer;">
-                        Загрузить…
+                        <span class="icon">📂</span>Загрузить…
                         <input type="file" accept="application/json" data-load-target="B" class="hidden">
                     </label>
-                    <button type="button" class="secondary" data-save-target="B">Сохранить…</button>
+                    <div class="spacer"></div>
+                    <button type="button" class="secondary" data-save-target="B"><span class="icon">💾</span>Сохранить…</button>
+                    <button type="button" class="secondary" data-clear-target="B"><span class="icon">🧹</span>Очистить</button>
                 </div>
                 <div class="mini-note">Загрузите или создайте функцию для дальнейших операций.</div>
+                <div class="table-meta"><span class="label">Файл/имя:</span> <span data-slot-label="B">—</span></div>
             </div>
 
             <div class="operations-panel" id="result-panel">
@@ -431,13 +527,15 @@
                     <tbody></tbody>
                 </table>
                 <div class="inline-actions">
-                    <button type="button" data-operation="add">+</button>
-                    <button type="button" data-operation="subtract">-</button>
-                    <button type="button" data-operation="multiply">*</button>
-                    <button type="button" data-operation="divide">/</button>
-                    <button type="button" class="secondary" data-save-target="RESULT">Сохранить…</button>
+                    <button type="button" data-operation="add"><span class="icon">➕</span>+</button>
+                    <button type="button" data-operation="subtract"><span class="icon">➖</span>-</button>
+                    <button type="button" data-operation="multiply"><span class="icon">✖️</span>*</button>
+                    <button type="button" data-operation="divide"><span class="icon">➗</span>/</button>
+                    <div class="spacer"></div>
+                    <button type="button" class="secondary" data-save-target="RESULT"><span class="icon">💾</span>Сохранить…</button>
                 </div>
                 <div class="mini-note">X и Y недоступны для редактирования, сохраняются в JSON.</div>
+                <div class="table-meta"><span class="label">Имя результата:</span> <span data-slot-label="RESULT">—</span></div>
             </div>
         </div>
         <div class="actions">
@@ -460,14 +558,17 @@
                     <tbody></tbody>
                 </table>
                 <div class="inline-actions">
-                    <button type="button" data-create-target="DIFF_SOURCE">Создать…</button>
+                    <button type="button" data-create-target="DIFF_SOURCE"><span class="icon">➕</span>Создать…</button>
                     <label class="secondary" style="padding: 10px; cursor: pointer;">
-                        Загрузить…
+                        <span class="icon">📂</span>Загрузить…
                         <input type="file" accept="application/json" data-load-target="DIFF_SOURCE" class="hidden">
                     </label>
-                    <button type="button" class="secondary" data-save-target="DIFF_SOURCE">Сохранить…</button>
+                    <div class="spacer"></div>
+                    <button type="button" class="secondary" data-save-target="DIFF_SOURCE"><span class="icon">💾</span>Сохранить…</button>
+                    <button type="button" class="secondary" data-clear-target="DIFF_SOURCE"><span class="icon">🧹</span>Очистить</button>
                 </div>
                 <div class="mini-note">Y редактируемые. Изменения применяются сразу.</div>
+                <div class="table-meta"><span class="label">Файл/имя:</span> <span data-slot-label="DIFF_SOURCE">—</span></div>
             </div>
 
             <div class="operations-panel" id="diff-result-panel">
@@ -477,10 +578,12 @@
                     <tbody></tbody>
                 </table>
                 <div class="inline-actions">
-                    <button type="button" id="derive-button">Дифференцировать</button>
-                    <button type="button" class="secondary" data-save-target="DIFF_RESULT">Сохранить…</button>
+                    <button type="button" id="derive-button"><span class="icon">🔀</span>Дифференцировать</button>
+                    <div class="spacer"></div>
+                    <button type="button" class="secondary" data-save-target="DIFF_RESULT"><span class="icon">💾</span>Сохранить…</button>
                 </div>
                 <div class="mini-note">Результат нельзя редактировать, но можно сохранить как JSON.</div>
+                <div class="table-meta"><span class="label">Имя результата:</span> <span data-slot-label="DIFF_RESULT">—</span></div>
             </div>
         </div>
         <div class="actions">
@@ -541,6 +644,12 @@
         DIFF_SOURCE: null,
         DIFF_RESULT: null
     };
+    const dirtySlots = {
+        A: false,
+        B: false,
+        DIFF_SOURCE: false,
+    };
+    const recentFiles = [];
     const slotConfig = {
         A: { tableId: 'operand-a-table', editable: true },
         B: { tableId: 'operand-b-table', editable: true },
@@ -591,13 +700,51 @@
         }
     };
 
+    const modalSlots = {
+        'operations-window': ['A', 'B'],
+        'diff-window': ['DIFF_SOURCE'],
+    };
+
+    function hasDirtySlots(modalId) {
+        const slots = modalSlots[modalId];
+        if (!slots) return false;
+        return slots.some((slot) => dirtySlots[slot]);
+    }
+
+    function requestCloseModal(modalId) {
+        if (hasDirtySlots(modalId)) {
+            showModal('Есть несохранённые изменения Y. Закрыть окно?', {
+                confirmText: 'Закрыть',
+                onConfirm: () => {
+                    (modalSlots[modalId] || []).forEach((slot) => setDirty(slot, false));
+                    modalManager.close(modalId);
+                },
+                closeText: 'Отмена'
+            });
+            return;
+        }
+        modalManager.close(modalId);
+    }
+
     document.querySelectorAll('[data-close-modal]').forEach((button) => {
-        button.addEventListener('click', () => modalManager.close(button.dataset.closeModal));
+        button.addEventListener('click', () => requestCloseModal(button.dataset.closeModal));
     });
 
     function showStatus(message, type = 'info') {
         statusPanel.textContent = message;
         statusPanel.className = `status ${type}`;
+    }
+
+    function setLoading(isLoading, text = 'Выполнение…') {
+        const indicator = document.getElementById('global-loading');
+        const label = document.getElementById('loading-text');
+        if (!indicator) {
+            return;
+        }
+        if (label) {
+            label.textContent = text;
+        }
+        indicator.classList.toggle('active', isLoading);
     }
 
     function showModal(message, options = {}) {
@@ -644,6 +791,57 @@
     });
 
     closeModalBtn.addEventListener('click', hideErrorModal);
+
+    function setDirty(slot, dirty) {
+        if (Object.prototype.hasOwnProperty.call(dirtySlots, slot)) {
+            dirtySlots[slot] = dirty;
+        }
+    }
+
+    function updateSlotLabel(slot) {
+        const labelEl = document.querySelector(`[data-slot-label="${slot}"]`);
+        const data = functionsState[slot];
+        if (!labelEl) {
+            return;
+        }
+        labelEl.textContent = data && data.name ? data.name : '—';
+    }
+
+    function renderRecentFiles() {
+        const list = document.getElementById('recent-files');
+        if (!list) { return; }
+        list.innerHTML = '';
+        if (recentFiles.length === 0) {
+            const empty = document.createElement('li');
+            const meta = document.createElement('span');
+            meta.className = 'meta';
+            meta.textContent = 'Список пуст';
+            empty.appendChild(meta);
+            list.appendChild(empty);
+            return;
+        }
+        recentFiles.forEach((item) => {
+            const li = document.createElement('li');
+            const name = document.createElement('span');
+            name.className = 'name';
+            name.textContent = item.name;
+            const meta = document.createElement('span');
+            meta.className = 'meta';
+            meta.textContent = item.slot;
+            li.appendChild(name);
+            li.appendChild(meta);
+            list.appendChild(li);
+        });
+    }
+
+    function trackRecentFile(name, slot) {
+        if (!name) return;
+        recentFiles.unshift({ name, slot });
+        if (recentFiles.length > 5) {
+            recentFiles.pop();
+        }
+        renderRecentFiles();
+    }
 
     function createPointRow(index) {
         const row = document.createElement('tr');
@@ -744,6 +942,41 @@
         };
     }
 
+    function isValidNumberInput(value) {
+        if (value === null || value === undefined) {
+            return false;
+        }
+        const normalized = String(value).trim();
+        if (normalized === '') {
+            return false;
+        }
+        return !Number.isNaN(Number(normalized));
+    }
+
+    function attachYInputHandlers(yInput, data, index, slot) {
+        yInput.addEventListener('input', () => {
+            yInput.value = yInput.value.replace(',', '.');
+            if (!isValidNumberInput(yInput.value)) {
+                yInput.classList.add('input-error');
+                return;
+            }
+            yInput.classList.remove('input-error');
+        });
+
+        yInput.addEventListener('change', () => {
+            const normalized = yInput.value.replace(',', '.');
+            if (!isValidNumberInput(normalized)) {
+                showErrorModal('Введите числовое значение Y.');
+                yInput.value = data.yValues[index];
+                yInput.classList.remove('input-error');
+                return;
+            }
+            yInput.classList.remove('input-error');
+            data.yValues[index] = Number(normalized);
+            setDirty(slot, true);
+        });
+    }
+
     function renderSlot(slot) {
         const config = slotConfig[slot];
         if (!config) {
@@ -754,6 +987,7 @@
         const table = document.getElementById(config.tableId);
         const tbody = table.querySelector('tbody');
         tbody.innerHTML = '';
+        updateSlotLabel(slot);
 
         if (!data || !data.xValues || !data.yValues || data.xValues.length === 0) {
             const row = document.createElement('tr');
@@ -781,15 +1015,7 @@
             yInput.value = data.yValues[i];
             yInput.readOnly = !config.editable;
             if (config.editable) {
-                yInput.addEventListener('change', () => {
-                    const newVal = Number(yInput.value);
-                    if (Number.isNaN(newVal)) {
-                        showErrorModal('Введите числовое значение Y.');
-                        yInput.value = data.yValues[i];
-                        return;
-                    }
-                    data.yValues[i] = newVal;
-                });
+                attachYInputHandlers(yInput, data, i, slot);
             }
             yCell.appendChild(yInput);
 
@@ -799,7 +1025,7 @@
         }
     }
 
-    function applyPayload(slot, payload) {
+    function applyPayload(slot, payload, displayName) {
         if (!payload || !Array.isArray(payload.xValues) || !Array.isArray(payload.yValues)) {
             showErrorModal('Не удалось применить данные функции.');
             return;
@@ -809,16 +1035,37 @@
             return;
         }
         functionsState[slot] = {
-            name: payload.name || `Функция ${slot}`,
+            name: displayName || payload.name || `Функция ${slot}`,
             xValues: payload.xValues.slice(),
             yValues: payload.yValues.slice(),
         };
+        setDirty(slot, false);
         if (slot === 'DIFF_SOURCE') {
             functionsState.DIFF_RESULT = null;
             renderSlot('DIFF_RESULT');
         }
         renderSlot(slot);
         showStatus(`Обновлена область ${slot}: ${functionsState[slot].name}.`, 'info');
+    }
+
+    function clearSlot(slot) {
+        functionsState[slot] = null;
+        setDirty(slot, false);
+        renderSlot(slot);
+        showStatus(`Область ${slot} очищена.`, 'info');
+    }
+
+    function ensureSlotValid(slot) {
+        const data = functionsState[slot];
+        if (!data) {
+            return true;
+        }
+        const invalidIndex = data.yValues.findIndex((val) => Number.isNaN(Number(val)));
+        if (invalidIndex !== -1) {
+            showErrorModal(`Значение Y в строке ${invalidIndex + 1} должно быть числом.`);
+            return false;
+        }
+        return true;
     }
 
     function showCreationChooser(target) {
@@ -856,15 +1103,22 @@
                 if (!files || files.length === 0) {
                     return;
                 }
+                const slot = event.target.dataset.loadTarget;
+                setLoading(true, 'Загрузка файла функции…');
                 const reader = new FileReader();
                 reader.onload = () => {
                     try {
                         const parsed = JSON.parse(reader.result);
-                        applyPayload(event.target.dataset.loadTarget, parsed);
+                        applyPayload(slot, parsed, parsed.name || files[0].name);
+                        trackRecentFile(files[0].name, slot);
                     } catch (e) {
                         showErrorModal('Не удалось разобрать файл функции.');
                     }
                 };
+                reader.onerror = () => {
+                    showErrorModal('Ошибка при чтении файла функции.');
+                };
+                reader.onloadend = () => setLoading(false);
                 reader.readAsText(files[0]);
                 event.target.value = '';
             });
@@ -889,6 +1143,24 @@
                 document.body.removeChild(link);
                 URL.revokeObjectURL(link.href);
                 showStatus('Функция сохранена в JSON.', 'success');
+                setDirty(slot, false);
+            });
+        });
+    }
+
+    function bindClearing() {
+        document.querySelectorAll('[data-clear-target]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const slot = button.dataset.clearTarget;
+                if (!functionsState[slot]) {
+                    showStatus('Нет данных для очистки.', 'info');
+                    return;
+                }
+                showModal('Очистить таблицу функции?', {
+                    confirmText: 'Очистить',
+                    onConfirm: () => clearSlot(slot),
+                    closeText: 'Отмена'
+                });
             });
         });
     }
@@ -899,7 +1171,12 @@
             return;
         }
 
+        if (!ensureSlotValid('A') || !ensureSlotValid('B')) {
+            return;
+        }
+
         try {
+            setLoading(true, 'Выполнение операции…');
             const response = await fetch('/ui/api/tabulated-functions/operations', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -915,6 +1192,8 @@
             showStatus('Операция успешно выполнена.', 'success');
         } catch (e) {
             // ошибки выводятся модально
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -924,7 +1203,12 @@
             return;
         }
 
+        if (!ensureSlotValid('DIFF_SOURCE')) {
+            return;
+        }
+
         try {
+            setLoading(true, 'Выполнение дифференцирования…');
             const response = await fetch('/ui/api/tabulated-functions/differential', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -938,6 +1222,8 @@
             showStatus('Производная успешно получена.', 'success');
         } catch (e) {
             // отображено модально
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -992,6 +1278,8 @@
 
     bindFileLoading();
     bindSaving();
+    bindClearing();
+    renderRecentFiles();
     renderSlot('A');
     renderSlot('B');
     renderSlot('RESULT');
@@ -1027,6 +1315,7 @@
         }
 
         try {
+            setLoading(true, 'Создание функции из массивов…');
             const response = await fetch('/ui/api/tabulated-functions/arrays', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1046,6 +1335,8 @@
             modalManager.close('arrays-window');
         } catch (e) {
             // Ошибка уже отображена модально
+        } finally {
+            setLoading(false);
         }
     });
 
@@ -1077,6 +1368,7 @@
         }
 
         try {
+            setLoading(true, 'Табулирование функции…');
             const response = await fetch('/ui/api/tabulated-functions/math-function', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1098,6 +1390,8 @@
             modalManager.close('math-window');
         } catch (e) {
             // Ошибка уже отображена модально
+        } finally {
+            setLoading(false);
         }
     });
 
