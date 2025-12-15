@@ -18,6 +18,13 @@ public interface PointRepository extends JpaRepository<Point, Long> {
     @Query("SELECT p FROM Point p WHERE p.function.id = :functionId")
     List<Point> findByFunctionId(@Param("functionId") Long functionId);
 
+    // ДОБАВЛЕННЫЙ МЕТОД - получение точек функции, отсортированных по X
+    @Query("SELECT p FROM Point p WHERE p.function.id = :functionId ORDER BY p.xValue ASC")
+    List<Point> findByFunctionIdOrderByXValueAsc(@Param("functionId") Long functionId);
+
+    // Альтернативная версия через Spring Data JPA naming convention
+    List<Point> findByFunctionIdOrderByXValue(Long functionId);
+
     @Query("SELECT p FROM Point p WHERE p.function.user.login = :userLogin")
     List<Point> findByUserLogin(@Param("userLogin") String userLogin);
 
@@ -27,6 +34,24 @@ public interface PointRepository extends JpaRepository<Point, Long> {
     @Query("SELECT p FROM Point p WHERE p.yValue BETWEEN :minY AND :maxY")
     List<Point> findByYValueBetween(@Param("minY") Double minY, @Param("maxY") Double maxY);
 
+    @Query("SELECT p FROM Point p WHERE p.function.id = :functionId AND p.xValue BETWEEN :minX AND :maxX")
+    List<Point> findByFunctionIdAndXValueBetween(@Param("functionId") Long functionId,
+                                                 @Param("minX") Double minX,
+                                                 @Param("maxX") Double maxX);
+
+    @Query("SELECT p FROM Point p WHERE p.function.id = :functionId AND p.yValue BETWEEN :minY AND :maxY")
+    List<Point> findByFunctionIdAndYValueBetween(@Param("functionId") Long functionId,
+                                                 @Param("minY") Double minY,
+                                                 @Param("maxY") Double maxY);
+
+    // Поиск точки по точному значению X
+    @Query("SELECT p FROM Point p WHERE p.function.id = :functionId AND ABS(p.xValue - :xValue) < 1e-10")
+    List<Point> findByFunctionIdAndXValue(@Param("functionId") Long functionId, @Param("xValue") Double xValue);
+
+    // Получение точек с сортировкой по Y
+    @Query("SELECT p FROM Point p WHERE p.function.id = :functionId ORDER BY p.yValue ASC")
+    List<Point> findByFunctionIdOrderByYValueAsc(@Param("functionId") Long functionId);
+
     @Modifying
     @Transactional
     @Query("DELETE FROM Point p WHERE p.function.id = :functionId")
@@ -34,6 +59,24 @@ public interface PointRepository extends JpaRepository<Point, Long> {
 
     @Modifying
     @Transactional
+    @Query("DELETE FROM Point p WHERE p.function.id = :functionId AND p.xValue < :xThreshold")
+    void deleteByFunctionIdAndXValueLessThan(@Param("functionId") Long functionId,
+                                             @Param("xThreshold") Double xThreshold);
+
+    @Modifying
+    @Transactional
     @Query("DELETE FROM Point p WHERE p.function IN (SELECT f FROM Function f WHERE f.user.login = :userLogin)")
     void deleteByUserLogin(@Param("userLogin") String userLogin);
+
+    // Метод для подсчета количества точек у функции
+    @Query("SELECT COUNT(p) FROM Point p WHERE p.function.id = :functionId")
+    Long countByFunctionId(@Param("functionId") Long functionId);
+
+    // Метод для получения минимального и максимального X у функции
+    @Query("SELECT MIN(p.xValue), MAX(p.xValue) FROM Point p WHERE p.function.id = :functionId")
+    Object[] findMinMaxXByFunctionId(@Param("functionId") Long functionId);
+
+    // Метод для получения минимального и максимального Y у функции
+    @Query("SELECT MIN(p.yValue), MAX(p.yValue) FROM Point p WHERE p.function.id = :functionId")
+    Object[] findMinMaxYByFunctionId(@Param("functionId") Long functionId);
 }

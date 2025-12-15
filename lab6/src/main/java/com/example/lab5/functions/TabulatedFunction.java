@@ -96,6 +96,119 @@ public class TabulatedFunction implements Insertable, Removable {
         return yValues.clone();
     }
 
+    // ДОБАВЛЕННЫЙ МЕТОД apply()
+    /**
+     * Вычисляет значение функции в точке x.
+     * Если x находится между двумя точками, используется линейная интерполяция.
+     * Если x за пределами массива, возвращается значение на ближайшем конце.
+     *
+     * @param x точка для вычисления
+     * @return значение функции в точке x
+     */
+    public double apply(double x) {
+        // Проверка на пустой массив
+        if (xValues == null || xValues.length == 0) {
+            throw new IllegalStateException("Функция не инициализирована");
+        }
+
+        // Если x меньше или равен первому значению
+        if (x <= xValues[0]) {
+            return yValues[0];
+        }
+
+        // Если x больше или равен последнему значению
+        if (x >= xValues[xValues.length - 1]) {
+            return yValues[yValues.length - 1];
+        }
+
+        // Поиск интервала, в котором находится x
+        for (int i = 0; i < xValues.length - 1; i++) {
+            double x1 = xValues[i];
+            double x2 = xValues[i + 1];
+
+            // Если x точно совпадает с одной из точек
+            if (Math.abs(x - x1) < 1e-10) {
+                return yValues[i];
+            }
+            if (Math.abs(x - x2) < 1e-10) {
+                return yValues[i + 1];
+            }
+
+            // Если x находится между x1 и x2
+            if (x > x1 && x < x2) {
+                // Линейная интерполяция
+                double y1 = yValues[i];
+                double y2 = yValues[i + 1];
+                return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
+            }
+        }
+
+        // Не должно сюда дойти, но на всякий случай
+        throw new IllegalStateException("Не удалось вычислить значение для x = " + x);
+    }
+
+    /**
+     * Альтернативная версия apply с бинарным поиском (более эффективная для больших массивов)
+     */
+    public double applyBinary(double x) {
+        if (xValues == null || xValues.length == 0) {
+            throw new IllegalStateException("Функция не инициализирована");
+        }
+
+        if (x <= xValues[0]) {
+            return yValues[0];
+        }
+        if (x >= xValues[xValues.length - 1]) {
+            return yValues[yValues.length - 1];
+        }
+
+        // Бинарный поиск для нахождения интервала
+        int left = 0;
+        int right = xValues.length - 1;
+
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+
+            // Точное совпадение
+            if (Math.abs(x - xValues[mid]) < 1e-10) {
+                return yValues[mid];
+            }
+
+            // Проверяем интервал
+            if (mid < xValues.length - 1 && x > xValues[mid] && x < xValues[mid + 1]) {
+                // Линейная интерполяция
+                double x1 = xValues[mid];
+                double x2 = xValues[mid + 1];
+                double y1 = yValues[mid];
+                double y2 = yValues[mid + 1];
+                return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
+            }
+
+            if (x < xValues[mid]) {
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
+
+        // Если не нашли точного интервала (маловероятно)
+        return linearInterpolation(x);
+    }
+
+    // Вспомогательный метод для линейной интерполяции
+    private double linearInterpolation(double x) {
+        for (int i = 0; i < xValues.length - 1; i++) {
+            if (x > xValues[i] && x < xValues[i + 1]) {
+                double x1 = xValues[i];
+                double x2 = xValues[i + 1];
+                double y1 = yValues[i];
+                double y2 = yValues[i + 1];
+                return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
+            }
+        }
+        throw new IllegalStateException("Не удалось интерполировать значение для x = " + x);
+    }
+
     private void checkIndex(int index) {
         if (index < 0 || index >= xValues.length) {
             throw new IndexOutOfBoundsException("Некорректный индекс точки: " + index);
@@ -122,5 +235,21 @@ public class TabulatedFunction implements Insertable, Removable {
                 throw new IllegalArgumentException("После вставки нарушен строгий порядок X");
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("TabulatedFunction[");
+        for (int i = 0; i < Math.min(5, xValues.length); i++) {
+            sb.append("(").append(xValues[i]).append(", ").append(yValues[i]).append(")");
+            if (i < Math.min(5, xValues.length) - 1) {
+                sb.append(", ");
+            }
+        }
+        if (xValues.length > 5) {
+            sb.append(", ... (").append(xValues.length - 5).append(" more)");
+        }
+        sb.append("]");
+        return sb.toString();
     }
 }

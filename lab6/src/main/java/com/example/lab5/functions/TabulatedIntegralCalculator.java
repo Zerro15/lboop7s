@@ -36,7 +36,8 @@ public class TabulatedIntegralCalculator {
             int chunk = (segments + actualThreads - 1) / actualThreads;
             for (int start = 0; start < segments; start += chunk) {
                 int end = Math.min(start + chunk, segments);
-                tasks.add(() -> integrateRange(function, start, end));
+                int finalStart = start;
+                tasks.add(() -> integrateRange(function, finalStart, end));
             }
 
             double total = 0.0;
