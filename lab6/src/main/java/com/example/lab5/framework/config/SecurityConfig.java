@@ -77,12 +77,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Разрешаем запросы с фронтенда
+        // Единый origin: статический фронтенд и API обслуживаются из одного приложения на 8080
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",    // React dev server
-                "http://localhost:5173",    // Vite dev server
-                "http://127.0.0.1:3000",
-                "http://127.0.0.1:5173"
+                "http://localhost:8080",
+                "http://127.0.0.1:8080"
         ));
 
         configuration.setAllowedMethods(Arrays.asList(
