@@ -244,36 +244,27 @@
         }
     };
 
-    const operate = (op) => {
+    const operate = async (op) => {
+        if (!uiState.authHeader) return errorModal.show('Нет доступа', 'Сначала сохраните логин и пароль.');
         if (leftPoints.length === 0 || rightPoints.length === 0) {
             return errorModal.show('Недостаточно данных', 'Создайте обе функции перед операцией.');
         }
-        if (leftPoints.length !== rightPoints.length) {
-            return errorModal.show('Разная размерность', 'Количество точек и x должны совпадать.');
+        try {
+            const payload = {
+                operation: op,
+                leftPoints,
+                rightPoints
+            };
+            const response = await fetchSafe('/api/v1/operations/elementary', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            resultPoints = response.points || [];
+            renderTable('resultTable', resultPoints, false);
+            toast('Операция выполнена');
+        } catch (e) {
+            errorModal.show('Не удалось выполнить операцию', e.message);
         }
-        for (let i = 0; i < leftPoints.length; i++) {
-            if (leftPoints[i].x !== rightPoints[i].x) {
-                return errorModal.show('Несоответствие X', 'Точки должны иметь одинаковые значения x.');
-            }
-        }
-        resultPoints = leftPoints.map((p, idx) => {
-            const a = p.y;
-            const b = rightPoints[idx].y;
-            let y;
-            switch (op) {
-                case 'add': y = a + b; break;
-                case 'sub': y = a - b; break;
-                case 'mul': y = a * b; break;
-                case 'div':
-                    if (b === 0) throw new Error('Деление на ноль в строке ' + (idx + 1));
-                    y = a / b; break;
-                default: y = NaN;
-            }
-            if (!Number.isFinite(y)) throw new Error('Некорректный результат в строке ' + (idx + 1));
-            return { x: p.x, y };
-        });
-        renderTable('resultTable', resultPoints, false);
-        toast('Операция выполнена');
     };
 
     const saveToFile = (target) => {
@@ -306,19 +297,32 @@
         input.click();
     };
 
-    const applyCredentials = () => {
+    const loadFactory = async () => {
+        try {
+            const info = await fetchSafe('/api/v1/factory/current');
+            updateFactoryType(info.currentFactory || uiState.factoryType);
+            factoryPills('factorySelect');
+        } catch (_) {
+            factoryPills('factorySelect');
+        }
+    };
+
+    const applyCredentials = async () => {
         const login = document.getElementById('login').value.trim();
         const password = document.getElementById('password').value;
         if (!login || !password) return errorModal.show('Нет доступа', 'Введите логин и пароль.');
         persistAuth(login, password);
         localStorage.setItem('lastLogin', login);
         toast('Доступ сохранён');
+        await loadFactory();
+        await renderMathOptions();
     };
 
     const closeModal = (modal) => { if (modal.open) modal.close(); };
 
     const renderMathOptions = async () => {
         try {
+            if (!uiState.authHeader) return;
             const registry = await loadMathRegistry();
             const select = document.getElementById('mathSelect');
             select.innerHTML = '';
@@ -337,6 +341,9 @@
         document.getElementById('login').value = localStorage.getItem('lastLogin') || '';
         factoryPills('factorySelect');
         await renderMathOptions();
+        if (uiState.authHeader) {
+            await loadFactory();
+        }
     })();
 </script>
 </body>

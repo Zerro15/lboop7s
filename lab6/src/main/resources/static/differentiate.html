@@ -217,29 +217,20 @@
         }
     };
 
-    const differentiate = () => {
+    const differentiate = async () => {
+        if (!uiState.authHeader) return errorModal.show('Нет доступа', 'Сначала сохраните логин и пароль.');
         if (sourcePoints.length < 2) return errorModal.show('Недостаточно точек', 'Нужно минимум две точки для дифференцирования.');
-        derivativePoints = [];
-        for (let i = 0; i < sourcePoints.length; i++) {
-            let slope;
-            if (i === 0) {
-                const dx = sourcePoints[i + 1].x - sourcePoints[i].x;
-                slope = (sourcePoints[i + 1].y - sourcePoints[i].y) / dx;
-            } else if (i === sourcePoints.length - 1) {
-                const dx = sourcePoints[i].x - sourcePoints[i - 1].x;
-                slope = (sourcePoints[i].y - sourcePoints[i - 1].y) / dx;
-            } else {
-                const dx1 = sourcePoints[i].x - sourcePoints[i - 1].x;
-                const dx2 = sourcePoints[i + 1].x - sourcePoints[i].x;
-                const dy1 = sourcePoints[i].y - sourcePoints[i - 1].y;
-                const dy2 = sourcePoints[i + 1].y - sourcePoints[i].y;
-                slope = ((dy1 / dx1) + (dy2 / dx2)) / 2;
-            }
-            if (!Number.isFinite(slope)) return errorModal.show('Некорректные данные', 'Проверьте шаг между точками.');
-            derivativePoints.push({ x: sourcePoints[i].x, y: slope });
+        try {
+            const response = await fetchSafe('/api/v1/operations/differentiate', {
+                method: 'POST',
+                body: JSON.stringify({ points: sourcePoints })
+            });
+            derivativePoints = response.points || [];
+            renderTable('derivativeTable', derivativePoints, false);
+            toast('Производная вычислена');
+        } catch (e) {
+            errorModal.show('Не удалось вычислить производную', e.message);
         }
-        renderTable('derivativeTable', derivativePoints, false);
-        toast('Производная вычислена');
     };
 
     const saveDerivative = () => {
@@ -270,19 +261,32 @@
         input.click();
     };
 
-    const applyCredentials = () => {
+    const loadFactory = async () => {
+        try {
+            const info = await fetchSafe('/api/v1/factory/current');
+            updateFactoryType(info.currentFactory || uiState.factoryType);
+            factoryPills('factorySelect');
+        } catch (_) {
+            factoryPills('factorySelect');
+        }
+    };
+
+    const applyCredentials = async () => {
         const login = document.getElementById('login').value.trim();
         const password = document.getElementById('password').value;
         if (!login || !password) return errorModal.show('Нет доступа', 'Введите логин и пароль.');
         persistAuth(login, password);
         localStorage.setItem('lastLogin', login);
         toast('Доступ сохранён');
+        await loadFactory();
+        await renderMathOptions();
     };
 
     const closeModal = (modal) => { if (modal.open) modal.close(); };
 
     const renderMathOptions = async () => {
         try {
+            if (!uiState.authHeader) return;
             const registry = await loadMathRegistry();
             const select = document.getElementById('mathSelect');
             select.innerHTML = '';
@@ -301,6 +305,9 @@
         document.getElementById('login').value = localStorage.getItem('lastLogin') || '';
         factoryPills('factorySelect');
         await renderMathOptions();
+        if (uiState.authHeader) {
+            await loadFactory();
+        }
     })();
 </script>
 </body>
