@@ -71,11 +71,11 @@ public class HierarchySearch {
             for (Function function : functions) {
                 List<Point> points = pointRepository.findByFunction(function);
                 allPoints.addAll(points);
-                logger.debug("Found {} points for function: {}", points.size(), function.getName());
+                logger.debug("Found {} points for function: {}", Optional.of(points.size()), function.getName());
             }
         }
 
-        logger.info("Points hierarchy search completed. Found {} points", allPoints.size());
+        logger.info("Points hierarchy search completed. Found {} points", Optional.of(allPoints.size()));
         return allPoints;
     }
 
@@ -91,7 +91,7 @@ public class HierarchySearch {
             }
         }
 
-        logger.info("Multiple users hierarchy search completed. Found {} results", results.size());
+        logger.info("Multiple users hierarchy search completed. Found {} results", Optional.of(results.size()));
         return results;
     }
 
@@ -127,7 +127,7 @@ public class HierarchySearch {
             return "DESC".equalsIgnoreCase(sortOrder) ? -result : result;
         });
 
-        logger.info("Hierarchical points search with sorting completed. Found {} points", points.size());
+        logger.info("Hierarchical points search with sorting completed. Found {} points", Optional.of(points.size()));
         return points;
     }
 
@@ -153,7 +153,7 @@ public class HierarchySearch {
             return 0;
         });
 
-        logger.info("Hierarchical points search with multiple sorting completed. Found {} points", points.size());
+        logger.info("Hierarchical points search with multiple sorting completed. Found {} points", Optional.of(points.size()));
         return points;
     }
 
@@ -224,7 +224,7 @@ public class HierarchySearch {
             return "DESC".equalsIgnoreCase(sortDirection) ? -result : result;
         });
 
-        logger.info("Users hierarchy search with sorting completed. Found {} users", users.size());
+        logger.info("Users hierarchy search with sorting completed. Found {} users", Optional.of(users.size()));
         return users;
     }
 }

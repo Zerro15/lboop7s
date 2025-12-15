@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -57,7 +58,7 @@ public class FunctionController {
         List<FunctionDTO> result = functionService.getAllFunctions().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
-        logger.info("Получено {} функций", result.size());
+        logger.info("Получено {} функций", Optional.of(result.size()));
         return result;
     }
 
@@ -83,7 +84,7 @@ public class FunctionController {
         List<FunctionDTO> result = functionService.getFunctionsByUserId(userId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
-        logger.info("Найдено {} функций для пользователя {}", result.size(), userId);
+        logger.info("Найдено {} функций для пользователя {}", Optional.of(result.size()), userId);
         return result;
     }
 
@@ -106,14 +107,14 @@ public class FunctionController {
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public FunctionDTO createFromArrays(@RequestBody CreateFromArraysRequest request) {
         logger.info("POST /api/v1/functions/create-from-arrays - создание из массивов: name={}, points={}, factory={}",
-                request.getName(), request.getPoints().size(), request.getFactoryType());
+                (Object) request.getName(), (Object) request.getPoints().size(), request.getFactoryType());
 
         Function created = functionService.createFromArrays(
                 request.getUserId(),
                 request.getName(),
                 request.getPoints(),
                 request.getFactoryType()
-        );
+        ).getFunction();
 
         logger.info("Функция создана из массивов с ID: {}", created.getId());
         return toDTO(created);
@@ -133,7 +134,7 @@ public class FunctionController {
                 request.getLeftBound(),
                 request.getRightBound(),
                 request.getFactoryType()
-        );
+        ).getFunction();
 
         logger.info("Функция создана из MathFunction с ID: {}", created.getId());
         return toDTO(created);

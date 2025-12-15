@@ -42,7 +42,7 @@ public class PointService {
 
     public int generateFunctionPoints(Long functionId, String functionType, double start, double end, double step) {
         logger.info("Генерация точек для функции {}: type={}, range=[{}, {}], step={}",
-                functionId, functionType, start, end, step);
+                (Object) functionId, (Object) functionType, (Object) start, (Object) end, (Object) step);
 
         Optional<Function> function = functionRepository.findById(functionId);
         if (!function.isPresent()) {
@@ -53,15 +53,15 @@ public class PointService {
         List<Point> points = new ArrayList<>();
         int pointCount = 0;
 
-        for (double x = start; x <= end; x += step) {
-            double y = calculateFunction(functionType, x);
+        for (Double x = (Double) start; x <= end; x += step) {
+            Double y = (Double) calculateFunction(functionType, x);
             points.add(new Point(x, y, function.get()));
             pointCount++;
         }
 
         if (!points.isEmpty()) {
             pointRepository.saveAll(points);
-            logger.info("Сгенерировано {} точек для функции {}", pointCount, functionId);
+            logger.info("Сгенерировано {} точек для функции {}", Optional.of(pointCount), functionId);
         }
 
         return pointCount;

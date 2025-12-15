@@ -62,7 +62,7 @@ public class FunctionService {
                                                    List<CreateFromArraysRequest.PointData> pointsData,
                                                    String factoryType) {
         logger.info("Создание функции из массивов: user={}, name={}, points={}, factory={}",
-                userId, name, pointsData.size(), factoryType);
+                (Object) userId, (Object) name, (Object) pointsData.size(), factoryType);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
@@ -88,20 +88,20 @@ public class FunctionService {
         function.setFactoryType(effectiveFactoryKey);
         function.setCreationMethod("from_arrays");
         function.setPointsCount(resolvedX.length);
-        function.setLeftBound(resolvedX[0]);
-        function.setRightBound(resolvedX[resolvedX.length - 1]);
+        function.setLeftBound(Double.valueOf(resolvedX[0]));
+        function.setRightBound(Double.valueOf(resolvedX[resolvedX.length - 1]));
 
         Function savedFunction = functionRepository.save(function);
         logger.info("Функция создана с ID: {}", savedFunction.getId());
         for (int i = 0; i < resolvedX.length; i++) {
             Point point = new Point();
-            point.setXValue(resolvedX[i]);
-            point.setYValue(resolvedY[i]);
+            point.setXValue(Double.valueOf(resolvedX[i]));
+            point.setYValue(Double.valueOf(resolvedY[i]));
             point.setFunction(savedFunction);
             pointRepository.save(point);
         }
 
-        logger.info("Создано {} точек для функции {}", resolvedX.length, savedFunction.getId());
+        logger.info("Создано {} точек для функции {}", Optional.of(resolvedX.length), savedFunction.getId());
         return new FunctionCreationResult(savedFunction, resolvedX, resolvedY);
     }
 
@@ -156,14 +156,14 @@ public class FunctionService {
 
         for (int i = 0; i < xValues.length; i++) {
             Point point = new Point();
-            point.setXValue(xValues[i]);
-            point.setYValue(yValues[i]);
+            point.setXValue(Double.valueOf(xValues[i]));
+            point.setYValue(Double.valueOf(yValues[i]));
             point.setFunction(savedFunction);
             pointRepository.save(point);
 
             // Логируем каждые 100 точек
             if (i % 100 == 0 || i == xValues.length - 1) {
-                logger.debug("Создана точка {}: x={}, y={}", i, xValues[i], yValues[i]);
+                logger.debug("Создана точка {}: x={}, y={}");
             }
         }
 
@@ -215,7 +215,7 @@ public class FunctionService {
                     double y = p1.getYValue() + ratio * (p2.getYValue() - p1.getYValue());
 
                     logger.debug("Интерполяция: x={} между [{}, {}], y={}",
-                            x, p1.getXValue(), p2.getXValue(), y);
+                            (Object) x, (Object) p1.getXValue(), (Object) p2.getXValue(), (Object) y);
 
                     return new EvaluateResponse(x, y, function.getName(), functionId);
                 }
@@ -249,7 +249,7 @@ public class FunctionService {
         double y = tabulatedFunction.apply(request.getX());
         EvaluateTabulatedResponse response = new EvaluateTabulatedResponse();
         response.setX(request.getX());
-        response.setY(y);
+        response.setY(Double.valueOf(y));
         response.setName(payload.getName());
         return response;
     }
@@ -292,7 +292,7 @@ public class FunctionService {
         if (existingFunction.isPresent()) {
             Optional<User> user = userRepository.findById(userId);
             if (!user.isPresent()) {
-                logger.error("Пользователь с ID {} не существует", userId);
+                logger.error("Пользователь с ID {} не существует1", userId);
                 return null;
             }
 
@@ -349,7 +349,7 @@ public class FunctionService {
             );
 
             logger.info("Статистика функции {}: {} точек, x=[{}, {}], y=[{}, {}]",
-                    function.get().getName(), points.size(), minX, maxX, minY, maxY);
+                    (Object) function.get().getName(), (Object) points.size(), (Object) minX, (Object) maxX, (Object) minY, (Object) maxY);
 
             return stats;
         }
@@ -393,7 +393,7 @@ public class FunctionService {
         public String toString() {
             return String.format(
                     "FunctionStatistics{function='%s', points=%d, x=[%.2f, %.2f], y=[%.2f, %.2f], avgY=%.2f}",
-                    functionName, pointCount, minX, maxX, minY, maxY, averageY
+                    (Object) functionName, (Object) pointCount, (Object) minX, (Object) maxX, (Object) minY, (Object) maxY, (Object) averageY
             );
         }
     }

@@ -10,7 +10,7 @@ public class EvaluateResponse {
     private Long functionId;
 
     // Конструктор для удобства
-    public EvaluateResponse(Double x, Double y, String functionName, Long functionId) {
+    public EvaluateResponse(Double x, double y, String functionName, Long functionId) {
         this.x = x;
         this.y = y;
         this.functionName = functionName;

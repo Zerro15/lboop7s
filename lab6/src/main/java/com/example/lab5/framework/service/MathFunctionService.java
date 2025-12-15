@@ -64,7 +64,7 @@ public class MathFunctionService {
         CompositeDescriptor descriptor = new CompositeDescriptor(trimmedName, compositeFunction, formula);
         customFunctions.put(trimmedName, descriptor);
         return toDto(descriptor.name(), descriptor.name(),
-                "Пользовательская композиция", formula, "Composite", true);
+                "Пользовательская композиция", formula, "Composite", Boolean.parseBoolean(String.valueOf(true)));
     }
 
     public MathFunctionDTO renameComposite(String oldName, String newName) {
@@ -82,7 +82,7 @@ public class MathFunctionService {
         CompositeDescriptor renamed = new CompositeDescriptor(trimmed, descriptor.function(), descriptor.formula());
         customFunctions.put(trimmed, renamed);
         return toDto(renamed.name(), renamed.name(),
-                "Пользовательская композиция", renamed.formula(), "Composite", true);
+                "Пользовательская композиция", renamed.formula(), "Composite", Boolean.parseBoolean(String.valueOf(true)));
     }
 
     public void deleteComposite(String name) {
@@ -96,7 +96,7 @@ public class MathFunctionService {
         List<MathFunctionDTO> result = new ArrayList<>();
         descriptors.forEach(descriptor -> result.add(toDto(descriptor.label(), descriptor.label(),
                 describe(descriptor.label()), example(descriptor.label()), category(descriptor.label()),
-                descriptor.functionType(), false)));
+                Boolean.parseBoolean(String.valueOf(false)))));
         return result;
     }
 
@@ -104,7 +104,7 @@ public class MathFunctionService {
         return customFunctions.values().stream()
                 .sorted(Comparator.comparing(CompositeDescriptor::name))
                 .map(desc -> toDto(desc.name(), desc.name(), "Пользовательская композиция", desc.formula(),
-                        "Composite", true))
+                        "Composite", Boolean.parseBoolean(String.valueOf(true))))
                 .collect(Collectors.toList());
     }
 
@@ -129,8 +129,8 @@ public class MathFunctionService {
             double y = function.apply(x);
 
             PreviewResponse.PointData point = new PreviewResponse.PointData();
-            point.setX(x);
-            point.setY(y);
+            point.setX(Double.valueOf(x));
+            point.setY(Double.valueOf(y));
             points.add(point);
         }
 
@@ -139,7 +139,7 @@ public class MathFunctionService {
     }
 
     private MathFunctionDTO toDto(String key, String label, String description,
-                                  String example, String category, String functionType, boolean custom) {
+                                  String example, String category, boolean custom) {
         MathFunctionDTO dto = new MathFunctionDTO();
         dto.setKey(key);
         dto.setLabel(label);
@@ -147,7 +147,7 @@ public class MathFunctionService {
         dto.setExample(example);
         dto.setCategory(category);
         dto.setFunctionType(functionType);
-        dto.setCustom(custom);
+        dto.setCustom(Boolean.parseBoolean(String.valueOf(custom)));
         dto.setFormula(custom ? example : null);
         return dto;
     }

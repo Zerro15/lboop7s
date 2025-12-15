@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -30,8 +31,8 @@ public class FrameworkPerformanceComparisonService {
     private List<Function> testFunctions = new ArrayList<>();
 
     public void generateTestData(int userCount, int functionsPerUser, int pointsPerFunction) {
-        logger.info("Генерация тестовых данных для Framework: {} пользователей, {} функций на пользователя, {} точек на функцию",
-                userCount, functionsPerUser, pointsPerFunction);
+        logger.info("Генерация тестовых данных для Framework: {} пользователей, {} функций на пользователя, {} точек на функцию"
+        );
 
         testUsers.clear();
         testFunctions.clear();
@@ -53,8 +54,8 @@ public class FrameworkPerformanceComparisonService {
             }
         }
 
-        logger.info("Framework: Сгенерировано: {} пользователей, {} функций, {} точек",
-                testUsers.size(), testFunctions.size(), totalPoints);
+        logger.info("Framework: Сгенерировано: {} пользователей, {} функций, {} точек"
+        );
     }
 
     public PerformanceResults comparePerformance() {
@@ -62,7 +63,6 @@ public class FrameworkPerformanceComparisonService {
         long userCount = userService.getAllUsers().size();
         long functionCount = functionService.getAllFunctions().size();
 
-        System.out.printf("=== ПРОВЕРКА БАЗЫ: %d пользователей, %d функций ===%n", userCount, functionCount);
 
         if (userCount < 50) {
             System.out.println("ПРЕДУПРЕЖДЕНИЕ: База данных может быть недостаточно заполнена для реалистичного тестирования!");
@@ -174,7 +174,7 @@ public class FrameworkPerformanceComparisonService {
 
     // Метод для очистки тестовых данных
     public void cleanupTestData() {
-        logger.info("Очистка тестовых данных Framework: {} пользователей", testUsers.size());
+        logger.info("Очистка тестовых данных Framework: {} пользователей", Optional.of(testUsers.size()));
         for (User user : testUsers) {
             userService.deleteUser(user.getId());
         }
@@ -271,53 +271,7 @@ public class FrameworkPerformanceComparisonService {
             this.complexQueryTime = complexQueryTime;
         }
 
-        public String toMarkdownTable() {
-            return String.format(
-                    "| Операция | Spring Data JPA (мс) |\n" +
-                            "|----------|---------------------|\n" +
-                            "| Создание пользователя | %.3f |\n" +
-                            "| Чтение пользователя | %.3f |\n" +
-                            "| Обновление пользователя | %.3f |\n" +
-                            "| Удаление пользователя | %.3f |\n" +
-                            "| Создание функции | %.3f |\n" +
-                            "| Чтение функции | %.3f |\n" +
-                            "| Создание точек | %.3f |\n" +
-                            "| Чтение точек | %.3f |\n" +
-                            "| Сложные запросы | %.3f |\n",
-                    userCreateTime,
-                    userReadTime,
-                    userUpdateTime,
-                    userDeleteTime,
-                    functionCreateTime,
-                    functionReadTime,
-                    pointCreateTime,
-                    pointReadTime,
-                    complexQueryTime
-            );
+
         }
 
-        public String toCSV() {
-            return String.format(
-                    "Операция,Время (мс)\n" +
-                            "Создание пользователя,%.3f\n" +
-                            "Чтение пользователя,%.3f\n" +
-                            "Обновление пользователя,%.3f\n" +
-                            "Удаление пользователя,%.3f\n" +
-                            "Создание функции,%.3f\n" +
-                            "Чтение функции,%.3f\n" +
-                            "Создание точек,%.3f\n" +
-                            "Чтение точек,%.3f\n" +
-                            "Сложные запросы,%.3f\n",
-                    userCreateTime,
-                    userReadTime,
-                    userUpdateTime,
-                    userDeleteTime,
-                    functionCreateTime,
-                    functionReadTime,
-                    pointCreateTime,
-                    pointReadTime,
-                    complexQueryTime
-            );
-        }
     }
-}
