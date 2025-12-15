@@ -234,6 +234,26 @@ public class FunctionService {
         return null;
     }
 
+    public EvaluateTabulatedResponse evaluateTabulated(EvaluateTabulatedRequest request) {
+        if (request == null || request.getFunction() == null) {
+            throw new IllegalArgumentException("Функция для вычисления не задана");
+        }
+        if (request.getX() == null) {
+            throw new IllegalArgumentException("Значение X должно быть указано");
+        }
+
+        TabulatedFunctionPayload payload = request.getFunction();
+        TabulatedFunctionFactory chosenFactory = factoryHolder.resolveFactory(request.getFactoryType());
+        TabulatedFunction tabulatedFunction = chosenFactory.create(payload.getXValues(), payload.getYValues());
+
+        double y = tabulatedFunction.apply(request.getX());
+        EvaluateTabulatedResponse response = new EvaluateTabulatedResponse();
+        response.setX(request.getX());
+        response.setY(y);
+        response.setName(payload.getName());
+        return response;
+    }
+
     private double calculateMathFunction(String functionKey, double x) {
         MathFunction function = mathFunctionService.getFunctionByKey(functionKey);
         if (function == null) {

@@ -312,6 +312,42 @@
         .factory-badge.hidden {
             display: none;
         }
+        .explorer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+            margin-top: 12px;
+        }
+        .chart-panel {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px;
+            background: #f9fafb;
+        }
+        .chart-card {
+            height: 360px;
+            position: relative;
+        }
+        .chart-card canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .badge {
+            display: inline-block;
+            background: #eef2ff;
+            color: #3730a3;
+            border: 1px solid #c7d2fe;
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-weight: bold;
+        }
+        .apply-panel {
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 8px;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -331,6 +367,7 @@
         <div class="actions">
             <button type="button" id="open-array-window"><span class="icon">📄</span>Создать функцию (массивы)</button>
             <button type="button" id="open-math-window"><span class="icon">📐</span>Создать функцию (формула)</button>
+            <button type="button" id="open-explorer-window"><span class="icon">📊</span>Графический анализ функции</button>
             <button type="button" id="open-operations-window"><span class="icon">🧮</span>Операции над функциями</button>
             <button type="button" id="open-diff-window"><span class="icon">🔀</span>Дифференцирование функции</button>
             <button type="button" id="open-factory-window"><span class="icon">⚙️</span>Настройки</button>
@@ -490,7 +527,7 @@
                     <button type="button" data-create-target="A"><span class="icon">➕</span>Создать…</button>
                     <label class="secondary" style="padding: 10px; cursor: pointer;">
                         <span class="icon">📂</span>Загрузить…
-                        <input type="file" accept="application/json" data-load-target="A" class="hidden">
+                        <input type="file" accept="application/json,text/csv" data-load-target="A" class="hidden">
                     </label>
                     <div class="spacer"></div>
                     <button type="button" class="secondary" data-save-target="A"><span class="icon">💾</span>Сохранить…</button>
@@ -510,7 +547,7 @@
                     <button type="button" data-create-target="B"><span class="icon">➕</span>Создать…</button>
                     <label class="secondary" style="padding: 10px; cursor: pointer;">
                         <span class="icon">📂</span>Загрузить…
-                        <input type="file" accept="application/json" data-load-target="B" class="hidden">
+                        <input type="file" accept="application/json,text/csv" data-load-target="B" class="hidden">
                     </label>
                     <div class="spacer"></div>
                     <button type="button" class="secondary" data-save-target="B"><span class="icon">💾</span>Сохранить…</button>
@@ -543,6 +580,58 @@
         </div>
     </div>
 
+    <div class="modal window hidden" data-modal="explorer-window">
+        <div class="modal-header">
+            <h3>Графический анализ функции</h3>
+            <button type="button" class="close-btn" data-close-modal="explorer-window">×</button>
+        </div>
+        <p>Редактируйте значения Y, визуализируйте точки и вычисляйте f(x) по табулированной функции.</p>
+        <div class="explorer-grid">
+            <div class="operations-panel" id="explorer-panel">
+                <h4>Исследуемая функция <span class="badge" data-slot-label="EXPLORER">—</span></h4>
+                <table class="table" aria-label="Исследуемая функция" id="explorer-table">
+                    <thead><tr><th>X</th><th>Y</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="inline-actions">
+                    <button type="button" data-create-target="EXPLORER"><span class="icon">➕</span>Создать…</button>
+                    <label class="secondary" style="padding: 10px; cursor: pointer;">
+                        <span class="icon">📂</span>Загрузить…
+                        <input type="file" accept="application/json,text/csv" data-load-target="EXPLORER" class="hidden">
+                    </label>
+                    <div class="spacer"></div>
+                    <button type="button" class="secondary" data-save-target="EXPLORER"><span class="icon">💾</span>Сохранить JSON…</button>
+                    <button type="button" class="secondary" data-save-target="EXPLORER" data-save-format="csv"><span class="icon">📑</span>Сохранить CSV…</button>
+                    <button type="button" class="secondary" data-clear-target="EXPLORER"><span class="icon">🧹</span>Очистить</button>
+                </div>
+                <div class="apply-panel">
+                    <div>
+                        <label for="explorer-x">Значение X</label>
+                        <input type="number" step="any" id="explorer-x" placeholder="Например, 0.5">
+                    </div>
+                    <div>
+                        <label for="explorer-y">Результат f(x)</label>
+                        <input type="text" id="explorer-y" readonly>
+                    </div>
+                    <div>
+                        <label>&nbsp;</label>
+                        <button type="button" id="evaluate-button"><span class="icon">🧭</span>Вычислить в точке</button>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-panel">
+                <h4>Визуализация</h4>
+                <div class="chart-card">
+                    <canvas id="explorer-chart" aria-label="График функции"></canvas>
+                </div>
+                <p class="mini-note">График обновляется при загрузке и редактировании точек. Используйте колесо мыши для масштабирования и перетаскивайте для панорамирования.</p>
+            </div>
+        </div>
+        <div class="actions">
+            <button type="button" class="secondary" data-close-modal="explorer-window">Закрыть окно</button>
+        </div>
+    </div>
+
     <div class="modal window hidden" data-modal="diff-window">
         <div class="modal-header">
             <h3>Окно дифференцирования</h3>
@@ -561,7 +650,7 @@
                     <button type="button" data-create-target="DIFF_SOURCE"><span class="icon">➕</span>Создать…</button>
                     <label class="secondary" style="padding: 10px; cursor: pointer;">
                         <span class="icon">📂</span>Загрузить…
-                        <input type="file" accept="application/json" data-load-target="DIFF_SOURCE" class="hidden">
+                        <input type="file" accept="application/json,text/csv" data-load-target="DIFF_SOURCE" class="hidden">
                     </label>
                     <div class="spacer"></div>
                     <button type="button" class="secondary" data-save-target="DIFF_SOURCE"><span class="icon">💾</span>Сохранить…</button>
@@ -616,6 +705,8 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 <script th:inline="javascript">
     const mathFunctions = /*[[${mathFunctions}]]*/ [];
     let factoryState = /*[[${factoryState}]]*/ { factories: [], activeKey: 'array' };
@@ -634,6 +725,14 @@
     const pointsCountInput = document.getElementById('points-count-input');
     const pointsCountError = document.getElementById('points-count-error');
     const MAX_POINTS = 1000;
+    const explorerXInput = document.getElementById('explorer-x');
+    const explorerYOutput = document.getElementById('explorer-y');
+    let explorerChart = null;
+
+    const zoomPlugin = window['chartjs-plugin-zoom'] || window.ChartZoom;
+    if (typeof Chart !== 'undefined' && Chart.register && zoomPlugin) {
+        Chart.register(zoomPlugin);
+    }
     let confirmHandler = null;
     let closeHandler = null;
     let creationTarget = null;
@@ -642,12 +741,14 @@
         B: null,
         RESULT: null,
         DIFF_SOURCE: null,
-        DIFF_RESULT: null
+        DIFF_RESULT: null,
+        EXPLORER: null,
     };
     const dirtySlots = {
         A: false,
         B: false,
         DIFF_SOURCE: false,
+        EXPLORER: false,
     };
     const recentFiles = [];
     const slotConfig = {
@@ -655,7 +756,8 @@
         B: { tableId: 'operand-b-table', editable: true },
         RESULT: { tableId: 'result-table', editable: false },
         DIFF_SOURCE: { tableId: 'diff-source-table', editable: true },
-        DIFF_RESULT: { tableId: 'diff-result-table', editable: false }
+        DIFF_RESULT: { tableId: 'diff-result-table', editable: false },
+        EXPLORER: { tableId: 'explorer-table', editable: true }
     };
 
     const modalManager = {
@@ -703,6 +805,7 @@
     const modalSlots = {
         'operations-window': ['A', 'B'],
         'diff-window': ['DIFF_SOURCE'],
+        'explorer-window': ['EXPLORER'],
     };
 
     function hasDirtySlots(modalId) {
@@ -843,6 +946,77 @@
         renderRecentFiles();
     }
 
+    function ensureExplorerChart() {
+        const canvas = document.getElementById('explorer-chart');
+        if (!canvas || !Chart) {
+            return null;
+        }
+        if (!explorerChart) {
+            explorerChart = new Chart(canvas, {
+                type: 'line',
+                data: { datasets: [{ label: 'f(x)', data: [], showLine: true, borderColor: '#0b65c2', backgroundColor: 'rgba(11,101,194,0.15)', pointRadius: 4 }] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    parsing: false,
+                    scales: {
+                        x: { type: 'linear', title: { display: true, text: 'X' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        y: { title: { display: true, text: 'Y' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: true },
+                        zoom: {
+                            zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' },
+                            pan: { enabled: true, mode: 'xy' },
+                        },
+                    },
+                },
+            });
+        }
+        return explorerChart;
+    }
+
+    function updateExplorerChart() {
+        const chart = ensureExplorerChart();
+        if (!chart) { return; }
+        const data = functionsState.EXPLORER;
+        if (!data || !data.xValues || !data.yValues) {
+            chart.data.datasets[0].data = [];
+            chart.update();
+            return;
+        }
+        chart.data.datasets[0].data = data.xValues.map((x, idx) => ({ x, y: data.yValues[idx] }));
+        chart.update();
+    }
+
+    function parseCsvToPayload(content, nameHint) {
+        const lines = content.split(/\r?\n/).map((line) => line.trim()).filter((line) => line.length > 0);
+        if (lines.length < 2) {
+            throw new Error('Недостаточно строк в CSV');
+        }
+        const xValues = [];
+        const yValues = [];
+        lines.forEach((line, idx) => {
+            const parts = line.split(/[;,\s]+/).filter((token) => token.length > 0);
+            if (parts.length < 2) {
+                throw new Error(`Строка ${idx + 1} не содержит две колонки`);
+            }
+            const x = Number(parts[0].replace(',', '.'));
+            const y = Number(parts[1].replace(',', '.'));
+            if (Number.isNaN(x) || Number.isNaN(y)) {
+                throw new Error(`Строка ${idx + 1} содержит нечисловые данные`);
+            }
+            xValues.push(x);
+            yValues.push(y);
+        });
+        return { name: nameHint, xValues, yValues };
+    }
+
+    function stringifyCsv(payload) {
+        return payload.xValues.map((x, idx) => `${x};${payload.yValues[idx]}`).join('\n');
+    }
+
     function createPointRow(index) {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -974,6 +1148,9 @@
             yInput.classList.remove('input-error');
             data.yValues[index] = Number(normalized);
             setDirty(slot, true);
+            if (slot === 'EXPLORER') {
+                updateExplorerChart();
+            }
         });
     }
 
@@ -1045,6 +1222,9 @@
             renderSlot('DIFF_RESULT');
         }
         renderSlot(slot);
+        if (slot === 'EXPLORER') {
+            updateExplorerChart();
+        }
         showStatus(`Обновлена область ${slot}: ${functionsState[slot].name}.`, 'info');
     }
 
@@ -1052,6 +1232,9 @@
         functionsState[slot] = null;
         setDirty(slot, false);
         renderSlot(slot);
+        if (slot === 'EXPLORER') {
+            updateExplorerChart();
+        }
         showStatus(`Область ${slot} очищена.`, 'info');
     }
 
@@ -1093,6 +1276,9 @@
         if (target.startsWith('DIFF')) {
             return 'diff-window';
         }
+        if (target === 'EXPLORER') {
+            return 'explorer-window';
+        }
         return null;
     }
 
@@ -1112,7 +1298,13 @@
                         applyPayload(slot, parsed, parsed.name || files[0].name);
                         trackRecentFile(files[0].name, slot);
                     } catch (e) {
-                        showErrorModal('Не удалось разобрать файл функции.');
+                        try {
+                            const parsedCsv = parseCsvToPayload(reader.result, files[0].name);
+                            applyPayload(slot, parsedCsv, parsedCsv.name || files[0].name);
+                            trackRecentFile(files[0].name, slot);
+                        } catch (csvError) {
+                            showErrorModal('Не удалось разобрать файл функции.');
+                        }
                     }
                 };
                 reader.onerror = () => {
@@ -1134,15 +1326,17 @@
                     showErrorModal('Нет данных для сохранения.');
                     return;
                 }
-                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                const format = button.dataset.saveFormat || 'json';
+                const content = format === 'csv' ? stringifyCsv(payload) : JSON.stringify(payload, null, 2);
+                const mime = format === 'csv' ? 'text/csv' : 'application/json';
                 const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `${payload.name || slot}.json`;
+                link.href = URL.createObjectURL(new Blob([content], { type: mime }));
+                link.download = `${payload.name || slot}.${format}`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 URL.revokeObjectURL(link.href);
-                showStatus('Функция сохранена в JSON.', 'success');
+                showStatus(`Функция сохранена в формате ${format.toUpperCase()}.`, 'success');
                 setDirty(slot, false);
             });
         });
@@ -1227,6 +1421,41 @@
         }
     }
 
+    async function evaluateExplorer() {
+        if (!functionsState.EXPLORER) {
+            showErrorModal('Загрузите или создайте функцию для анализа.');
+            return;
+        }
+        if (!ensureSlotValid('EXPLORER')) {
+            return;
+        }
+        if (!isValidNumberInput(explorerXInput.value)) {
+            showErrorModal('Введите числовое значение X.');
+            return;
+        }
+
+        const xValue = Number(String(explorerXInput.value).replace(',', '.'));
+        try {
+            setLoading(true, 'Вычисление значения…');
+            const response = await fetch('/ui/api/tabulated-functions/apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    factoryType: activeFactoryKey,
+                    x: xValue,
+                    function: functionsState.EXPLORER,
+                })
+            });
+            const data = await handleResponse(response);
+            explorerYOutput.value = data.y;
+            showStatus(`Значение f(${xValue}) = ${data.y}.`, 'success');
+        } catch (e) {
+            // Ошибка отображена модально
+        } finally {
+            setLoading(false);
+        }
+    }
+
     function syncFactoryDisplay() {
         document.querySelectorAll('[data-active-factory-label]').forEach((element) => {
             element.textContent = getFactoryLabel(activeFactoryKey);
@@ -1259,6 +1488,7 @@
         syncFactoryDisplay();
         modalManager.close('factory-window');
     });
+    document.getElementById('open-explorer-window').addEventListener('click', () => modalManager.open('explorer-window'));
     document.getElementById('open-operations-window').addEventListener('click', () => modalManager.open('operations-window'));
     document.getElementById('open-diff-window').addEventListener('click', () => modalManager.open('diff-window'));
     document.getElementById('open-about-window').addEventListener('click', () => modalManager.open('about-window'));
@@ -1275,6 +1505,10 @@
     if (deriveButton) {
         deriveButton.addEventListener('click', () => performDifferentiation());
     }
+    const evaluateButton = document.getElementById('evaluate-button');
+    if (evaluateButton) {
+        evaluateButton.addEventListener('click', () => evaluateExplorer());
+    }
 
     bindFileLoading();
     bindSaving();
@@ -1285,6 +1519,8 @@
     renderSlot('RESULT');
     renderSlot('DIFF_SOURCE');
     renderSlot('DIFF_RESULT');
+    renderSlot('EXPLORER');
+    updateExplorerChart();
 
     document.getElementById('arrays-form').addEventListener('submit', async (event) => {
         event.preventDefault();

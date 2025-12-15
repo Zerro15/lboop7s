@@ -2,6 +2,7 @@ package com.example.lab5.ui;
 
 import com.example.lab5.framework.dto.CreateFromArraysRequest;
 import com.example.lab5.framework.dto.CreateFromMathRequest;
+import com.example.lab5.framework.dto.EvaluateTabulatedRequest;
 import com.example.lab5.framework.dto.FunctionCreationResult;
 import com.example.lab5.framework.dto.FunctionDTO;
 import com.example.lab5.framework.entity.Function;
@@ -51,5 +52,10 @@ public class TabulatedFunctionUiApiController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(mapper.toDto(result.getFunction(), result.getXValues(), result.getYValues()));
+    }
+
+    @PostMapping("/apply")
+    public ResponseEntity<?> evaluateTabulated(@RequestBody EvaluateTabulatedRequest request) {
+        return ResponseEntity.ok(functionService.evaluateTabulated(request));
     }
 }

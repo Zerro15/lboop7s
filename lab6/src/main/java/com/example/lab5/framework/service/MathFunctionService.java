@@ -3,8 +3,12 @@ package com.example.lab5.framework.service;
 import com.example.lab5.framework.dto.MathFunctionDTO;
 import com.example.lab5.framework.dto.PreviewResponse;
 import com.example.lab5.functions.*;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 @Service
@@ -14,13 +18,7 @@ public class MathFunctionService {
 
     public MathFunctionService() {
         Map<String, MathFunction> functions = new TreeMap<>();
-        functions.put("Квадратичная функция", new SqrFunction());
-        functions.put("Тождественная функция", new IdentityFunction());
-        functions.put("Синусоида", new SinFunction());
-        functions.put("Косинус", new CosFunction());
-        functions.put("Экспонента", new ExpFunction());
-        functions.put("Нулевая функция", new ZeroFunction());
-        functions.put("Натуральный логарифм", new LogFunction());
+        discoverMathFunctions(functions);
         availableFunctions = Collections.unmodifiableMap(functions);
     }
 
@@ -113,6 +111,51 @@ public class MathFunctionService {
             default:
                 return label;
         }
+    }
+
+    private void discoverMathFunctions(Map<String, MathFunction> functions) {
+        Map<String, MathFunction> defaults = new LinkedHashMap<>();
+        defaults.put("Квадратичная функция", new SqrFunction());
+        defaults.put("Тождественная функция", new IdentityFunction());
+        defaults.put("Синусоида", new SinFunction());
+        defaults.put("Косинус", new CosFunction());
+        defaults.put("Экспонента", new ExpFunction());
+        defaults.put("Нулевая функция", new ZeroFunction());
+        defaults.put("Натуральный логарифм", new LogFunction());
+
+        ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
+        scanner.addIncludeFilter(new AssignableTypeFilter(MathFunction.class));
+
+        Set<String> usedLabels = new HashSet<>();
+        for (BeanDefinition bean : scanner.findCandidateComponents("com.example.lab5.functions")) {
+            try {
+                Class<?> clazz = Class.forName(bean.getBeanClassName());
+                if (!MathFunction.class.isAssignableFrom(clazz) || clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
+                    continue;
+                }
+                MathFunction instance = (MathFunction) clazz.getDeclaredConstructor().newInstance();
+                String label = resolveLabel(clazz.getSimpleName());
+                if (usedLabels.add(label)) {
+                    functions.put(label, instance);
+                }
+            } catch (Exception ignored) {
+                // игнорируем нестабильные классы
+            }
+        }
+
+        defaults.forEach((label, fn) -> functions.putIfAbsent(label, fn));
+    }
+
+    private String resolveLabel(String simpleName) {
+        Map<String, String> overrides = new HashMap<>();
+        overrides.put("SqrFunction", "Квадратичная функция");
+        overrides.put("IdentityFunction", "Тождественная функция");
+        overrides.put("SinFunction", "Синусоида");
+        overrides.put("CosFunction", "Косинус");
+        overrides.put("ExpFunction", "Экспонента");
+        overrides.put("ZeroFunction", "Нулевая функция");
+        overrides.put("LogFunction", "Натуральный логарифм");
+        return overrides.getOrDefault(simpleName, simpleName.replace("Function", "").replaceAll("([A-Z])", " $1").trim());
     }
 
     private String example(String label) {
