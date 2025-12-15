@@ -29,16 +29,22 @@ public class JwtFilter implements Filter {
 
         String header = req.getHeader("Authorization");
         if (header == null || !header.startsWith("Bearer ")) {
-            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            sendUnauthorized(resp, "Требуется авторизация");
             return;
         }
         String token = header.substring("Bearer ".length());
         Optional<JwtService.UserPrincipal> principal = jwtService.verify(token);
         if (principal.isEmpty()) {
-            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            sendUnauthorized(resp, "Недействительный токен");
             return;
         }
         req.setAttribute("principal", principal.get());
         chain.doFilter(request, response);
+    }
+
+    private void sendUnauthorized(HttpServletResponse resp, String message) throws IOException {
+        resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        resp.setContentType("application/json;charset=UTF-8");
+        resp.getWriter().write("{\"message\": \"" + message + "\"}");
     }
 }

@@ -1,7 +1,8 @@
 package com.example.lab5.manual.ui;
 
-import com.example.lab5.manual.service.InMemoryUserStore;
+import com.example.lab5.manual.dto.UserDTO;
 import com.example.lab5.manual.service.JwtService;
+import com.example.lab5.manual.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -10,15 +11,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Optional;
 
 /**
  * Регистрация и авторизация с выдачей JWT.
  */
 @WebServlet("/ui/api/auth/*")
 public class AuthServlet extends HttpServlet {
-    private static final InMemoryUserStore STORE = new InMemoryUserStore();
     private static final JwtService JWT = new JwtService("manual-secret-key");
+    private final UserService userService = new UserService();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ExceptionResponder exceptionResponder = new ExceptionResponder();
 
@@ -29,6 +29,8 @@ public class AuthServlet extends HttpServlet {
             handleRegister(req, resp);
         } else if (path != null && path.contains("login")) {
             handleLogin(req, resp);
+        } else if (path != null && path.contains("guest")) {
+            handleGuest(resp);
         } else {
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
@@ -37,15 +39,14 @@ public class AuthServlet extends HttpServlet {
     private void handleRegister(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
             ObjectNode payload = objectMapper.readValue(req.getInputStream(), ObjectNode.class);
-            String login = payload.get("login").asText();
-            String password = payload.get("password").asText();
+            String login = payload.path("login").asText("").trim();
+            String password = payload.path("password").asText("");
             if (login.isBlank() || password.isBlank()) {
                 throw new IllegalArgumentException("Логин и пароль обязательны");
             }
-            if (!STORE.register(login, password)) {
-                throw new IllegalArgumentException("Пользователь уже существует");
-            }
-            issueToken(resp, login, "USER");
+            UserDTO user = userService.register(login, password);
+            resp.setStatus(HttpServletResponse.SC_CREATED);
+            issueToken(resp, user.getLogin(), user.getRole());
         } catch (Exception ex) {
             exceptionResponder.handle(resp, ex);
         }
@@ -54,20 +55,18 @@ public class AuthServlet extends HttpServlet {
     private void handleLogin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
             ObjectNode payload = objectMapper.readValue(req.getInputStream(), ObjectNode.class);
-            String login = payload.get("login").asText();
-            String password = payload.get("password").asText();
-            Optional<String> stored = STORE.getPassword(login);
-            if (stored.isEmpty()) {
-                throw new IllegalArgumentException("Пользователь не найден. Зарегистрируйтесь и выполните вход.");
-            }
-            if (!stored.get().equals(password)) {
-                throw new IllegalArgumentException("Неверный пароль");
-            }
-            String role = STORE.getRole(login).orElse("USER");
-            issueToken(resp, login, role);
+            String login = payload.path("login").asText("").trim();
+            String password = payload.path("password").asText("");
+            UserDTO user = userService.authenticate(login, password);
+            resp.setStatus(HttpServletResponse.SC_OK);
+            issueToken(resp, user.getLogin(), user.getRole());
         } catch (Exception ex) {
             exceptionResponder.handle(resp, ex);
         }
+    }
+
+    private void handleGuest(HttpServletResponse resp) throws IOException {
+        issueToken(resp, "Гость", "GUEST");
     }
 
     private void issueToken(HttpServletResponse resp, String login, String role) throws IOException {

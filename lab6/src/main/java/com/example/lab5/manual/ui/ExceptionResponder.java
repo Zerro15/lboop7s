@@ -1,5 +1,6 @@
 package com.example.lab5.manual.ui;
 
+import com.example.lab5.manual.exception.AuthenticationException;
 import com.example.lab5.manual.functions.exception.TableSizeLimitExceededException;
 import com.example.lab5.manual.functions.exception.UnknownFunctionException;
 import com.example.lab5.manual.functions.exception.ValidationException;
@@ -35,6 +36,12 @@ public class ExceptionResponder {
             message = exception.getMessage();
         } else if (exception instanceof IllegalArgumentException) {
             status = HttpServletResponse.SC_BAD_REQUEST;
+            message = exception.getMessage();
+        } else if (exception instanceof AuthenticationException) {
+            status = HttpServletResponse.SC_UNAUTHORIZED;
+            message = exception.getMessage();
+        } else if (exception instanceof IllegalStateException) {
+            status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
             message = exception.getMessage();
         }
 
