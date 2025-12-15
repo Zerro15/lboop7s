@@ -13,6 +13,7 @@ const buildValidationErrorResponse = (errors) =>
 router.post(
   '/register',
   [
+    body('username').trim().isLength({ min: 2 }).withMessage('Имя обязательно'),
     body('email').isEmail().withMessage('Некорректный email').normalizeEmail(),
     body('password')
       .isLength({ min: 6 })
@@ -24,15 +25,18 @@ router.post(
       return res.status(400).json({ message: 'Некорректные данные', errors: buildValidationErrorResponse(errors) });
     }
 
-    const { email, password } = req.body;
+    const { username, email, password } = req.body;
 
     try {
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
+      const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+      if (existingUser?.email === email) {
         return res.status(400).json({ message: 'Пользователь с таким email уже существует' });
       }
+      if (existingUser?.username === username) {
+        return res.status(400).json({ message: 'Пользователь с таким именем уже существует' });
+      }
 
-      const user = new User({ email, password });
+      const user = new User({ username, email, password });
       await user.save();
 
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });

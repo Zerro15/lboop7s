@@ -28,7 +28,7 @@ CLIENT_ORIGIN=http://localhost:3000
 ```
 
 ## Доступные маршруты
-- `POST /api/auth/register` — регистрация нового пользователя (email, password). Хеширует пароль и возвращает JWT.
+- `POST /api/auth/register` — регистрация нового пользователя (username, email, password). Хеширует пароль и возвращает JWT.
 - `POST /api/auth/login` — авторизация. Возвращает JWT при верных данных, общую ошибку при неверных.
 - `GET /api/users/me` — защищённый маршрут, доступен только с валидным JWT в заголовке `Authorization: Bearer <token>`.
 - `GET /health` — проверка работоспособности сервера.
