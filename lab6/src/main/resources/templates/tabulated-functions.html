@@ -452,7 +452,37 @@
         </div>
         <p>Задайте исходную функцию и получите ее табулированную производную. Окно открывается модально и не
             допускает дубликатов.</p>
-        <div class="status info">Интерфейс дифференцирования будет реализован далее.</div>
+        <div class="operations-grid">
+            <div class="operations-panel" id="diff-source-panel">
+                <h4>Исходная функция</h4>
+                <table class="table" aria-label="Исходная функция" id="diff-source-table">
+                    <thead><tr><th>X</th><th>Y</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="inline-actions">
+                    <button type="button" data-create-target="DIFF_SOURCE">Создать…</button>
+                    <label class="secondary" style="padding: 10px; cursor: pointer;">
+                        Загрузить…
+                        <input type="file" accept="application/json" data-load-target="DIFF_SOURCE" class="hidden">
+                    </label>
+                    <button type="button" class="secondary" data-save-target="DIFF_SOURCE">Сохранить…</button>
+                </div>
+                <div class="mini-note">Y редактируемые. Изменения применяются сразу.</div>
+            </div>
+
+            <div class="operations-panel" id="diff-result-panel">
+                <h4>Производная (результат)</h4>
+                <table class="table readonly" aria-label="Производная" id="diff-result-table">
+                    <thead><tr><th>X</th><th>Y</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="inline-actions">
+                    <button type="button" id="derive-button">Дифференцировать</button>
+                    <button type="button" class="secondary" data-save-target="DIFF_RESULT">Сохранить…</button>
+                </div>
+                <div class="mini-note">Результат нельзя редактировать, но можно сохранить как JSON.</div>
+            </div>
+        </div>
         <div class="actions">
             <button type="button" class="secondary" data-close-modal="diff-window">Закрыть окно</button>
         </div>
@@ -504,7 +534,20 @@
     let confirmHandler = null;
     let closeHandler = null;
     let creationTarget = null;
-    const operationsState = { A: null, B: null, RESULT: null };
+    const functionsState = {
+        A: null,
+        B: null,
+        RESULT: null,
+        DIFF_SOURCE: null,
+        DIFF_RESULT: null
+    };
+    const slotConfig = {
+        A: { tableId: 'operand-a-table', editable: true },
+        B: { tableId: 'operand-b-table', editable: true },
+        RESULT: { tableId: 'result-table', editable: false },
+        DIFF_SOURCE: { tableId: 'diff-source-table', editable: true },
+        DIFF_RESULT: { tableId: 'diff-result-table', editable: false }
+    };
 
     const modalManager = {
         openModals: new Map(),
@@ -701,9 +744,14 @@
         };
     }
 
-    function renderSlot(slot, tableId, editable) {
-        const data = operationsState[slot];
-        const table = document.getElementById(tableId);
+    function renderSlot(slot) {
+        const config = slotConfig[slot];
+        if (!config) {
+            showErrorModal('Неизвестная область для отображения.');
+            return;
+        }
+        const data = functionsState[slot];
+        const table = document.getElementById(config.tableId);
         const tbody = table.querySelector('tbody');
         tbody.innerHTML = '';
 
@@ -731,8 +779,8 @@
             yInput.type = 'number';
             yInput.step = 'any';
             yInput.value = data.yValues[i];
-            yInput.readOnly = !editable;
-            if (editable) {
+            yInput.readOnly = !config.editable;
+            if (config.editable) {
                 yInput.addEventListener('change', () => {
                     const newVal = Number(yInput.value);
                     if (Number.isNaN(newVal)) {
@@ -760,13 +808,17 @@
             showErrorModal('Количество точек должно совпадать и быть не меньше двух.');
             return;
         }
-        operationsState[slot] = {
+        functionsState[slot] = {
             name: payload.name || `Функция ${slot}`,
             xValues: payload.xValues.slice(),
             yValues: payload.yValues.slice(),
         };
-        renderSlot(slot, slot === 'RESULT' ? 'result-table' : `operand-${slot.toLowerCase()}-table`, slot !== 'RESULT');
-        showStatus(`Обновлена область ${slot}: ${operationsState[slot].name}.`, 'info');
+        if (slot === 'DIFF_SOURCE') {
+            functionsState.DIFF_RESULT = null;
+            renderSlot('DIFF_RESULT');
+        }
+        renderSlot(slot);
+        showStatus(`Обновлена область ${slot}: ${functionsState[slot].name}.`, 'info');
     }
 
     function showCreationChooser(target) {
@@ -782,6 +834,19 @@
                 modalManager.open('math-window');
             }
         });
+    }
+
+    function resolveWindowForTarget(target) {
+        if (!target) {
+            return null;
+        }
+        if (['A', 'B', 'RESULT'].includes(target)) {
+            return 'operations-window';
+        }
+        if (target.startsWith('DIFF')) {
+            return 'diff-window';
+        }
+        return null;
     }
 
     function bindFileLoading() {
@@ -810,7 +875,7 @@
         document.querySelectorAll('[data-save-target]').forEach((button) => {
             button.addEventListener('click', () => {
                 const slot = button.dataset.saveTarget;
-                const payload = operationsState[slot];
+                const payload = functionsState[slot];
                 if (!payload || !payload.xValues || payload.xValues.length === 0) {
                     showErrorModal('Нет данных для сохранения.');
                     return;
@@ -829,7 +894,7 @@
     }
 
     async function performOperation(operation) {
-        if (!operationsState.A || !operationsState.B) {
+        if (!functionsState.A || !functionsState.B) {
             showErrorModal('Задайте обе функции-операнды.');
             return;
         }
@@ -841,8 +906,8 @@
                 body: JSON.stringify({
                     operation,
                     factoryType: activeFactoryKey,
-                    left: operationsState.A,
-                    right: operationsState.B,
+                    left: functionsState.A,
+                    right: functionsState.B,
                 })
             });
             const data = await handleResponse(response);
@@ -850,6 +915,29 @@
             showStatus('Операция успешно выполнена.', 'success');
         } catch (e) {
             // ошибки выводятся модально
+        }
+    }
+
+    async function performDifferentiation() {
+        if (!functionsState.DIFF_SOURCE) {
+            showErrorModal('Загрузите или создайте исходную функцию.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/ui/api/tabulated-functions/differential', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    factoryType: activeFactoryKey,
+                    function: functionsState.DIFF_SOURCE
+                })
+            });
+            const data = await handleResponse(response);
+            applyPayload('DIFF_RESULT', data.result);
+            showStatus('Производная успешно получена.', 'success');
+        } catch (e) {
+            // отображено модально
         }
     }
 
@@ -897,11 +985,18 @@
         button.addEventListener('click', () => performOperation(button.dataset.operation));
     });
 
+    const deriveButton = document.getElementById('derive-button');
+    if (deriveButton) {
+        deriveButton.addEventListener('click', () => performDifferentiation());
+    }
+
     bindFileLoading();
     bindSaving();
-    renderSlot('A', 'operand-a-table', true);
-    renderSlot('B', 'operand-b-table', true);
-    renderSlot('RESULT', 'result-table', false);
+    renderSlot('A');
+    renderSlot('B');
+    renderSlot('RESULT');
+    renderSlot('DIFF_SOURCE');
+    renderSlot('DIFF_RESULT');
 
     document.getElementById('arrays-form').addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -942,8 +1037,11 @@
             const payload = dtoToPayload(data);
             if (creationTarget && payload) {
                 applyPayload(creationTarget, payload);
+                const targetWindow = resolveWindowForTarget(creationTarget);
                 creationTarget = null;
-                modalManager.open('operations-window');
+                if (targetWindow) {
+                    modalManager.open(targetWindow);
+                }
             }
             modalManager.close('arrays-window');
         } catch (e) {
@@ -991,8 +1089,11 @@
             const mapped = dtoToPayload(data);
             if (creationTarget && mapped) {
                 applyPayload(creationTarget, mapped);
+                const targetWindow = resolveWindowForTarget(creationTarget);
                 creationTarget = null;
-                modalManager.open('operations-window');
+                if (targetWindow) {
+                    modalManager.open(targetWindow);
+                }
             }
             modalManager.close('math-window');
         } catch (e) {
