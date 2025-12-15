@@ -21,8 +21,8 @@ public class TabulatedFunctionFactoryHolder {
     private TabulatedFunctionFactory activeFactory;
 
     public TabulatedFunctionFactoryHolder() {
-        register("array", "ArrayTabulatedFunctionFactory", "Хранение точек в массиве", ArrayTabulatedFunctionFactory::new);
-        register("linked_list", "LinkedListTabulatedFunctionFactory", "Хранение точек в связном списке", LinkedListTabulatedFunctionFactory::new);
+        register("array", "Использовать массив (по умолчанию)", "Табуляция точек с хранением в массиве", ArrayTabulatedFunctionFactory::new);
+        register("linked_list", "Использовать связный список", "Табуляция точек с хранением в связном списке", LinkedListTabulatedFunctionFactory::new);
         activate("array");
     }
 

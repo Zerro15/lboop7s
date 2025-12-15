@@ -327,24 +327,27 @@
 
     <div class="modal window hidden" data-modal="factory-window">
         <div class="modal-header">
-            <h3>Настройка фабрики табулированных функций</h3>
+            <h3>Настройки</h3>
             <button type="button" class="close-btn" data-close-modal="factory-window">×</button>
         </div>
-        <p>Выберите единственную активную фабрику. При повторном открытии окна используется существующий экземпляр.</p>
+        <p>Текущая фабрика применяется ко всем операциям создания и табуляции функций.</p>
         <form id="factory-form">
-            <div class="factory-list">
-                <label class="factory-option" th:each="factory : ${factoryTypes}" th:attr="data-factory-key=${factory.key}">
-                    <input type="radio" name="factoryKey" th:value="${factory.key}" th:checked="${factory.active}">
-                    <div class="factory-summary">
-                        <div class="factory-title" th:text="${factory.label}"></div>
-                        <div class="factory-description" th:text="${factory.description}"></div>
-                        <span class="factory-badge" th:classappend="${factory.active} ? '' : ' hidden'">Текущая</span>
-                    </div>
-                </label>
-            </div>
+            <fieldset>
+                <legend><strong>Фабрика функций</strong></legend>
+                <div class="factory-list">
+                    <label class="factory-option" th:each="factory : ${factoryTypes}" th:attr="data-factory-key=${factory.key}">
+                        <input type="radio" name="factoryKey" th:value="${factory.key}" th:checked="${factory.active}">
+                        <div class="factory-summary">
+                            <div class="factory-title" th:text="${factory.label}"></div>
+                            <div class="factory-description" th:text="${factory.description}"></div>
+                            <span class="factory-badge" th:classappend="${factory.active} ? '' : ' hidden'">Текущая</span>
+                        </div>
+                    </label>
+                </div>
+            </fieldset>
             <div class="actions">
-                <button type="submit">Сделать активной</button>
-                <button type="button" class="secondary" data-close-modal="factory-window">Закрыть окно</button>
+                <button type="submit">Сохранить</button>
+                <button type="button" class="secondary" id="cancel-factory-window">Отмена</button>
             </div>
         </form>
     </div>
@@ -625,6 +628,10 @@
     document.getElementById('open-factory-window').addEventListener('click', () => {
         syncFactoryDisplay();
         modalManager.open('factory-window');
+    });
+    document.getElementById('cancel-factory-window').addEventListener('click', () => {
+        syncFactoryDisplay();
+        modalManager.close('factory-window');
     });
     document.getElementById('open-operations-window').addEventListener('click', () => modalManager.open('operations-window'));
     document.getElementById('open-diff-window').addEventListener('click', () => modalManager.open('diff-window'));
