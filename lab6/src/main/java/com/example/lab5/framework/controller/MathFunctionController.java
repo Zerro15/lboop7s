@@ -1,12 +1,6 @@
 package com.example.lab5.framework.controller;
 
-import com.example.lab5.framework.dto.CompositeCreateRequest;
-import com.example.lab5.framework.dto.CompositeDeleteRequest;
-import com.example.lab5.framework.dto.CompositeRenameRequest;
-import com.example.lab5.framework.dto.MathFunctionDTO;
-import com.example.lab5.framework.dto.MathFunctionGroupsResponse;
-import com.example.lab5.framework.dto.PreviewRequest;
-import com.example.lab5.framework.dto.PreviewResponse;
+import com.example.lab5.framework.dto.*;
 import com.example.lab5.framework.service.MathFunctionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,8 +13,12 @@ import java.util.Map;
 @RequestMapping("/api/v1/math-functions")
 public class MathFunctionController {
 
+    private final MathFunctionService mathFunctionService;
+
     @Autowired
-    private MathFunctionService mathFunctionService;
+    public MathFunctionController(MathFunctionService mathFunctionService) {
+        this.mathFunctionService = mathFunctionService;
+    }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
@@ -54,18 +52,25 @@ public class MathFunctionController {
     @PostMapping("/composite")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public MathFunctionGroupsResponse createComposite(@RequestBody CompositeCreateRequest request) {
-        mathFunctionService.createComposite(request.getName(), request.getOuterKey(), request.getInnerKey());
+        mathFunctionService.createComposite(
+                request.getName(),
+                request.getOuterKey(),
+                request.getInnerKey()
+        );
         return mathFunctionService.describeGroups();
     }
 
     @PostMapping("/composite/rename")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public MathFunctionGroupsResponse renameComposite(@RequestBody CompositeRenameRequest request) {
-        mathFunctionService.renameComposite(request.getOldName(), request.getNewName());
+        mathFunctionService.renameComposite(
+                request.getOldName(),
+                request.getNewName()
+        );
         return mathFunctionService.describeGroups();
     }
 
-    @PostMapping("/composite/delete")
+    @DeleteMapping("/composite")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public MathFunctionGroupsResponse deleteComposite(@RequestBody CompositeDeleteRequest request) {
         mathFunctionService.deleteComposite(request.getName());

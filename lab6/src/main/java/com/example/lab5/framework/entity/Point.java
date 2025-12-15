@@ -10,7 +10,7 @@ public class Point {
     private Long id;
 
     @Column(name = "x_value", nullable = false)
-    private Double xValue;
+    private Double xValue;  // Поле называется xValue (маленькая x)
 
     @Column(name = "y_value", nullable = false)
     private Double yValue;

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -197,8 +198,10 @@ public class FrameworkPerformanceComparisonService {
         private double pointCreateTime;
         private double pointReadTime;
         private double complexQueryTime;
+        private Date testDate = new Date();
+        private int testDataSize = 100; // Примерное количество записей в базе
 
-        // Getters and Setters
+        // Геттеры и сеттеры
         public double getUserCreateTime() {
             return userCreateTime;
         }
@@ -271,7 +274,226 @@ public class FrameworkPerformanceComparisonService {
             this.complexQueryTime = complexQueryTime;
         }
 
-
+        public Date getTestDate() {
+            return testDate;
         }
 
+        public void setTestDate(Date testDate) {
+            this.testDate = testDate;
+        }
+
+        public int getTestDataSize() {
+            return testDataSize;
+        }
+
+        public void setTestDataSize(int testDataSize) {
+            this.testDataSize = testDataSize;
+        }
+
+        // ДОБАВЛЕННЫЕ МЕТОДЫ:
+
+        /**
+         * Форматирует результаты в виде Markdown таблицы
+         */
+        public String toMarkdownTable() {
+            double totalTime = calculateTotalTime();
+
+            return String.format(
+                    "# Результаты тестирования производительности Spring Data JPA\n\n" +
+                            "**Дата теста:** %s\n" +
+                            "**Размер тестовых данных:** ~%d записей\n\n" +
+                            "## Время выполнения операций (мс)\n" +
+                            "| Операция | Время (мс) | Описание |\n" +
+                            "|----------|------------|----------|\n" +
+                            "| Создание пользователя | %.3f | Среднее время создания одного пользователя |\n" +
+                            "| Чтение пользователя | %.3f | Среднее время чтения одного пользователя |\n" +
+                            "| Обновление пользователя | %.3f | Среднее время обновления одного пользователя |\n" +
+                            "| Удаление пользователя | %.3f | Среднее время удаления одного пользователя |\n" +
+                            "| Создание функции | %.3f | Среднее время создания одной функции |\n" +
+                            "| Чтение функции | %.3f | Среднее время чтения одной функции |\n" +
+                            "| Создание точек | %.3f | Среднее время создания серии точек |\n" +
+                            "| Чтение точек | %.3f | Среднее время чтения точек функции |\n" +
+                            "| Сложные запросы | %.3f | Время выполнения сложных связанных запросов |\n" +
+                            "| **Общее время** | **%.3f** | **Суммарное время всех операций** |\n\n" +
+                            "## Сводка производительности\n" +
+                            "- **Всего операций:** %d\n" +
+                            "- **Общее время:** %.3f мс\n" +
+                            "- **Среднее время операции:** %.3f мс\n",
+
+                    testDate,
+                    testDataSize,
+                    userCreateTime,
+                    userReadTime,
+                    userUpdateTime,
+                    userDeleteTime,
+                    functionCreateTime,
+                    functionReadTime,
+                    pointCreateTime,
+                    pointReadTime,
+                    complexQueryTime,
+                    totalTime,
+                    getOperationCount(),
+                    totalTime,
+                    totalTime / getOperationCount()
+            );
+        }
+
+        /**
+         * Форматирует результаты в CSV формат
+         */
+        public String toCSV() {
+            double totalTime = calculateTotalTime();
+
+            return String.format(
+                    "Дата теста,%s\n" +
+                            "Размер тестовых данных,%d\n" +
+                            "Создание пользователя (мс),%.3f\n" +
+                            "Чтение пользователя (мс),%.3f\n" +
+                            "Обновление пользователя (мс),%.3f\n" +
+                            "Удаление пользователя (мс),%.3f\n" +
+                            "Создание функции (мс),%.3f\n" +
+                            "Чтение функции (мс),%.3f\n" +
+                            "Создание точек (мс),%.3f\n" +
+                            "Чтение точек (мс),%.3f\n" +
+                            "Сложные запросы (мс),%.3f\n" +
+                            "Общее время (мс),%.3f\n" +
+                            "Всего операций,%d\n" +
+                            "Среднее время операции (мс),%.3f",
+
+                    testDate,
+                    testDataSize,
+                    userCreateTime,
+                    userReadTime,
+                    userUpdateTime,
+                    userDeleteTime,
+                    functionCreateTime,
+                    functionReadTime,
+                    pointCreateTime,
+                    pointReadTime,
+                    complexQueryTime,
+                    totalTime,
+                    getOperationCount(),
+                    totalTime / getOperationCount()
+            );
+        }
+
+        /**
+         * Форматирует результаты в краткую Markdown таблицу (для сравнения)
+         */
+        public String toShortMarkdownTable() {
+            double totalTime = calculateTotalTime();
+
+            return String.format(
+                    "# Краткие результаты тестирования\n\n" +
+                            "**Дата:** %s  \n" +
+                            "**Размер данных:** ~%d записей\n\n" +
+                            "| Метрика | Значение |\n" +
+                            "|---------|----------|\n" +
+                            "| CRUD пользователей (мс) | %.3f |\n" +
+                            "| CRUD функций (мс) | %.3f |\n" +
+                            "| CRUD точек (мс) | %.3f |\n" +
+                            "| Сложные запросы (мс) | %.3f |\n" +
+                            "| **Общее время (мс)** | **%.3f** |\n" +
+                            "| Операций выполнено | %d |\n" +
+                            "| Среднее время/операция (мс) | %.3f |",
+
+                    testDate,
+                    testDataSize,
+                    userCreateTime + userReadTime + userUpdateTime + userDeleteTime,
+                    functionCreateTime + functionReadTime,
+                    pointCreateTime + pointReadTime,
+                    complexQueryTime,
+                    totalTime,
+                    getOperationCount(),
+                    totalTime / getOperationCount()
+            );
+        }
+
+        /**
+         * Рассчитывает общее время всех операций
+         */
+        private double calculateTotalTime() {
+            return userCreateTime + userReadTime + userUpdateTime + userDeleteTime +
+                    functionCreateTime + functionReadTime +
+                    pointCreateTime + pointReadTime +
+                    complexQueryTime;
+        }
+
+        /**
+         * Возвращает общее количество выполненных операций
+         */
+        private int getOperationCount() {
+            // Каждая операция измерялась по одному разу
+            return 9; // userCreate, userRead, userUpdate, userDelete,
+            // functionCreate, functionRead, pointCreate, pointRead, complexQuery
+        }
+
+        /**
+         * Генерирует JSON представление результатов
+         */
+        public String toJson() {
+            double totalTime = calculateTotalTime();
+
+            return String.format(
+                    "{\n" +
+                            "  \"testDate\": \"%s\",\n" +
+                            "  \"testDataSize\": %d,\n" +
+                            "  \"operations\": {\n" +
+                            "    \"userCreate\": %.3f,\n" +
+                            "    \"userRead\": %.3f,\n" +
+                            "    \"userUpdate\": %.3f,\n" +
+                            "    \"userDelete\": %.3f,\n" +
+                            "    \"functionCreate\": %.3f,\n" +
+                            "    \"functionRead\": %.3f,\n" +
+                            "    \"pointCreate\": %.3f,\n" +
+                            "    \"pointRead\": %.3f,\n" +
+                            "    \"complexQuery\": %.3f\n" +
+                            "  },\n" +
+                            "  \"summary\": {\n" +
+                            "    \"totalTime\": %.3f,\n" +
+                            "    \"operationCount\": %d,\n" +
+                            "    \"averageTimePerOperation\": %.3f\n" +
+                            "  }\n" +
+                            "}",
+
+                    testDate,
+                    testDataSize,
+                    userCreateTime,
+                    userReadTime,
+                    userUpdateTime,
+                    userDeleteTime,
+                    functionCreateTime,
+                    functionReadTime,
+                    pointCreateTime,
+                    pointReadTime,
+                    complexQueryTime,
+                    totalTime,
+                    getOperationCount(),
+                    totalTime / getOperationCount()
+            );
+        }
+
+        @Override
+        public String toString() {
+            return String.format(
+                    "PerformanceResults[\n" +
+                            "  testDate=%s,\n" +
+                            "  userCreateTime=%.3fms,\n" +
+                            "  userReadTime=%.3fms,\n" +
+                            "  userUpdateTime=%.3fms,\n" +
+                            "  userDeleteTime=%.3fms,\n" +
+                            "  functionCreateTime=%.3fms,\n" +
+                            "  functionReadTime=%.3fms,\n" +
+                            "  pointCreateTime=%.3fms,\n" +
+                            "  pointReadTime=%.3fms,\n" +
+                            "  complexQueryTime=%.3fms\n" +
+                            "]",
+                    testDate,
+                    userCreateTime, userReadTime, userUpdateTime, userDeleteTime,
+                    functionCreateTime, functionReadTime,
+                    pointCreateTime, pointReadTime,
+                    complexQueryTime
+            );
+        }
     }
+}
