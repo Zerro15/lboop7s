@@ -22,9 +22,9 @@ public class MathFunctionController {
         return mathFunctionService.getAllMathFunctions();
     }
 
-    @GetMapping("/map")
+    @GetMapping("/registry")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    public Map<String, MathFunctionDTO> getFunctionMap() {
+    public Map<String, MathFunctionDTO> getFunctionRegistry() {
         return mathFunctionService.getFunctionMap();
     }
 
