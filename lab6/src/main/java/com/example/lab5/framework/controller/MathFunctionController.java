@@ -1,6 +1,15 @@
 package com.example.lab5.framework.controller;
 
-import com.example.lab5.framework.dto.*;
+// Удалите import com.example.lab5.framework.dto.*;
+// Добавьте явные импорты:
+
+import com.example.lab5.framework.dto.CompositeCreateRequest;
+import com.example.lab5.framework.dto.CompositeDeleteRequest;
+import com.example.lab5.framework.dto.CompositeRenameRequest;
+import com.example.lab5.framework.dto.MathFunctionDTO;
+import com.example.lab5.framework.dto.MathFunctionGroupsResponse;
+import com.example.lab5.framework.dto.PreviewRequest;
+import com.example.lab5.framework.dto.PreviewResponse;
 import com.example.lab5.framework.service.MathFunctionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
