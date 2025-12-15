@@ -19,4 +19,6 @@ public class FunctionDTO {
     private Double rightBound;
     private Integer pointsCount;
     private List<TabulatedPointDTO> points;
+    private boolean insertable;
+    private boolean removable;
 }

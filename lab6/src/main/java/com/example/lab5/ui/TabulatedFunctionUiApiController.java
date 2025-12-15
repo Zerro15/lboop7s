@@ -5,8 +5,11 @@ import com.example.lab5.framework.dto.CreateFromMathRequest;
 import com.example.lab5.framework.dto.EvaluateTabulatedRequest;
 import com.example.lab5.framework.dto.FunctionCreationResult;
 import com.example.lab5.framework.dto.FunctionDTO;
+import com.example.lab5.framework.dto.InsertPointRequest;
+import com.example.lab5.framework.dto.RemovePointRequest;
 import com.example.lab5.framework.entity.Function;
 import com.example.lab5.framework.service.FunctionService;
+import com.example.lab5.framework.service.TabulatedFunctionMutationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,10 +22,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class TabulatedFunctionUiApiController {
 
     private final FunctionService functionService;
+    private final TabulatedFunctionMutationService mutationService;
     private final UiFunctionMapper mapper = new UiFunctionMapper();
 
-    public TabulatedFunctionUiApiController(FunctionService functionService) {
+    public TabulatedFunctionUiApiController(FunctionService functionService,
+                                            TabulatedFunctionMutationService mutationService) {
         this.functionService = functionService;
+        this.mutationService = mutationService;
     }
 
     @PostMapping("/arrays")
@@ -57,5 +63,19 @@ public class TabulatedFunctionUiApiController {
     @PostMapping("/apply")
     public ResponseEntity<?> evaluateTabulated(@RequestBody EvaluateTabulatedRequest request) {
         return ResponseEntity.ok(functionService.evaluateTabulated(request));
+    }
+
+    @PostMapping("/insert")
+    public ResponseEntity<?> insertPoint(@RequestBody InsertPointRequest request) {
+        return ResponseEntity.ok(
+                mutationService.insert(request.getFunction(), request.getX(), request.getY(), request.getFactoryType())
+        );
+    }
+
+    @PostMapping("/remove")
+    public ResponseEntity<?> removePoint(@RequestBody RemovePointRequest request) {
+        return ResponseEntity.ok(
+                mutationService.remove(request.getFunction(), request.getIndex(), request.getFactoryType())
+        );
     }
 }

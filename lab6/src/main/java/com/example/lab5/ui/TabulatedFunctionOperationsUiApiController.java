@@ -4,6 +4,8 @@ import com.example.lab5.framework.dto.OperationRequest;
 import com.example.lab5.framework.dto.OperationResponse;
 import com.example.lab5.framework.dto.TabulatedFunctionPayload;
 import com.example.lab5.framework.service.TabulatedFunctionFactoryHolder;
+import com.example.lab5.functions.Insertable;
+import com.example.lab5.functions.Removable;
 import com.example.lab5.functions.TabulatedFunction;
 import com.example.lab5.functions.TabulatedFunctionFactory;
 import com.example.lab5.functions.TabulatedFunctionOperationService;
@@ -53,6 +55,9 @@ public class TabulatedFunctionOperationsUiApiController {
         payload.setName("Результат");
         payload.setXValues(result.getXValues());
         payload.setYValues(result.getYValues());
+        payload.setFactoryType(factoryHolder.resolveKey(request.getFactoryType()));
+        payload.setInsertable(result instanceof Insertable);
+        payload.setRemovable(result instanceof Removable);
 
         return ResponseEntity.ok(new OperationResponse(payload));
     }

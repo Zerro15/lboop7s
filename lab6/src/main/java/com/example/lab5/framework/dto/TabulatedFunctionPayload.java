@@ -7,4 +7,7 @@ public class TabulatedFunctionPayload {
     private String name;
     private double[] xValues;
     private double[] yValues;
+    private String factoryType;
+    private boolean insertable;
+    private boolean removable;
 }

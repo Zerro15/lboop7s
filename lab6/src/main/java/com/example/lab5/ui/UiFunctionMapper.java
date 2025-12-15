@@ -20,6 +20,8 @@ public class UiFunctionMapper {
         dto.setLeftBound(function.getLeftBound());
         dto.setRightBound(function.getRightBound());
         dto.setPointsCount(function.getPointsCount());
+        dto.setInsertable(true);
+        dto.setRemovable(true);
 
         if (xValues != null && yValues != null && xValues.length == yValues.length) {
             java.util.List<com.example.lab5.framework.dto.TabulatedPointDTO> points = new java.util.ArrayList<>();

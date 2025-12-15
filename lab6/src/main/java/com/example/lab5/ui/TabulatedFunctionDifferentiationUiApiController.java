@@ -4,6 +4,8 @@ import com.example.lab5.framework.dto.DifferentiationRequest;
 import com.example.lab5.framework.dto.DifferentiationResponse;
 import com.example.lab5.framework.dto.TabulatedFunctionPayload;
 import com.example.lab5.framework.service.TabulatedFunctionFactoryHolder;
+import com.example.lab5.functions.Insertable;
+import com.example.lab5.functions.Removable;
 import com.example.lab5.functions.TabulatedDifferentialOperator;
 import com.example.lab5.functions.TabulatedFunction;
 import com.example.lab5.functions.TabulatedFunctionFactory;
@@ -35,6 +37,9 @@ public class TabulatedFunctionDifferentiationUiApiController {
         payload.setName("Производная");
         payload.setXValues(derivative.getXValues());
         payload.setYValues(derivative.getYValues());
+        payload.setFactoryType(factoryHolder.resolveKey(request.getFactoryType()));
+        payload.setInsertable(derivative instanceof Insertable);
+        payload.setRemovable(derivative instanceof Removable);
 
         return ResponseEntity.ok(new DifferentiationResponse(payload));
     }

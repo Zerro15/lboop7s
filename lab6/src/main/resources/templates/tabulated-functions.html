@@ -304,6 +304,9 @@
             border-color: #e5e7eb;
             cursor: default;
         }
+        .table tr.selected td {
+            background: #e5f1ff;
+        }
         .mini-note {
             color: #6b7280;
             font-size: 13px;
@@ -530,6 +533,9 @@
                         <input type="file" accept="application/json,text/csv" data-load-target="A" class="hidden">
                     </label>
                     <div class="spacer"></div>
+                    <button type="button" class="secondary hidden" data-insert-target="A"><span class="icon">📌</span>Вставить</button>
+                    <button type="button" class="secondary hidden" data-remove-target="A"><span class="icon">🗑️</span>Удалить</button>
+                    <div class="spacer"></div>
                     <button type="button" class="secondary" data-save-target="A"><span class="icon">💾</span>Сохранить…</button>
                     <button type="button" class="secondary" data-clear-target="A"><span class="icon">🧹</span>Очистить</button>
                 </div>
@@ -549,6 +555,9 @@
                         <span class="icon">📂</span>Загрузить…
                         <input type="file" accept="application/json,text/csv" data-load-target="B" class="hidden">
                     </label>
+                    <div class="spacer"></div>
+                    <button type="button" class="secondary hidden" data-insert-target="B"><span class="icon">📌</span>Вставить</button>
+                    <button type="button" class="secondary hidden" data-remove-target="B"><span class="icon">🗑️</span>Удалить</button>
                     <div class="spacer"></div>
                     <button type="button" class="secondary" data-save-target="B"><span class="icon">💾</span>Сохранить…</button>
                     <button type="button" class="secondary" data-clear-target="B"><span class="icon">🧹</span>Очистить</button>
@@ -599,6 +608,9 @@
                         <span class="icon">📂</span>Загрузить…
                         <input type="file" accept="application/json,text/csv" data-load-target="EXPLORER" class="hidden">
                     </label>
+                    <div class="spacer"></div>
+                    <button type="button" class="secondary hidden" data-insert-target="EXPLORER"><span class="icon">📌</span>Вставить</button>
+                    <button type="button" class="secondary hidden" data-remove-target="EXPLORER"><span class="icon">🗑️</span>Удалить</button>
                     <div class="spacer"></div>
                     <button type="button" class="secondary" data-save-target="EXPLORER"><span class="icon">💾</span>Сохранить JSON…</button>
                     <button type="button" class="secondary" data-save-target="EXPLORER" data-save-format="csv"><span class="icon">📑</span>Сохранить CSV…</button>
@@ -653,6 +665,9 @@
                         <input type="file" accept="application/json,text/csv" data-load-target="DIFF_SOURCE" class="hidden">
                     </label>
                     <div class="spacer"></div>
+                    <button type="button" class="secondary hidden" data-insert-target="DIFF_SOURCE"><span class="icon">📌</span>Вставить</button>
+                    <button type="button" class="secondary hidden" data-remove-target="DIFF_SOURCE"><span class="icon">🗑️</span>Удалить</button>
+                    <div class="spacer"></div>
                     <button type="button" class="secondary" data-save-target="DIFF_SOURCE"><span class="icon">💾</span>Сохранить…</button>
                     <button type="button" class="secondary" data-clear-target="DIFF_SOURCE"><span class="icon">🧹</span>Очистить</button>
                 </div>
@@ -692,6 +707,32 @@
             <button type="button" class="secondary" data-close-modal="about-window">Закрыть окно</button>
         </div>
     </div>
+
+    <div class="modal window hidden" data-modal="insert-window">
+        <div class="modal-header">
+            <h3>Вставка точки</h3>
+            <button type="button" class="close-btn" data-close-modal="insert-window">×</button>
+        </div>
+        <p>Добавьте новую точку в выбранную функцию. X должен сохранять строгий порядок возрастания.</p>
+        <form id="insert-form" class="stacked-form">
+            <div>
+                <label for="insert-slot">Область</label>
+                <input type="text" id="insert-slot" readonly>
+            </div>
+            <div>
+                <label for="insert-x">Значение X</label>
+                <input type="number" step="any" id="insert-x" required>
+            </div>
+            <div>
+                <label for="insert-y">Значение Y</label>
+                <input type="number" step="any" id="insert-y" required>
+            </div>
+            <div class="actions">
+                <button type="submit">Вставить точку</button>
+                <button type="button" class="secondary" data-close-modal="insert-window">Отмена</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <div id="modal-overlay" class="overlay hidden" role="dialog" aria-modal="true">
@@ -727,7 +768,11 @@
     const MAX_POINTS = 1000;
     const explorerXInput = document.getElementById('explorer-x');
     const explorerYOutput = document.getElementById('explorer-y');
+    const insertSlotInput = document.getElementById('insert-slot');
+    const insertXInput = document.getElementById('insert-x');
+    const insertYInput = document.getElementById('insert-y');
     let explorerChart = null;
+    let insertTarget = null;
 
     const zoomPlugin = window['chartjs-plugin-zoom'] || window.ChartZoom;
     if (typeof Chart !== 'undefined' && Chart.register && zoomPlugin) {
@@ -749,6 +794,12 @@
         B: false,
         DIFF_SOURCE: false,
         EXPLORER: false,
+    };
+    const selectedRows = {
+        A: null,
+        B: null,
+        DIFF_SOURCE: null,
+        EXPLORER: null,
     };
     const recentFiles = [];
     const slotConfig = {
@@ -910,6 +961,33 @@
         labelEl.textContent = data && data.name ? data.name : '—';
     }
 
+    function getSlotTitle(slot) {
+        const titles = {
+            A: 'Операнд A',
+            B: 'Операнд B',
+            DIFF_SOURCE: 'Исходная функция',
+            EXPLORER: 'Исследуемая функция',
+        };
+        return titles[slot] || slot;
+    }
+
+    function syncMutationControls(slot) {
+        const data = functionsState[slot];
+        const insertBtn = document.querySelector(`[data-insert-target="${slot}"]`);
+        const removeBtn = document.querySelector(`[data-remove-target="${slot}"]`);
+        const insertable = Boolean(data && data.insertable);
+        const removable = Boolean(data && data.removable);
+
+        if (insertBtn) {
+            insertBtn.classList.toggle('hidden', !insertable);
+            insertBtn.disabled = !insertable;
+        }
+        if (removeBtn) {
+            removeBtn.classList.toggle('hidden', !removable);
+            removeBtn.disabled = !removable || selectedRows[slot] === null || selectedRows[slot] === undefined;
+        }
+    }
+
     function renderRecentFiles() {
         const list = document.getElementById('recent-files');
         if (!list) { return; }
@@ -1010,7 +1088,7 @@
             xValues.push(x);
             yValues.push(y);
         });
-        return { name: nameHint, xValues, yValues };
+        return { name: nameHint, xValues, yValues, factoryType: activeFactoryKey, insertable: true, removable: true };
     }
 
     function stringifyCsv(payload) {
@@ -1113,6 +1191,9 @@
             name: dto.name || 'Функция',
             xValues: dto.points.map((p) => p.x),
             yValues: dto.points.map((p) => p.y),
+            factoryType: dto.factoryType,
+            insertable: dto.insertable,
+            removable: dto.removable,
         };
     }
 
@@ -1173,6 +1254,7 @@
             cell.textContent = 'Нет данных';
             row.appendChild(cell);
             tbody.appendChild(row);
+            syncMutationControls(slot);
             return;
         }
 
@@ -1199,7 +1281,21 @@
             row.appendChild(xCell);
             row.appendChild(yCell);
             tbody.appendChild(row);
+
+            if (Object.prototype.hasOwnProperty.call(selectedRows, slot)) {
+                if (selectedRows[slot] === i) {
+                    row.classList.add('selected');
+                }
+                row.addEventListener('click', () => {
+                    selectedRows[slot] = i;
+                    Array.from(tbody.children).forEach((r, idx) => {
+                        r.classList.toggle('selected', idx === i);
+                    });
+                    syncMutationControls(slot);
+                });
+            }
         }
+        syncMutationControls(slot);
     }
 
     function applyPayload(slot, payload, displayName) {
@@ -1215,8 +1311,14 @@
             name: displayName || payload.name || `Функция ${slot}`,
             xValues: payload.xValues.slice(),
             yValues: payload.yValues.slice(),
+            factoryType: payload.factoryType || activeFactoryKey,
+            insertable: Boolean(payload.insertable),
+            removable: Boolean(payload.removable),
         };
         setDirty(slot, false);
+        if (Object.prototype.hasOwnProperty.call(selectedRows, slot)) {
+            selectedRows[slot] = null;
+        }
         if (slot === 'DIFF_SOURCE') {
             functionsState.DIFF_RESULT = null;
             renderSlot('DIFF_RESULT');
@@ -1225,16 +1327,21 @@
         if (slot === 'EXPLORER') {
             updateExplorerChart();
         }
+        syncMutationControls(slot);
         showStatus(`Обновлена область ${slot}: ${functionsState[slot].name}.`, 'info');
     }
 
     function clearSlot(slot) {
         functionsState[slot] = null;
         setDirty(slot, false);
+        if (Object.prototype.hasOwnProperty.call(selectedRows, slot)) {
+            selectedRows[slot] = null;
+        }
         renderSlot(slot);
         if (slot === 'EXPLORER') {
             updateExplorerChart();
         }
+        syncMutationControls(slot);
         showStatus(`Область ${slot} очищена.`, 'info');
     }
 
@@ -1355,6 +1462,126 @@
                     onConfirm: () => clearSlot(slot),
                     closeText: 'Отмена'
                 });
+            });
+        });
+    }
+
+    function bindMutations() {
+        document.querySelectorAll('[data-insert-target]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const slot = button.dataset.insertTarget;
+                const data = functionsState[slot];
+                if (!data) {
+                    showErrorModal('Сначала создайте или загрузите функцию.');
+                    return;
+                }
+                if (!data.insertable) {
+                    showErrorModal('Эта функция не поддерживает вставку точек.');
+                    return;
+                }
+                insertTarget = slot;
+                insertSlotInput.value = getSlotTitle(slot);
+                insertXInput.value = '';
+                insertYInput.value = '';
+                modalManager.open('insert-window');
+            });
+        });
+
+        document.querySelectorAll('[data-remove-target]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const slot = button.dataset.removeTarget;
+                const data = functionsState[slot];
+                if (!data) {
+                    showErrorModal('Нет данных для удаления.');
+                    return;
+                }
+                if (!data.removable) {
+                    showErrorModal('Эта функция не поддерживает удаление точек.');
+                    return;
+                }
+                const index = selectedRows[slot];
+                if (index === null || index === undefined) {
+                    showErrorModal('Выберите строку для удаления.');
+                    return;
+                }
+                showModal(`Удалить точку №${index + 1}?`, {
+                    confirmText: 'Удалить',
+                    onConfirm: async () => {
+                        try {
+                            setLoading(true, 'Удаление точки…');
+                            const response = await fetch('/ui/api/tabulated-functions/remove', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    function: data,
+                                    index,
+                                    factoryType: data.factoryType || activeFactoryKey,
+                                }),
+                            });
+                            const updated = await handleResponse(response);
+                            applyPayload(slot, updated, updated.name || data.name);
+                            setDirty(slot, true);
+                            if (Object.prototype.hasOwnProperty.call(selectedRows, slot)) {
+                                selectedRows[slot] = null;
+                            }
+                        } catch (e) {
+                            // Ошибка уже показана
+                        } finally {
+                            setLoading(false);
+                        }
+                    },
+                    closeText: 'Отмена',
+                });
+            });
+        });
+
+        const insertForm = document.getElementById('insert-form');
+        insertForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!insertTarget) {
+                modalManager.close('insert-window');
+                return;
+            }
+            const data = functionsState[insertTarget];
+            if (!data || !data.insertable) {
+                showErrorModal('Эта функция недоступна для вставки.');
+                return;
+            }
+
+            const xValue = Number(insertXInput.value);
+            const yValue = Number(insertYInput.value);
+            if (!isValidNumberInput(xValue) || !isValidNumberInput(yValue)) {
+                showErrorModal('Введите числовые значения X и Y.');
+                return;
+            }
+
+            try {
+                setLoading(true, 'Вставка точки…');
+                const response = await fetch('/ui/api/tabulated-functions/insert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        function: data,
+                        x: xValue,
+                        y: yValue,
+                        factoryType: data.factoryType || activeFactoryKey,
+                    }),
+                });
+                const updated = await handleResponse(response);
+                applyPayload(insertTarget, updated, updated.name || data.name);
+                setDirty(insertTarget, true);
+                modalManager.close('insert-window');
+                insertTarget = null;
+            } catch (e) {
+                // Ошибка уже показана
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        document.querySelectorAll('[data-close-modal="insert-window"]').forEach((button) => {
+            button.addEventListener('click', () => {
+                insertTarget = null;
             });
         });
     }
@@ -1513,6 +1740,7 @@
     bindFileLoading();
     bindSaving();
     bindClearing();
+    bindMutations();
     renderRecentFiles();
     renderSlot('A');
     renderSlot('B');

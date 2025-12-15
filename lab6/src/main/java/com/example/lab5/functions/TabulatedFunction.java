@@ -1,8 +1,8 @@
 package com.example.lab5.functions;
 
-public class TabulatedFunction {
-    private final double[] xValues;
-    private final double[] yValues;
+public class TabulatedFunction implements Insertable, Removable {
+    private double[] xValues;
+    private double[] yValues;
 
     public TabulatedFunction(double[] xValues, double[] yValues) {
         if (xValues == null || yValues == null) {
@@ -44,6 +44,50 @@ public class TabulatedFunction {
         yValues[index] = value;
     }
 
+    @Override
+    public void insert(double x, double y) {
+        int position = findInsertPosition(x);
+        if (position < xValues.length && xValues[position] == x) {
+            throw new IllegalArgumentException("Значение X уже существует и должно быть уникальным");
+        }
+
+        double[] newX = new double[xValues.length + 1];
+        double[] newY = new double[yValues.length + 1];
+
+        System.arraycopy(xValues, 0, newX, 0, position);
+        System.arraycopy(yValues, 0, newY, 0, position);
+
+        newX[position] = x;
+        newY[position] = y;
+
+        System.arraycopy(xValues, position, newX, position + 1, xValues.length - position);
+        System.arraycopy(yValues, position, newY, position + 1, yValues.length - position);
+
+        validateOrder(newX);
+
+        this.xValues = newX;
+        this.yValues = newY;
+    }
+
+    @Override
+    public void remove(int index) {
+        checkIndex(index);
+        if (xValues.length <= 2) {
+            throw new IllegalStateException("Нельзя удалить точку: должно остаться минимум две");
+        }
+
+        double[] newX = new double[xValues.length - 1];
+        double[] newY = new double[yValues.length - 1];
+
+        System.arraycopy(xValues, 0, newX, 0, index);
+        System.arraycopy(yValues, 0, newY, 0, index);
+        System.arraycopy(xValues, index + 1, newX, index, xValues.length - index - 1);
+        System.arraycopy(yValues, index + 1, newY, index, yValues.length - index - 1);
+
+        this.xValues = newX;
+        this.yValues = newY;
+    }
+
     public double[] getXValues() {
         return xValues.clone();
     }
@@ -55,6 +99,28 @@ public class TabulatedFunction {
     private void checkIndex(int index) {
         if (index < 0 || index >= xValues.length) {
             throw new IndexOutOfBoundsException("Некорректный индекс точки: " + index);
+        }
+    }
+
+    private int findInsertPosition(double x) {
+        int low = 0;
+        int high = xValues.length;
+        while (low < high) {
+            int mid = (low + high) >>> 1;
+            if (xValues[mid] < x) {
+                low = mid + 1;
+            } else {
+                high = mid;
+            }
+        }
+        return low;
+    }
+
+    private void validateOrder(double[] values) {
+        for (int i = 1; i < values.length; i++) {
+            if (values[i] <= values[i - 1]) {
+                throw new IllegalArgumentException("После вставки нарушен строгий порядок X");
+            }
         }
     }
 }
