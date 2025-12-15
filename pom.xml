@@ -13,9 +13,9 @@
     </modules>
 
     <properties>
-        <!-- Align with the team's JDK 24 toolchain while keeping dependency versions in sync -->
-        <java.version>24</java.version>
-        <spring-boot.version>3.4.1</spring-boot.version>
+        <!-- Align with Java 21 toolchain and compatible Spring Boot platform -->
+        <java.version>21</java.version>
+        <spring-boot.version>3.3.4</spring-boot.version>
     </properties>
 
     <dependencyManagement>
