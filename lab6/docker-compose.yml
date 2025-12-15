@@ -19,7 +19,7 @@ services:
 
   # Наше приложение
   app:
-    build: lab6  # Собираем из Dockerfile
+    build: .  # Собираем из Dockerfile
     container_name: lab5-app
     depends_on:
       postgres:

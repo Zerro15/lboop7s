@@ -22,10 +22,7 @@ public interface PointRepository extends JpaRepository<Point, Long> {
     @Query("SELECT p FROM Point p WHERE p.function.id = :functionId ORDER BY p.xValue ASC")
     List<Point> findByFunctionIdOrderByXValueAsc(@Param("functionId") Long functionId);
 
-    // УДАЛИТЕ ЭТУ СТРОКУ - она вызывает ошибку:
-    // List<Point> findByFunctionIdOrderByXValue(Long functionId);
-    // Вместо этого используйте правильное имя поля (xValue с маленькой буквы):
-    List<Point> findByFunctionIdOrderByxValueAsc(Long functionId);  // xValue с маленькой x
+    // УДАЛЕНО: List<Point> findByFunctionIdOrderByxValueAsc(Long functionId);
 
     @Query("SELECT p FROM Point p WHERE p.function.user.login = :userLogin")
     List<Point> findByUserLogin(@Param("userLogin") String userLogin);
