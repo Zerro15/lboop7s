@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tabulated Function UI</title>
+    <link rel="stylesheet" href="/ui/tabulated-functions.css" />
+</head>
+<body>
+<header>
+    <h1>Создание TabulatedFunction</h1>
+    <div>Фронтенд для API /api/v1/functions</div>
+</header>
+<div class="container">
+    <div class="panel">
+        <h2>Доступ к API</h2>
+        <div class="form-grid">
+            <div>
+                <label for="username">Логин</label>
+                <input id="username" type="text" placeholder="user" />
+            </div>
+            <div>
+                <label for="password">Пароль</label>
+                <input id="password" type="password" placeholder="password" />
+            </div>
+            <div>
+                <label for="userId">ID пользователя (владельца функции)</label>
+                <input id="userId" type="number" min="1" placeholder="1" />
+            </div>
+        </div>
+        <p class="info-box">Введите учётные данные и идентификатор пользователя, для которого будут создаваться функции.</p>
+    </div>
+
+    <div class="panel">
+        <h2>Создание из массивов точек</h2>
+        <div class="form-grid">
+            <div>
+                <label for="arrayName">Имя функции</label>
+                <input id="arrayName" type="text" placeholder="Моя табулированная функция" />
+            </div>
+            <div>
+                <label for="arrayFactory">Фабрика</label>
+                <select id="arrayFactory">
+                    <option value="ARRAY">ARRAY</option>
+                    <option value="LINKED_LIST">LINKED_LIST</option>
+                </select>
+            </div>
+        </div>
+        <label for="pointsInput">Точки (формат: x,y на строку)</label>
+        <textarea id="pointsInput" placeholder="0,0&#10;1,1&#10;2,4"></textarea>
+        <div class="actions">
+            <button class="primary" id="submitArrays">Создать из массивов</button>
+            <button class="secondary" id="clearArrays">Очистить</button>
+        </div>
+        <div id="arraySuccess" class="success" aria-live="polite"></div>
+    </div>
+
+    <div class="panel">
+        <h2>Создание из математической функции</h2>
+        <div class="form-grid">
+            <div>
+                <label for="mathName">Имя функции</label>
+                <input id="mathName" type="text" placeholder="sin на [0, 6.28]" />
+            </div>
+            <div>
+                <label for="mathKey">Тип функции</label>
+                <select id="mathKey">
+                    <option value="sqr">x^2</option>
+                    <option value="identity">x</option>
+                    <option value="sin">sin(x)</option>
+                    <option value="cos">cos(x)</option>
+                    <option value="exp">exp(x)</option>
+                    <option value="log">ln(x)</option>
+                </select>
+            </div>
+            <div>
+                <label for="pointsCount">Количество точек</label>
+                <input id="pointsCount" type="number" min="2" value="10" />
+            </div>
+            <div>
+                <label for="leftBound">Левая граница</label>
+                <input id="leftBound" type="number" step="0.01" value="0" />
+            </div>
+            <div>
+                <label for="rightBound">Правая граница</label>
+                <input id="rightBound" type="number" step="0.01" value="6.28" />
+            </div>
+            <div>
+                <label for="mathFactory">Фабрика</label>
+                <select id="mathFactory">
+                    <option value="ARRAY">ARRAY</option>
+                    <option value="LINKED_LIST">LINKED_LIST</option>
+                </select>
+            </div>
+        </div>
+        <div class="actions">
+            <button class="primary" id="submitMath">Создать из формулы</button>
+            <button class="secondary" id="clearMath">Сбросить поля</button>
+        </div>
+        <div id="mathSuccess" class="success" aria-live="polite"></div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="errorModal" role="alertdialog" aria-modal="true" aria-labelledby="errorTitle" aria-describedby="errorMessage">
+    <div class="modal">
+        <h3 id="errorTitle">Ошибка</h3>
+        <div class="message error" id="errorMessage"></div>
+        <div class="modal-footer">
+            <button class="primary" id="closeError">Закрыть</button>
+        </div>
+    </div>
+</div>
+
+<script src="/ui/tabulated-functions.js"></script>
+</body>
+</html>
