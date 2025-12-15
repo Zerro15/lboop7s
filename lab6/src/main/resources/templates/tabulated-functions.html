@@ -99,6 +99,16 @@
             color: #3730a3;
             border: 1px solid #c7d2fe;
         }
+        .field-error {
+            color: #b91c1c;
+            display: block;
+            margin-top: 4px;
+        }
+        .hint {
+            display: block;
+            margin-top: 6px;
+            color: #6b7280;
+        }
         .overlay {
             position: fixed;
             inset: 0;
@@ -152,31 +162,29 @@
                                 th:text="${factory}"></option>
                     </select>
                 </div>
+                <div>
+                    <label for="points-count-input">Количество точек</label>
+                    <input type="number" id="points-count-input" name="pointsCountInput" min="2" required placeholder="Например, 5">
+                    <small id="points-count-error" class="field-error hidden">Введите положительное целое число.</small>
+                </div>
+                <div>
+                    <label>&nbsp;</label>
+                    <button type="button" id="generate-table">Сгенерировать таблицу</button>
+                    <small class="hint">Текущие данные будут стерты при повторной генерации после подтверждения.</small>
+                </div>
             </div>
 
-            <table class="table" aria-label="Точки функции">
+            <table class="table hidden" aria-label="Точки функции" id="points-table">
                 <thead>
                 <tr>
                     <th>X</th>
                     <th>Y</th>
-                    <th>Действие</th>
                 </tr>
                 </thead>
                 <tbody id="points-body">
-                <tr>
-                    <td><input type="number" step="any" name="x" required></td>
-                    <td><input type="number" step="any" name="y" required></td>
-                    <td><button type="button" class="secondary remove-row">Удалить</button></td>
-                </tr>
-                <tr>
-                    <td><input type="number" step="any" name="x" required></td>
-                    <td><input type="number" step="any" name="y" required></td>
-                    <td><button type="button" class="secondary remove-row">Удалить</button></td>
-                </tr>
                 </tbody>
             </table>
             <div class="actions">
-                <button type="button" id="add-point" class="secondary">Добавить точку</button>
                 <button type="submit">Создать функцию</button>
             </div>
         </form>
@@ -240,6 +248,7 @@
         <h3>Ошибка</h3>
         <p id="modal-message">Произошла ошибка.</p>
         <div class="actions">
+            <button type="button" id="confirm-modal" class="hidden">Продолжить</button>
             <button type="button" id="close-modal">Закрыть</button>
         </div>
     </div>
@@ -250,45 +259,122 @@
     const statusPanel = document.getElementById('status');
     const overlay = document.getElementById('modal-overlay');
     const modalMessage = document.getElementById('modal-message');
+    const confirmModalBtn = document.getElementById('confirm-modal');
+    const closeModalBtn = document.getElementById('close-modal');
+    const pointsTable = document.getElementById('points-table');
+    const pointsBody = document.getElementById('points-body');
+    const pointsCountInput = document.getElementById('points-count-input');
+    const pointsCountError = document.getElementById('points-count-error');
+    const MAX_POINTS = 1000;
+    let confirmHandler = null;
 
     function showStatus(message, type = 'info') {
         statusPanel.textContent = message;
         statusPanel.className = `status ${type}`;
     }
 
-    function showErrorModal(message) {
+    function showModal(message, options = {}) {
+        const { confirmText, onConfirm, closeText } = options;
         modalMessage.textContent = message || 'Неизвестная ошибка';
+        confirmHandler = typeof onConfirm === 'function' ? onConfirm : null;
+
+        if (confirmHandler) {
+            confirmModalBtn.textContent = confirmText || 'Продолжить';
+            confirmModalBtn.classList.remove('hidden');
+        } else {
+            confirmModalBtn.classList.add('hidden');
+        }
+
+        closeModalBtn.textContent = closeText || 'Закрыть';
         overlay.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
+    }
+
+    function showErrorModal(message) {
+        showModal(message);
     }
 
     function hideErrorModal() {
         overlay.classList.add('hidden');
         document.body.style.overflow = 'auto';
+        confirmHandler = null;
     }
 
-    document.getElementById('close-modal').addEventListener('click', hideErrorModal);
+    confirmModalBtn.addEventListener('click', () => {
+        const handler = confirmHandler;
+        hideErrorModal();
+        if (handler) {
+            handler();
+        }
+    });
 
-    function addPointRow() {
+    closeModalBtn.addEventListener('click', hideErrorModal);
+
+    function createPointRow(index) {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><input type="number" step="any" name="x" required></td>
-            <td><input type="number" step="any" name="y" required></td>
-            <td><button type="button" class="secondary remove-row">Удалить</button></td>
+            <td><input type="number" step="any" name="x" required aria-label="X ${index + 1}"></td>
+            <td><input type="number" step="any" name="y" required aria-label="Y ${index + 1}"></td>
         `;
-        document.getElementById('points-body').appendChild(row);
+        return row;
     }
 
-    document.getElementById('add-point').addEventListener('click', addPointRow);
+    function clearPointsTable() {
+        pointsBody.innerHTML = '';
+    }
 
-    document.getElementById('points-body').addEventListener('click', (event) => {
-        if (event.target.classList.contains('remove-row')) {
-            const rows = document.querySelectorAll('#points-body tr');
-            if (rows.length <= 1) {
-                showErrorModal('Нельзя удалить все строки: нужна хотя бы одна точка.');
-                return;
-            }
-            event.target.closest('tr').remove();
+    function buildPointsTable(count) {
+        clearPointsTable();
+        for (let i = 0; i < count; i += 1) {
+            pointsBody.appendChild(createPointRow(i));
+        }
+        pointsTable.classList.remove('hidden');
+    }
+
+    function validateCountInput() {
+        const raw = pointsCountInput.value.trim();
+        pointsCountError.classList.add('hidden');
+
+        if (raw === '') {
+            pointsCountError.textContent = 'Введите количество точек.';
+            pointsCountError.classList.remove('hidden');
+            return null;
+        }
+
+        const count = Number(raw);
+        if (!Number.isInteger(count) || count < 2) {
+            pointsCountError.textContent = 'Введите целое число не меньше 2.';
+            pointsCountError.classList.remove('hidden');
+            return null;
+        }
+
+        if (count > MAX_POINTS) {
+            showModal(`Количество точек ограничено ${MAX_POINTS}. Введите меньшее значение.`, { closeText: 'Понятно' });
+            return null;
+        }
+
+        return count;
+    }
+
+    document.getElementById('generate-table').addEventListener('click', () => {
+        const count = validateCountInput();
+        if (!count) {
+            return;
+        }
+
+        const rebuild = () => {
+            buildPointsTable(count);
+            showStatus(`Подготовлена таблица на ${count} точек.`, 'info');
+        };
+
+        if (pointsBody.children.length > 0) {
+            showModal('Текущие данные будут потеряны. Продолжить?', {
+                confirmText: 'Пересоздать',
+                onConfirm: rebuild,
+                closeText: 'Отмена',
+            });
+        } else {
+            rebuild();
         }
     });
 
@@ -312,11 +398,23 @@
         const userId = Number(document.getElementById('arrays-user').value);
         const name = document.getElementById('arrays-name').value.trim();
         const factoryType = document.getElementById('arrays-factory').value;
-        const points = Array.from(document.querySelectorAll('#points-body tr')).map((row) => {
-            const x = row.querySelector('input[name="x"]').value;
-            const y = row.querySelector('input[name="y"]').value;
-            return { x: Number(x), y: Number(y) };
+
+        if (pointsBody.children.length === 0) {
+            showErrorModal('Сначала сгенерируйте таблицу точек.');
+            return;
+        }
+
+        const points = Array.from(pointsBody.querySelectorAll('tr')).map((row) => {
+            const x = Number(row.querySelector('input[name="x"]').value);
+            const y = Number(row.querySelector('input[name="y"]').value);
+            return { x, y };
         });
+
+        const invalidIndex = points.findIndex((point) => Number.isNaN(point.x) || Number.isNaN(point.y));
+        if (invalidIndex !== -1) {
+            showErrorModal(`Заполните корректно все значения в строке ${invalidIndex + 1}.`);
+            return;
+        }
 
         if (points.length < 2) {
             showErrorModal('Добавьте как минимум две точки.');
