@@ -34,3 +34,13 @@ CLIENT_ORIGIN=http://localhost:3000
 - `GET /health` — проверка работоспособности сервера.
 
 Пароль хранится только в виде bcrypt-хеша. JWT по умолчанию также устанавливается в httpOnly-cookie.
+
+## Тестирование Java сервлета (lab6)
+Для unit-тестов DAO и сервисов используется встраиваемая база H2 в режиме PostgreSQL.
+
+1. Убедитесь, что у вас установлен Maven 3.9+ и JDK 17.
+2. Запустите тесты модуля lab6 (применяется тестовая конфигурация из `src/test/resources/manual/application.properties`):
+   ```bash
+   mvn -pl lab6 test
+   ```
+3. Если нужна альтернатива конфигурации, задайте путь к своему файлу свойств через переменную окружения `MANUAL_DB_CONFIG` или системное свойство `-Dmanual.db.config=/path/to/application.properties`.
