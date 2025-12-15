@@ -352,6 +352,9 @@
             padding: 6px 10px;
             font-weight: bold;
         }
+        .composite-actions button {
+            width: auto;
+        }
         .apply-panel {
             margin-top: 10px;
             display: grid;
@@ -378,6 +381,7 @@
         <div class="actions">
             <button type="button" id="open-array-window"><span class="icon">📄</span>Создать функцию (массивы)</button>
             <button type="button" id="open-math-window"><span class="icon">📐</span>Создать функцию (формула)</button>
+            <button type="button" id="open-composite-window"><span class="icon">🪢</span>Композитные функции</button>
             <button type="button" id="open-explorer-window"><span class="icon">📊</span>Графический анализ функции</button>
             <button type="button" id="open-operations-window"><span class="icon">🧮</span>Операции над функциями</button>
             <button type="button" id="open-diff-window"><span class="icon">🔀</span>Дифференцирование функции</button>
@@ -470,9 +474,16 @@
                     <label for="math-key">Математическая функция</label>
                     <select id="math-key" name="mathFunctionKey" required>
                         <option value="" disabled selected>Выберите функцию</option>
-                        <option th:each="func : ${mathFunctions}"
-                                th:value="${func.key}"
-                                th:text="${func.label}"></option>
+                        <optgroup label="Базовые функции">
+                            <option th:each="func : ${baseFunctions}"
+                                    th:value="${func.key}"
+                                    th:text="${func.label}"></option>
+                        </optgroup>
+                        <optgroup th:if="${#lists.size(customFunctions) > 0}" label="Пользовательские композитные функции">
+                            <option th:each="func : ${customFunctions}"
+                                    th:value="${func.key}"
+                                    th:text="${func.label}"></option>
+                        </optgroup>
                     </select>
                 </div>
                 <div>
@@ -493,6 +504,56 @@
                 <button type="button" class="secondary" data-close-modal="math-window">Закрыть окно</button>
             </div>
         </form>
+    </div>
+
+    <div class="modal window hidden" data-modal="composite-window">
+        <div class="modal-header">
+            <h3>Создание композитной функции g(f(x))</h3>
+            <button type="button" class="close-btn" data-close-modal="composite-window">×</button>
+        </div>
+        <p>Выберите внешнюю и внутреннюю функции, задайте уникальное имя и добавьте результат в список доступных.</p>
+        <form id="composite-form" class="stacked-form">
+            <label for="composite-name">Название новой функции</label>
+            <input type="text" id="composite-name" required placeholder="Например, sin(sqr(x))">
+            <label for="composite-outer">Внешняя функция g(x)</label>
+            <select id="composite-outer" required>
+                <option value="" disabled selected>Выберите внешнюю функцию</option>
+                <optgroup label="Базовые функции">
+                    <option th:each="func : ${baseFunctions}" th:value="${func.key}" th:text="${func.label}"></option>
+                </optgroup>
+                <optgroup th:if="${#lists.size(customFunctions) > 0}" label="Пользовательские композитные функции">
+                    <option th:each="func : ${customFunctions}" th:value="${func.key}" th:text="${func.label}"></option>
+                </optgroup>
+            </select>
+            <label for="composite-inner">Внутренняя функция f(x)</label>
+            <select id="composite-inner" required>
+                <option value="" disabled selected>Выберите внутреннюю функцию</option>
+                <optgroup label="Базовые функции">
+                    <option th:each="func : ${baseFunctions}" th:value="${func.key}" th:text="${func.label}"></option>
+                </optgroup>
+                <optgroup th:if="${#lists.size(customFunctions) > 0}" label="Пользовательские композитные функции">
+                    <option th:each="func : ${customFunctions}" th:value="${func.key}" th:text="${func.label}"></option>
+                </optgroup>
+            </select>
+            <div class="actions">
+                <button type="submit">Создать композитную g(f(x))</button>
+                <button type="button" class="secondary" data-close-modal="composite-window">Закрыть окно</button>
+            </div>
+        </form>
+        <div class="divider"></div>
+        <h4>Созданные композитные функции</h4>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Название</th>
+                <th>Формула</th>
+                <th>Действия</th>
+            </tr>
+            </thead>
+            <tbody id="composite-table-body">
+            <tr><td colspan="3">Пока нет композитных функций</td></tr>
+            </tbody>
+        </table>
     </div>
 
     <div class="modal window hidden" data-modal="factory-window">
@@ -818,7 +879,9 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 <script th:inline="javascript">
-    const mathFunctions = /*[[${mathFunctions}]]*/ [];
+    let baseMathFunctions = /*[[${baseFunctions}]]*/ [];
+    let customMathFunctions = /*[[${customFunctions}]]*/ [];
+    let mathFunctions = [...baseMathFunctions, ...customMathFunctions];
     let factoryState = /*[[${factoryState}]]*/ { factories: [], activeKey: 'array' };
     let factoryTypes = factoryState.factories || [];
     let activeFactoryKey = factoryState.activeKey || 'array';
@@ -846,6 +909,10 @@
     const insertYInput = document.getElementById('insert-y');
     const integralThreadsInput = document.getElementById('integral-threads');
     const integralResultOutput = document.getElementById('integral-result');
+    const compositeOuterSelect = document.getElementById('composite-outer');
+    const compositeInnerSelect = document.getElementById('composite-inner');
+    const compositeNameInput = document.getElementById('composite-name');
+    const compositeTableBody = document.getElementById('composite-table-body');
     let explorerChart = null;
     let insertTarget = null;
 
@@ -889,6 +956,91 @@
         EXPLORER: { tableId: 'explorer-table', editable: true },
         INTEGRAL: { tableId: 'integral-table', editable: true }
     };
+
+    function renderMathSelectOptions(selectElement) {
+        if (!selectElement) return;
+        const currentValue = selectElement.value;
+        selectElement.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.disabled = true;
+        placeholder.selected = true;
+        placeholder.textContent = 'Выберите функцию';
+        selectElement.appendChild(placeholder);
+
+        const baseGroup = document.createElement('optgroup');
+        baseGroup.label = 'Базовые функции';
+        baseMathFunctions.forEach((func) => {
+            const option = document.createElement('option');
+            option.value = func.key;
+            option.textContent = func.label;
+            baseGroup.appendChild(option);
+        });
+        selectElement.appendChild(baseGroup);
+
+        if (customMathFunctions.length > 0) {
+            const customGroup = document.createElement('optgroup');
+            customGroup.label = 'Пользовательские композитные функции';
+            customMathFunctions.forEach((func) => {
+                const option = document.createElement('option');
+                option.value = func.key;
+                option.textContent = func.label;
+                customGroup.appendChild(option);
+            });
+            selectElement.appendChild(customGroup);
+        }
+
+        const availableOptions = Array.from(selectElement.querySelectorAll('option')).map((opt) => opt.value);
+        if (currentValue && availableOptions.includes(currentValue)) {
+            selectElement.value = currentValue;
+        }
+    }
+
+    function renderCompositeTable() {
+        if (!compositeTableBody) { return; }
+        compositeTableBody.innerHTML = '';
+        if (!customMathFunctions || customMathFunctions.length === 0) {
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 3;
+            cell.textContent = 'Пока нет композитных функций';
+            row.appendChild(cell);
+            compositeTableBody.appendChild(row);
+            return;
+        }
+        customMathFunctions.forEach((func) => {
+            const row = document.createElement('tr');
+            row.dataset.name = func.key;
+            const nameCell = document.createElement('td');
+            nameCell.textContent = func.label;
+            const formulaCell = document.createElement('td');
+            formulaCell.textContent = func.formula || 'g(f(x))';
+            const actionsCell = document.createElement('td');
+            actionsCell.className = 'composite-actions';
+            actionsCell.innerHTML = `
+                <button type="button" data-action="rename">Переименовать</button>
+                <button type="button" class="secondary" data-action="delete">Удалить</button>
+            `;
+            row.appendChild(nameCell);
+            row.appendChild(formulaCell);
+            row.appendChild(actionsCell);
+            compositeTableBody.appendChild(row);
+        });
+    }
+
+    function renderAllMathSelects() {
+        renderMathSelectOptions(document.getElementById('math-key'));
+        renderMathSelectOptions(compositeOuterSelect);
+        renderMathSelectOptions(compositeInnerSelect);
+    }
+
+    function refreshMathFunctions(groups) {
+        baseMathFunctions = groups && Array.isArray(groups.baseFunctions) ? groups.baseFunctions : [];
+        customMathFunctions = groups && Array.isArray(groups.customFunctions) ? groups.customFunctions : [];
+        mathFunctions = [...baseMathFunctions, ...customMathFunctions];
+        renderAllMathSelects();
+        renderCompositeTable();
+    }
 
     const modalManager = {
         openModals: new Map(),
@@ -1928,6 +2080,85 @@
         }
     }
 
+    async function submitComposite(event) {
+        event.preventDefault();
+        const name = compositeNameInput.value.trim();
+        const outerKey = compositeOuterSelect.value;
+        const innerKey = compositeInnerSelect.value;
+
+        if (!name) {
+            showErrorModal('Введите название композитной функции.');
+            return;
+        }
+        if (!outerKey || !innerKey) {
+            showErrorModal('Выберите обе функции g и f.');
+            return;
+        }
+
+        try {
+            setLoading(true, 'Создание композитной функции…');
+            const response = await fetch('/api/v1/math-functions/composite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, outerKey, innerKey })
+            });
+            const groups = await handleResponse(response);
+            refreshMathFunctions(groups);
+            compositeNameInput.value = '';
+            showStatus(`Создана композитная функция «${name}».`, 'success');
+        } catch (e) {
+            // ошибка показана модально
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function renameComposite(name) {
+        const newName = window.prompt('Новое имя для композитной функции', name);
+        if (!newName) {
+            return;
+        }
+        try {
+            setLoading(true, 'Переименование функции…');
+            const response = await fetch('/api/v1/math-functions/composite/rename', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ oldName: name, newName })
+            });
+            const groups = await handleResponse(response);
+            refreshMathFunctions(groups);
+            showStatus(`Функция переименована в «${newName.trim()}».`, 'success');
+        } catch (e) {
+            // отображено модально
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function deleteComposite(name) {
+        showModal(`Удалить композитную функцию «${name}»?`, {
+            confirmText: 'Удалить',
+            onConfirm: async () => {
+                try {
+                    setLoading(true, 'Удаление функции…');
+                    const response = await fetch('/api/v1/math-functions/composite/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name })
+                    });
+                    const groups = await handleResponse(response);
+                    refreshMathFunctions(groups);
+                    showStatus('Функция удалена из списка.', 'info');
+                } catch (e) {
+                    // сообщение уже показано
+                } finally {
+                    setLoading(false);
+                }
+            },
+            closeText: 'Отмена'
+        });
+    }
+
     function syncFactoryDisplay() {
         document.querySelectorAll('[data-active-factory-label]').forEach((element) => {
             element.textContent = getFactoryLabel(activeFactoryKey);
@@ -1952,6 +2183,7 @@
 
     document.getElementById('open-array-window').addEventListener('click', () => modalManager.open('arrays-window'));
     document.getElementById('open-math-window').addEventListener('click', () => modalManager.open('math-window'));
+    document.getElementById('open-composite-window').addEventListener('click', () => modalManager.open('composite-window'));
     document.getElementById('open-factory-window').addEventListener('click', () => {
         syncFactoryDisplay();
         modalManager.open('factory-window');
@@ -1987,10 +2219,30 @@
         integralButton.addEventListener('click', () => computeIntegral());
     }
 
+    if (document.getElementById('composite-form')) {
+        document.getElementById('composite-form').addEventListener('submit', submitComposite);
+    }
+    if (compositeTableBody) {
+        compositeTableBody.addEventListener('click', (event) => {
+            const action = event.target.dataset.action;
+            const row = event.target.closest('tr');
+            const name = row ? row.dataset.name : null;
+            if (!action || !name) return;
+            if (action === 'rename') {
+                renameComposite(name);
+            }
+            if (action === 'delete') {
+                deleteComposite(name);
+            }
+        });
+    }
+
     bindFileLoading();
     bindSaving();
     bindClearing();
     bindMutations();
+    renderAllMathSelects();
+    renderCompositeTable();
     renderRecentFiles();
     renderSlot('A');
     renderSlot('B');

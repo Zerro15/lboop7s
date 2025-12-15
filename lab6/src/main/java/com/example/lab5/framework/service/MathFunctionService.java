@@ -1,8 +1,10 @@
 package com.example.lab5.framework.service;
 
 import com.example.lab5.framework.dto.MathFunctionDTO;
+import com.example.lab5.framework.dto.MathFunctionGroupsResponse;
 import com.example.lab5.framework.dto.PreviewResponse;
 import com.example.lab5.framework.service.FunctionScannerService.FunctionDescriptor;
+import com.example.lab5.functions.CompositeFunction;
 import com.example.lab5.functions.MathFunction;
 import org.springframework.stereotype.Service;
 
@@ -12,21 +14,21 @@ import java.util.stream.Collectors;
 @Service
 public class MathFunctionService {
 
-    private final Map<String, MathFunction> availableFunctions;
+    private final Map<String, MathFunction> baseFunctions;
     private final List<FunctionDescriptor> descriptors;
+    private final Map<String, CompositeDescriptor> customFunctions = new LinkedHashMap<>();
 
     public MathFunctionService(FunctionScannerService scannerService) {
         this.descriptors = Collections.unmodifiableList(scannerService.getDescriptors());
-        this.availableFunctions = Collections.unmodifiableMap(descriptors.stream()
+        this.baseFunctions = Collections.unmodifiableMap(descriptors.stream()
                 .collect(Collectors.toMap(FunctionDescriptor::label, FunctionDescriptor::function,
                         (a, b) -> a, LinkedHashMap::new)));
     }
 
     public List<MathFunctionDTO> getAllMathFunctions() {
         List<MathFunctionDTO> result = new ArrayList<>();
-        descriptors.forEach(descriptor -> result.add(createFunctionDTO(descriptor.label(), descriptor.label(),
-                describe(descriptor.label()), example(descriptor.label()), category(descriptor.label()),
-                descriptor.functionType())));
+        result.addAll(getBaseFunctionDTOs());
+        result.addAll(getCustomFunctionDTOs());
         return result;
     }
 
@@ -37,7 +39,80 @@ public class MathFunctionService {
     }
 
     public MathFunction getFunctionByKey(String key) {
-        return availableFunctions.get(key);
+        if (customFunctions.containsKey(key)) {
+            return customFunctions.get(key).function();
+        }
+        return baseFunctions.get(key);
+    }
+
+    public MathFunctionDTO createComposite(String name, String outerKey, String innerKey) {
+        String trimmedName = name == null ? "" : name.trim();
+        if (trimmedName.isEmpty()) {
+            throw new IllegalArgumentException("Введите название композитной функции.");
+        }
+        if (baseFunctions.containsKey(trimmedName) || customFunctions.containsKey(trimmedName)) {
+            throw new IllegalArgumentException("Функция с таким названием уже существует.");
+        }
+        MathFunction outer = requireFunction(outerKey);
+        MathFunction inner = requireFunction(innerKey);
+
+        String outerLabel = resolveLabel(outerKey);
+        String innerLabel = resolveLabel(innerKey);
+        String formula = String.format("%s(%s(x))", outerLabel, innerLabel);
+
+        CompositeFunction compositeFunction = new CompositeFunction(outer, inner);
+        CompositeDescriptor descriptor = new CompositeDescriptor(trimmedName, compositeFunction, formula);
+        customFunctions.put(trimmedName, descriptor);
+        return toDto(descriptor.name(), descriptor.name(),
+                "Пользовательская композиция", formula, "Composite", true);
+    }
+
+    public MathFunctionDTO renameComposite(String oldName, String newName) {
+        if (!customFunctions.containsKey(oldName)) {
+            throw new IllegalArgumentException("Композитная функция не найдена: " + oldName);
+        }
+        String trimmed = newName == null ? "" : newName.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("Введите новое имя композитной функции.");
+        }
+        if (baseFunctions.containsKey(trimmed) || (customFunctions.containsKey(trimmed) && !oldName.equals(trimmed))) {
+            throw new IllegalArgumentException("Функция с таким названием уже существует.");
+        }
+        CompositeDescriptor descriptor = customFunctions.remove(oldName);
+        CompositeDescriptor renamed = new CompositeDescriptor(trimmed, descriptor.function(), descriptor.formula());
+        customFunctions.put(trimmed, renamed);
+        return toDto(renamed.name(), renamed.name(),
+                "Пользовательская композиция", renamed.formula(), "Composite", true);
+    }
+
+    public void deleteComposite(String name) {
+        if (!customFunctions.containsKey(name)) {
+            throw new IllegalArgumentException("Композитная функция не найдена: " + name);
+        }
+        customFunctions.remove(name);
+    }
+
+    public List<MathFunctionDTO> getBaseFunctionDTOs() {
+        List<MathFunctionDTO> result = new ArrayList<>();
+        descriptors.forEach(descriptor -> result.add(toDto(descriptor.label(), descriptor.label(),
+                describe(descriptor.label()), example(descriptor.label()), category(descriptor.label()),
+                descriptor.functionType(), false)));
+        return result;
+    }
+
+    public List<MathFunctionDTO> getCustomFunctionDTOs() {
+        return customFunctions.values().stream()
+                .sorted(Comparator.comparing(CompositeDescriptor::name))
+                .map(desc -> toDto(desc.name(), desc.name(), "Пользовательская композиция", desc.formula(),
+                        "Composite", true))
+                .collect(Collectors.toList());
+    }
+
+    public MathFunctionGroupsResponse describeGroups() {
+        MathFunctionGroupsResponse response = new MathFunctionGroupsResponse();
+        response.setBaseFunctions(getBaseFunctionDTOs());
+        response.setCustomFunctions(getCustomFunctionDTOs());
+        return response;
     }
 
     public PreviewResponse previewMathFunction(String functionKey, Integer pointsCount,
@@ -63,8 +138,8 @@ public class MathFunctionService {
         return response;
     }
 
-    private MathFunctionDTO createFunctionDTO(String key, String label, String description,
-                                              String example, String category, String functionType) {
+    private MathFunctionDTO toDto(String key, String label, String description,
+                                  String example, String category, String functionType, boolean custom) {
         MathFunctionDTO dto = new MathFunctionDTO();
         dto.setKey(key);
         dto.setLabel(label);
@@ -72,15 +147,27 @@ public class MathFunctionService {
         dto.setExample(example);
         dto.setCategory(category);
         dto.setFunctionType(functionType);
+        dto.setCustom(custom);
+        dto.setFormula(custom ? example : null);
         return dto;
     }
 
     private MathFunction requireFunction(String key) {
-        MathFunction function = availableFunctions.get(key);
+        MathFunction function = customFunctions.containsKey(key)
+                ? customFunctions.get(key).function()
+                : baseFunctions.get(key);
         if (function == null) {
             throw new IllegalArgumentException("Функция '" + key + "' недоступна");
         }
         return function;
+    }
+
+    private String resolveLabel(String key) {
+        return getAllMathFunctions().stream()
+                .filter(dto -> dto.getKey().equals(key))
+                .map(MathFunctionDTO::getLabel)
+                .findFirst()
+                .orElse(key);
     }
 
     private void validateBounds(Integer pointsCount, Double leftBound, Double rightBound) {
@@ -145,5 +232,8 @@ public class MathFunctionService {
             return "Экспоненциальные";
         }
         return "Алгебраические";
+    }
+
+    private record CompositeDescriptor(String name, MathFunction function, String formula) {
     }
 }

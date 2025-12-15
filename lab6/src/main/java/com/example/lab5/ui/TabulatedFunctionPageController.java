@@ -25,6 +25,8 @@ public class TabulatedFunctionPageController {
     @GetMapping("/tabulated-functions")
     public String tabulatedFunctions(Model model) {
         FactoryStateResponse factoryState = factoryHolder.describeState();
+        model.addAttribute("baseFunctions", mathFunctionService.getBaseFunctionDTOs());
+        model.addAttribute("customFunctions", mathFunctionService.getCustomFunctionDTOs());
         model.addAttribute("mathFunctions", mathFunctionService.getAllMathFunctions());
         model.addAttribute("factoryTypes", factoryState.getFactories());
         model.addAttribute("factoryState", factoryState);
