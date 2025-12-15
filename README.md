@@ -3,7 +3,17 @@
 This repository hosts the `lab6` Spring Boot service and static UI. Use the top-level Maven aggregator (this directory) to select the `lab6` module when running from the repo root.
 
 ## Running locally
-- **From the repo root**: `mvn -pl lab6 spring-boot:run` (requires Java 21 and Maven 3.9.11). The `-pl lab6` selector must be used only at the root; if you `cd lab6`, run `mvn spring-boot:run` without `-pl`.
+- **From the repo root** (there is a parent `pom.xml` with the `lab6` module):
+  ```bash
+  mvn -pl lab6 spring-boot:run
+  ```
+  Use `-pl lab6` only when you are in the repository root so Maven can pick the module from the parent POM.
+
+- **From inside the `lab6` directory** run without module selection:
+  ```bash
+  mvn spring-boot:run
+  ```
+
 - The app serves both API and static frontend at `http://localhost:8080/`.
 
 ## Building and running with Docker Compose
