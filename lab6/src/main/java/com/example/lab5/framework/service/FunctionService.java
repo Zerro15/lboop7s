@@ -7,6 +7,10 @@ import com.example.lab5.framework.entity.User;
 import com.example.lab5.framework.repository.FunctionRepository;
 import com.example.lab5.framework.repository.PointRepository;
 import com.example.lab5.framework.repository.UserRepository;
+import com.example.lab5.functions.ArrayTabulatedFunctionFactory;
+import com.example.lab5.functions.MathFunction;
+import com.example.lab5.functions.TabulatedFunction;
+import com.example.lab5.functions.TabulatedFunctionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +33,11 @@ public class FunctionService {
 
     @Autowired
     private PointRepository pointRepository;
+
+    @Autowired
+    private MathFunctionService mathFunctionService;
+
+    private final TabulatedFunctionFactory tabulatedFunctionFactory = new ArrayTabulatedFunctionFactory();
 
     // Существующие методы...
 
@@ -128,22 +137,26 @@ public class FunctionService {
         Function savedFunction = functionRepository.save(function);
         logger.info("Функция создана с ID: {}", savedFunction.getId());
 
-        // Генерируем точки из математической функции
-        double step = (rightBound - leftBound) / (pointsCount - 1);
+        MathFunction mathFunction = mathFunctionService.getFunctionByKey(mathFunctionKey);
+        if (mathFunction == null) {
+            throw new IllegalArgumentException("Неизвестная математическая функция: " + mathFunctionKey);
+        }
 
-        for (int i = 0; i < pointsCount; i++) {
-            double x = leftBound + i * step;
-            double y = calculateMathFunction(mathFunctionKey, x);
+        TabulatedFunction tabulated = tabulatedFunctionFactory.create(mathFunction, leftBound, rightBound, pointsCount);
 
+        double[] xValues = tabulated.getXValues();
+        double[] yValues = tabulated.getYValues();
+
+        for (int i = 0; i < xValues.length; i++) {
             Point point = new Point();
-            point.setXValue(x);
-            point.setYValue(y);
+            point.setXValue(xValues[i]);
+            point.setYValue(yValues[i]);
             point.setFunction(savedFunction);
             pointRepository.save(point);
 
             // Логируем каждые 100 точек
-            if (i % 100 == 0 || i == pointsCount - 1) {
-                logger.debug("Создана точка {}: x={}, y={}", i, x, y);
+            if (i % 100 == 0 || i == xValues.length - 1) {
+                logger.debug("Создана точка {}: x={}, y={}", i, xValues[i], yValues[i]);
             }
         }
 
@@ -215,23 +228,12 @@ public class FunctionService {
     }
 
     private double calculateMathFunction(String functionKey, double x) {
-        switch (functionKey) {
-            case "sqr":
-                return x * x;
-            case "identity":
-                return x;
-            case "sin":
-                return Math.sin(x);
-            case "cos":
-                return Math.cos(x);
-            case "exp":
-                return Math.exp(x);
-            case "log":
-                return x > 0 ? Math.log(x) : Double.NaN;
-            default:
-                logger.warn("Неизвестная функция: {}", functionKey);
-                return 0;
+        MathFunction function = mathFunctionService.getFunctionByKey(functionKey);
+        if (function == null) {
+            logger.warn("Неизвестная функция: {}", functionKey);
+            return 0;
         }
+        return function.apply(x);
     }
 
     // Остальные существующие методы...

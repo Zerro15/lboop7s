@@ -446,6 +446,11 @@
             factoryType: document.getElementById('math-factory').value
         };
 
+        if (!payload.mathFunctionKey) {
+            showErrorModal('Выберите математическую функцию для табулирования.');
+            return;
+        }
+
         if (payload.pointsCount < 2) {
             showErrorModal('Количество точек должно быть не менее двух.');
             return;
