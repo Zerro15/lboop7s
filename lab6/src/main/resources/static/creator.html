@@ -146,12 +146,21 @@
 <script src="/js/ui-common.js"></script>
 <script>
     const mathSelect = document.getElementById('mathSelect');
-    mathFunctionRegistry.sort((a,b) => a.label.localeCompare(b.label)).forEach(fn => {
-        const option = document.createElement('option');
-        option.value = fn.key;
-        option.textContent = fn.label;
-        mathSelect.appendChild(option);
-    });
+
+    const renderMathOptions = async () => {
+        try {
+            const registry = await loadMathRegistry();
+            mathSelect.innerHTML = '';
+            registry.forEach(fn => {
+                const option = document.createElement('option');
+                option.value = fn.key;
+                option.textContent = fn.label;
+                mathSelect.appendChild(option);
+            });
+        } catch (e) {
+            errorModal.show('Не удалось загрузить функции', e.message);
+        }
+    };
 
     const renderFactory = factoryPills('factorySelect', async (type) => {
         try {
@@ -174,6 +183,7 @@
         localStorage.setItem('lastLogin', login);
         toast('Доступ сохранён.');
         loadFactory();
+        renderMathOptions();
     };
 
     const loadFactory = async () => {
@@ -185,6 +195,12 @@
             renderFactory.render(uiState.factoryType);
         }
     };
+
+    (async function init() {
+        document.getElementById('login').value = localStorage.getItem('lastLogin') || '';
+        await renderMathOptions();
+        await loadFactory();
+    })();
 
     const buildTable = () => {
         const input = document.getElementById('pointsCount');

@@ -99,30 +99,44 @@ const factoryPills = (containerId, onChange) => {
     return { render };
 };
 
-const mathFunctionRegistry = [
-    { key: 'identity', label: 'Тождественная функция', fn: (x) => x },
-    { key: 'sqr', label: 'Квадратичная функция', fn: (x) => x * x },
-    { key: 'sin', label: 'Синус', fn: (x) => Math.sin(x) },
-    { key: 'cos', label: 'Косинус', fn: (x) => Math.cos(x) },
-    { key: 'exp', label: 'Экспонента', fn: (x) => Math.exp(x) },
-    { key: 'log', label: 'Натуральный логарифм', fn: (x) => x > 0 ? Math.log(x) : NaN },
-];
+let mathFunctionRegistry = [];
 
-const generateFromMath = ({ key, pointsCount, leftBound, rightBound }) => {
-    const fn = mathFunctionRegistry.find(f => f.key === key)?.fn;
-    if (!fn) throw new Error('Неизвестная функция');
-    if (pointsCount < 2 || !Number.isFinite(pointsCount)) throw new Error('Минимум две точки');
-    if (!(Number.isFinite(leftBound) && Number.isFinite(rightBound))) throw new Error('Границы не заданы');
-    if (leftBound >= rightBound) throw new Error('Левая граница должна быть меньше правой');
-    const step = (rightBound - leftBound) / (pointsCount - 1);
-    const points = [];
-    for (let i = 0; i < pointsCount; i++) {
-        const x = leftBound + i * step;
-        const y = fn(x);
-        if (!Number.isFinite(y)) throw new Error(`Некорректное значение функции в точке ${x}`);
-        points.push({ x, y });
+const loadMathRegistry = async () => {
+    if (mathFunctionRegistry.length > 0) {
+        return mathFunctionRegistry;
     }
-    return points;
+    const list = await fetchSafe('/api/v1/math-functions');
+    mathFunctionRegistry = list
+        .map(item => ({ key: item.key, label: item.label, priority: item.priority }))
+        .sort((a, b) => a.priority === b.priority
+            ? a.label.localeCompare(b.label)
+            : a.priority - b.priority);
+    return mathFunctionRegistry;
+};
+
+const previewMathPoints = async ({ key, pointsCount, leftBound, rightBound }) => {
+    if (!(Number.isFinite(pointsCount) && pointsCount >= 2)) {
+        throw new Error('Минимум две точки');
+    }
+    if (!(Number.isFinite(leftBound) && Number.isFinite(rightBound))) {
+        throw new Error('Границы не заданы');
+    }
+    if (leftBound >= rightBound) {
+        throw new Error('Левая граница должна быть меньше правой');
+    }
+    const payload = await fetchSafe('/api/v1/math-functions/preview', {
+        method: 'POST',
+        body: JSON.stringify({
+            mathFunctionKey: key,
+            pointsCount,
+            leftBound,
+            rightBound
+        })
+    });
+    if (!payload || !Array.isArray(payload.points)) {
+        throw new Error('Сервис не вернул точки для предпросмотра');
+    }
+    return payload.points.map(p => ({ x: p.x, y: p.y }));
 };
 
 const downloadJson = (filename, data) => {

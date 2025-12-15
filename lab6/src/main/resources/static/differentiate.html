@@ -202,13 +202,13 @@
         mathModal.showModal();
     };
 
-    const commitMathModal = () => {
+    const commitMathModal = async () => {
         const key = document.getElementById('mathSelect').value;
         const pointsCount = parseInt(document.getElementById('mathPoints').value, 10);
         const leftBound = safeNumber(document.getElementById('mathLeft').value);
         const rightBound = safeNumber(document.getElementById('mathRight').value);
         try {
-            const points = generateFromMath({ key, pointsCount, leftBound, rightBound });
+            const points = await previewMathPoints({ key, pointsCount, leftBound, rightBound });
             sourcePoints = points;
             renderTable('sourceTable', points, true);
             closeModal(mathModal);
@@ -281,15 +281,26 @@
 
     const closeModal = (modal) => { if (modal.open) modal.close(); };
 
-    (function init() {
+    const renderMathOptions = async () => {
+        try {
+            const registry = await loadMathRegistry();
+            const select = document.getElementById('mathSelect');
+            select.innerHTML = '';
+            registry.forEach(fn => {
+                const option = document.createElement('option');
+                option.value = fn.key;
+                option.textContent = fn.label;
+                select.appendChild(option);
+            });
+        } catch (e) {
+            errorModal.show('Не удалось загрузить функции', e.message);
+        }
+    };
+
+    (async function init() {
         document.getElementById('login').value = localStorage.getItem('lastLogin') || '';
         factoryPills('factorySelect');
-        mathFunctionRegistry.sort((a,b) => a.label.localeCompare(b.label)).forEach(fn => {
-            const option = document.createElement('option');
-            option.value = fn.key;
-            option.textContent = fn.label;
-            document.getElementById('mathSelect').appendChild(option);
-        });
+        await renderMathOptions();
     })();
 </script>
 </body>
