@@ -179,6 +179,14 @@
             background: #e5e7eb;
             align-self: stretch;
         }
+        .stacked-form label {
+            display: block;
+            margin: 6px 0;
+        }
+        .stacked-form .actions {
+            margin-top: 12px;
+            justify-content: flex-start;
+        }
         .field-error {
             color: #b91c1c;
             display: block;
@@ -530,7 +538,7 @@
                     <button type="button" data-create-target="A"><span class="icon">➕</span>Создать…</button>
                     <label class="secondary" style="padding: 10px; cursor: pointer;">
                         <span class="icon">📂</span>Загрузить…
-                        <input type="file" accept="application/json,text/csv" data-load-target="A" class="hidden">
+                        <input type="file" accept=".json,.xml,.dat,.csv,application/json,text/csv" data-load-target="A" class="hidden">
                     </label>
                     <div class="spacer"></div>
                     <button type="button" class="secondary hidden" data-insert-target="A"><span class="icon">📌</span>Вставить</button>
@@ -553,7 +561,7 @@
                     <button type="button" data-create-target="B"><span class="icon">➕</span>Создать…</button>
                     <label class="secondary" style="padding: 10px; cursor: pointer;">
                         <span class="icon">📂</span>Загрузить…
-                        <input type="file" accept="application/json,text/csv" data-load-target="B" class="hidden">
+                        <input type="file" accept=".json,.xml,.dat,.csv,application/json,text/csv" data-load-target="B" class="hidden">
                     </label>
                     <div class="spacer"></div>
                     <button type="button" class="secondary hidden" data-insert-target="B"><span class="icon">📌</span>Вставить</button>
@@ -580,7 +588,7 @@
                     <div class="spacer"></div>
                     <button type="button" class="secondary" data-save-target="RESULT"><span class="icon">💾</span>Сохранить…</button>
                 </div>
-                <div class="mini-note">X и Y недоступны для редактирования, сохраняются в JSON.</div>
+                <div class="mini-note">X и Y недоступны для редактирования; поддерживаются форматы JSON, XML и DAT.</div>
                 <div class="table-meta"><span class="label">Имя результата:</span> <span data-slot-label="RESULT">—</span></div>
             </div>
         </div>
@@ -606,13 +614,13 @@
                     <button type="button" data-create-target="EXPLORER"><span class="icon">➕</span>Создать…</button>
                     <label class="secondary" style="padding: 10px; cursor: pointer;">
                         <span class="icon">📂</span>Загрузить…
-                        <input type="file" accept="application/json,text/csv" data-load-target="EXPLORER" class="hidden">
+                        <input type="file" accept=".json,.xml,.dat,.csv,application/json,text/csv" data-load-target="EXPLORER" class="hidden">
                     </label>
                     <div class="spacer"></div>
                     <button type="button" class="secondary hidden" data-insert-target="EXPLORER"><span class="icon">📌</span>Вставить</button>
                     <button type="button" class="secondary hidden" data-remove-target="EXPLORER"><span class="icon">🗑️</span>Удалить</button>
                     <div class="spacer"></div>
-                    <button type="button" class="secondary" data-save-target="EXPLORER"><span class="icon">💾</span>Сохранить JSON…</button>
+                    <button type="button" class="secondary" data-save-target="EXPLORER"><span class="icon">💾</span>Сохранить…</button>
                     <button type="button" class="secondary" data-save-target="EXPLORER" data-save-format="csv"><span class="icon">📑</span>Сохранить CSV…</button>
                     <button type="button" class="secondary" data-clear-target="EXPLORER"><span class="icon">🧹</span>Очистить</button>
                 </div>
@@ -662,7 +670,7 @@
                     <button type="button" data-create-target="DIFF_SOURCE"><span class="icon">➕</span>Создать…</button>
                     <label class="secondary" style="padding: 10px; cursor: pointer;">
                         <span class="icon">📂</span>Загрузить…
-                        <input type="file" accept="application/json,text/csv" data-load-target="DIFF_SOURCE" class="hidden">
+                        <input type="file" accept=".json,.xml,.dat,.csv,application/json,text/csv" data-load-target="DIFF_SOURCE" class="hidden">
                     </label>
                     <div class="spacer"></div>
                     <button type="button" class="secondary hidden" data-insert-target="DIFF_SOURCE"><span class="icon">📌</span>Вставить</button>
@@ -746,6 +754,21 @@
     </div>
 </div>
 
+<div id="format-overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+        <h3>Выбор формата файла</h3>
+        <form id="format-form" class="stacked-form">
+            <label><input type="radio" name="file-format" value="json" checked> JSON (.json)</label>
+            <label><input type="radio" name="file-format" value="xml"> XML (.xml)</label>
+            <label><input type="radio" name="file-format" value="dat"> Бинарный (.dat)</label>
+            <div class="actions">
+                <button type="submit" id="format-confirm">Сохранить</button>
+                <button type="button" class="secondary" id="format-cancel">Отмена</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 <script th:inline="javascript">
@@ -759,6 +782,10 @@
     const modalMessage = document.getElementById('modal-message');
     const confirmModalBtn = document.getElementById('confirm-modal');
     const closeModalBtn = document.getElementById('close-modal');
+    const formatOverlay = document.getElementById('format-overlay');
+    const formatForm = document.getElementById('format-form');
+    const formatCancelBtn = document.getElementById('format-cancel');
+    let pendingSaveSlot = null;
 
     const windowOverlay = document.getElementById('window-overlay');
     const pointsTable = document.getElementById('points-table');
@@ -933,6 +960,24 @@
         closeHandler = null;
         if (handler) {
             handler();
+        }
+    }
+
+    function openFormatModal(slot) {
+        pendingSaveSlot = slot;
+        const defaultOption = formatForm.querySelector('input[name="file-format"][value="json"]');
+        if (defaultOption) {
+            defaultOption.checked = true;
+        }
+        formatOverlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeFormatModal() {
+        pendingSaveSlot = null;
+        formatOverlay.classList.add('hidden');
+        if (modalManager.openModals.size === 0 && errorOverlay.classList.contains('hidden')) {
+            document.body.style.overflow = 'auto';
         }
     }
 
@@ -1163,10 +1208,7 @@
         }
     });
 
-    async function handleResponse(response) {
-        if (response.ok) {
-            return response.json();
-        }
+    async function readErrorMessage(response) {
         let errorMessage = 'Не удалось выполнить запрос';
         try {
             const errorBody = await response.json();
@@ -1174,6 +1216,14 @@
         } catch (e) {
             // тело не JSON, оставляем сообщение по умолчанию
         }
+        return errorMessage;
+    }
+
+    async function handleResponse(response) {
+        if (response.ok) {
+            return response.json();
+        }
+        const errorMessage = await readErrorMessage(response);
         showErrorModal(errorMessage);
         throw new Error(errorMessage);
     }
@@ -1181,6 +1231,15 @@
     function getFactoryLabel(key) {
         const match = factoryTypes.find((factory) => factory.key === key);
         return match ? match.label : key;
+    }
+
+    function detectFormat(filename = '') {
+        const lower = filename.toLowerCase();
+        if (lower.endsWith('.json')) return 'json';
+        if (lower.endsWith('.xml')) return 'xml';
+        if (lower.endsWith('.dat')) return 'dat';
+        if (lower.endsWith('.csv')) return 'csv';
+        return null;
     }
 
     function dtoToPayload(dto) {
@@ -1391,62 +1450,143 @@
 
     function bindFileLoading() {
         document.querySelectorAll('[data-load-target]').forEach((input) => {
-            input.addEventListener('change', (event) => {
+            input.addEventListener('change', async (event) => {
                 const { files } = event.target;
                 if (!files || files.length === 0) {
                     return;
                 }
                 const slot = event.target.dataset.loadTarget;
-                setLoading(true, 'Загрузка файла функции…');
-                const reader = new FileReader();
-                reader.onload = () => {
-                    try {
-                        const parsed = JSON.parse(reader.result);
-                        applyPayload(slot, parsed, parsed.name || files[0].name);
-                        trackRecentFile(files[0].name, slot);
-                    } catch (e) {
+                const file = files[0];
+                const format = detectFormat(file.name);
+                if (!format) {
+                    showErrorModal('Неподдерживаемое расширение файла.');
+                    event.target.value = '';
+                    return;
+                }
+
+                if (format === 'csv') {
+                    setLoading(true, 'Загрузка CSV файла…');
+                    const reader = new FileReader();
+                    reader.onload = () => {
                         try {
-                            const parsedCsv = parseCsvToPayload(reader.result, files[0].name);
-                            applyPayload(slot, parsedCsv, parsedCsv.name || files[0].name);
-                            trackRecentFile(files[0].name, slot);
+                            const parsedCsv = parseCsvToPayload(reader.result, file.name);
+                            applyPayload(slot, parsedCsv, parsedCsv.name || file.name);
+                            trackRecentFile(file.name, slot);
+                            setDirty(slot, false);
                         } catch (csvError) {
-                            showErrorModal('Не удалось разобрать файл функции.');
+                            showErrorModal('Не удалось разобрать CSV файл функции.');
+                        } finally {
+                            setLoading(false);
                         }
-                    }
-                };
-                reader.onerror = () => {
-                    showErrorModal('Ошибка при чтении файла функции.');
-                };
-                reader.onloadend = () => setLoading(false);
-                reader.readAsText(files[0]);
-                event.target.value = '';
+                    };
+                    reader.onerror = () => {
+                        showErrorModal('Ошибка при чтении файла функции.');
+                        setLoading(false);
+                    };
+                    reader.readAsText(file);
+                    event.target.value = '';
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', file);
+                try {
+                    setLoading(true, 'Загрузка файла функции…');
+                    const response = await fetch(`/ui/api/tabulated-functions/files/deserialize?format=${format}`, {
+                        method: 'POST',
+                        body: formData,
+                    });
+                    const payload = await handleResponse(response);
+                    applyPayload(slot, payload, payload.name || file.name);
+                    trackRecentFile(file.name, slot);
+                    setDirty(slot, false);
+                } catch (e) {
+                    // сообщение уже показано
+                } finally {
+                    setLoading(false);
+                    event.target.value = '';
+                }
             });
         });
     }
 
     function bindSaving() {
+        formatForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const selected = formatForm.querySelector('input[name="file-format"]:checked');
+            const format = selected ? selected.value : 'json';
+            if (!pendingSaveSlot) {
+                closeFormatModal();
+                return;
+            }
+            try {
+                await saveWithFormat(pendingSaveSlot, format);
+            } finally {
+                closeFormatModal();
+            }
+        });
+
+        formatCancelBtn.addEventListener('click', () => closeFormatModal());
+
         document.querySelectorAll('[data-save-target]').forEach((button) => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', async () => {
                 const slot = button.dataset.saveTarget;
                 const payload = functionsState[slot];
                 if (!payload || !payload.xValues || payload.xValues.length === 0) {
                     showErrorModal('Нет данных для сохранения.');
                     return;
                 }
-                const format = button.dataset.saveFormat || 'json';
-                const content = format === 'csv' ? stringifyCsv(payload) : JSON.stringify(payload, null, 2);
-                const mime = format === 'csv' ? 'text/csv' : 'application/json';
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(new Blob([content], { type: mime }));
-                link.download = `${payload.name || slot}.${format}`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(link.href);
-                showStatus(`Функция сохранена в формате ${format.toUpperCase()}.`, 'success');
-                setDirty(slot, false);
+                const format = button.dataset.saveFormat;
+                if (format === 'csv') {
+                    saveCsv(slot, payload);
+                    return;
+                }
+                openFormatModal(slot);
             });
         });
+    }
+
+    async function saveWithFormat(slot, format) {
+        const payload = functionsState[slot];
+        setLoading(true, 'Сохранение функции…');
+        try {
+            const response = await fetch(`/ui/api/tabulated-functions/files/serialize?format=${format}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) {
+                const message = await readErrorMessage(response);
+                showErrorModal(message);
+                throw new Error(message);
+            }
+            const blob = await response.blob();
+            const extension = format === 'xml' ? 'xml' : format === 'dat' ? 'dat' : 'json';
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${payload.name || slot}.${extension}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            showStatus(`Функция сохранена в формате ${extension.toUpperCase()}.`, 'success');
+            setDirty(slot, false);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function saveCsv(slot, payload) {
+        const content = stringifyCsv(payload);
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([content], { type: 'text/csv' }));
+        link.download = `${payload.name || slot}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        showStatus('Функция сохранена в формате CSV.', 'success');
+        setDirty(slot, false);
     }
 
     function bindClearing() {
