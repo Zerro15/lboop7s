@@ -198,6 +198,37 @@
             border-radius: 8px;
             margin-top: 6px;
         }
+        .operations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 12px;
+        }
+        .operations-panel {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px;
+            background: #f9fafb;
+        }
+        .operations-panel h4 {
+            margin-top: 0;
+        }
+        .inline-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .table.readonly td input {
+            background: #f3f4f6;
+            border-color: #e5e7eb;
+            cursor: default;
+        }
+        .mini-note {
+            color: #6b7280;
+            font-size: 13px;
+            margin-top: 6px;
+        }
         .factory-badge.hidden {
             display: none;
         }
@@ -357,9 +388,58 @@
             <h3>Окно бинарных операций</h3>
             <button type="button" class="close-btn" data-close-modal="operations-window">×</button>
         </div>
-        <p>Здесь будут выполняться сложение, умножение и другие операции над табулированными функциями.
-            Окно доступно только в единственном экземпляре и поддерживает модальный режим.</p>
-        <div class="status info">Функциональность будет добавлена в следующих задачах.</div>
+        <p>Складывайте, вычитайте, умножайте и делите табулированные функции. Окно единично и блокирует фон.</p>
+        <div class="operations-grid">
+            <div class="operations-panel" id="operand-a-panel">
+                <h4>Функция 1 (Операнд A)</h4>
+                <table class="table" aria-label="Операнд A" id="operand-a-table">
+                    <thead><tr><th>X</th><th>Y</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="inline-actions">
+                    <button type="button" data-create-target="A">Создать…</button>
+                    <label class="secondary" style="padding: 10px; cursor: pointer;">
+                        Загрузить…
+                        <input type="file" accept="application/json" data-load-target="A" class="hidden">
+                    </label>
+                    <button type="button" class="secondary" data-save-target="A">Сохранить…</button>
+                </div>
+                <div class="mini-note">Y редактируемые. Изменения применяются сразу.</div>
+            </div>
+
+            <div class="operations-panel" id="operand-b-panel">
+                <h4>Функция 2 (Операнд B)</h4>
+                <table class="table" aria-label="Операнд B" id="operand-b-table">
+                    <thead><tr><th>X</th><th>Y</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="inline-actions">
+                    <button type="button" data-create-target="B">Создать…</button>
+                    <label class="secondary" style="padding: 10px; cursor: pointer;">
+                        Загрузить…
+                        <input type="file" accept="application/json" data-load-target="B" class="hidden">
+                    </label>
+                    <button type="button" class="secondary" data-save-target="B">Сохранить…</button>
+                </div>
+                <div class="mini-note">Загрузите или создайте функцию для дальнейших операций.</div>
+            </div>
+
+            <div class="operations-panel" id="result-panel">
+                <h4>Результат</h4>
+                <table class="table readonly" aria-label="Результат" id="result-table">
+                    <thead><tr><th>X</th><th>Y</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="inline-actions">
+                    <button type="button" data-operation="add">+</button>
+                    <button type="button" data-operation="subtract">-</button>
+                    <button type="button" data-operation="multiply">*</button>
+                    <button type="button" data-operation="divide">/</button>
+                    <button type="button" class="secondary" data-save-target="RESULT">Сохранить…</button>
+                </div>
+                <div class="mini-note">X и Y недоступны для редактирования, сохраняются в JSON.</div>
+            </div>
+        </div>
         <div class="actions">
             <button type="button" class="secondary" data-close-modal="operations-window">Закрыть окно</button>
         </div>
@@ -422,6 +502,9 @@
     const pointsCountError = document.getElementById('points-count-error');
     const MAX_POINTS = 1000;
     let confirmHandler = null;
+    let closeHandler = null;
+    let creationTarget = null;
+    const operationsState = { A: null, B: null, RESULT: null };
 
     const modalManager = {
         openModals: new Map(),
@@ -475,9 +558,10 @@
     }
 
     function showModal(message, options = {}) {
-        const { confirmText, onConfirm, closeText } = options;
+        const { confirmText, onConfirm, closeText, onClose } = options;
         modalMessage.textContent = message || 'Неизвестная ошибка';
         confirmHandler = typeof onConfirm === 'function' ? onConfirm : null;
+        closeHandler = typeof onClose === 'function' ? onClose : null;
 
         if (confirmHandler) {
             confirmModalBtn.textContent = confirmText || 'Продолжить';
@@ -500,7 +584,12 @@
         if (modalManager.openModals.size === 0) {
             document.body.style.overflow = 'auto';
         }
+        const handler = closeHandler;
         confirmHandler = null;
+        closeHandler = null;
+        if (handler) {
+            handler();
+        }
     }
 
     confirmModalBtn.addEventListener('click', () => {
@@ -601,6 +690,169 @@
         return match ? match.label : key;
     }
 
+    function dtoToPayload(dto) {
+        if (!dto || !Array.isArray(dto.points) || dto.points.length === 0) {
+            return null;
+        }
+        return {
+            name: dto.name || 'Функция',
+            xValues: dto.points.map((p) => p.x),
+            yValues: dto.points.map((p) => p.y),
+        };
+    }
+
+    function renderSlot(slot, tableId, editable) {
+        const data = operationsState[slot];
+        const table = document.getElementById(tableId);
+        const tbody = table.querySelector('tbody');
+        tbody.innerHTML = '';
+
+        if (!data || !data.xValues || !data.yValues || data.xValues.length === 0) {
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 2;
+            cell.textContent = 'Нет данных';
+            row.appendChild(cell);
+            tbody.appendChild(row);
+            return;
+        }
+
+        for (let i = 0; i < data.xValues.length; i += 1) {
+            const row = document.createElement('tr');
+            const xCell = document.createElement('td');
+            const xInput = document.createElement('input');
+            xInput.type = 'number';
+            xInput.readOnly = true;
+            xInput.value = data.xValues[i];
+            xCell.appendChild(xInput);
+
+            const yCell = document.createElement('td');
+            const yInput = document.createElement('input');
+            yInput.type = 'number';
+            yInput.step = 'any';
+            yInput.value = data.yValues[i];
+            yInput.readOnly = !editable;
+            if (editable) {
+                yInput.addEventListener('change', () => {
+                    const newVal = Number(yInput.value);
+                    if (Number.isNaN(newVal)) {
+                        showErrorModal('Введите числовое значение Y.');
+                        yInput.value = data.yValues[i];
+                        return;
+                    }
+                    data.yValues[i] = newVal;
+                });
+            }
+            yCell.appendChild(yInput);
+
+            row.appendChild(xCell);
+            row.appendChild(yCell);
+            tbody.appendChild(row);
+        }
+    }
+
+    function applyPayload(slot, payload) {
+        if (!payload || !Array.isArray(payload.xValues) || !Array.isArray(payload.yValues)) {
+            showErrorModal('Не удалось применить данные функции.');
+            return;
+        }
+        if (payload.xValues.length !== payload.yValues.length || payload.xValues.length < 2) {
+            showErrorModal('Количество точек должно совпадать и быть не меньше двух.');
+            return;
+        }
+        operationsState[slot] = {
+            name: payload.name || `Функция ${slot}`,
+            xValues: payload.xValues.slice(),
+            yValues: payload.yValues.slice(),
+        };
+        renderSlot(slot, slot === 'RESULT' ? 'result-table' : `operand-${slot.toLowerCase()}-table`, slot !== 'RESULT');
+        showStatus(`Обновлена область ${slot}: ${operationsState[slot].name}.`, 'info');
+    }
+
+    function showCreationChooser(target) {
+        showModal('Выберите способ создания функции', {
+            confirmText: 'Из массивов',
+            onConfirm: () => {
+                creationTarget = target;
+                modalManager.open('arrays-window');
+            },
+            closeText: 'Из MathFunction',
+            onClose: () => {
+                creationTarget = target;
+                modalManager.open('math-window');
+            }
+        });
+    }
+
+    function bindFileLoading() {
+        document.querySelectorAll('[data-load-target]').forEach((input) => {
+            input.addEventListener('change', (event) => {
+                const { files } = event.target;
+                if (!files || files.length === 0) {
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        const parsed = JSON.parse(reader.result);
+                        applyPayload(event.target.dataset.loadTarget, parsed);
+                    } catch (e) {
+                        showErrorModal('Не удалось разобрать файл функции.');
+                    }
+                };
+                reader.readAsText(files[0]);
+                event.target.value = '';
+            });
+        });
+    }
+
+    function bindSaving() {
+        document.querySelectorAll('[data-save-target]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const slot = button.dataset.saveTarget;
+                const payload = operationsState[slot];
+                if (!payload || !payload.xValues || payload.xValues.length === 0) {
+                    showErrorModal('Нет данных для сохранения.');
+                    return;
+                }
+                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `${payload.name || slot}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+                showStatus('Функция сохранена в JSON.', 'success');
+            });
+        });
+    }
+
+    async function performOperation(operation) {
+        if (!operationsState.A || !operationsState.B) {
+            showErrorModal('Задайте обе функции-операнды.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/ui/api/tabulated-functions/operations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    operation,
+                    factoryType: activeFactoryKey,
+                    left: operationsState.A,
+                    right: operationsState.B,
+                })
+            });
+            const data = await handleResponse(response);
+            applyPayload('RESULT', data.result);
+            showStatus('Операция успешно выполнена.', 'success');
+        } catch (e) {
+            // ошибки выводятся модально
+        }
+    }
+
     function syncFactoryDisplay() {
         document.querySelectorAll('[data-active-factory-label]').forEach((element) => {
             element.textContent = getFactoryLabel(activeFactoryKey);
@@ -636,6 +888,20 @@
     document.getElementById('open-operations-window').addEventListener('click', () => modalManager.open('operations-window'));
     document.getElementById('open-diff-window').addEventListener('click', () => modalManager.open('diff-window'));
     document.getElementById('open-about-window').addEventListener('click', () => modalManager.open('about-window'));
+
+    document.querySelectorAll('[data-create-target]').forEach((button) => {
+        button.addEventListener('click', () => showCreationChooser(button.dataset.createTarget));
+    });
+
+    document.querySelectorAll('[data-operation]').forEach((button) => {
+        button.addEventListener('click', () => performOperation(button.dataset.operation));
+    });
+
+    bindFileLoading();
+    bindSaving();
+    renderSlot('A', 'operand-a-table', true);
+    renderSlot('B', 'operand-b-table', true);
+    renderSlot('RESULT', 'result-table', false);
 
     document.getElementById('arrays-form').addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -673,6 +939,12 @@
             });
             const data = await handleResponse(response);
             showStatus(`Функция создана (ID: ${data.id}, имя: ${data.name}).`, 'success');
+            const payload = dtoToPayload(data);
+            if (creationTarget && payload) {
+                applyPayload(creationTarget, payload);
+                creationTarget = null;
+                modalManager.open('operations-window');
+            }
             modalManager.close('arrays-window');
         } catch (e) {
             // Ошибка уже отображена модально
@@ -716,6 +988,12 @@
             const descriptor = mathFunctions.find((f) => f.key === data.mathFunctionKey);
             const label = descriptor ? descriptor.label : data.mathFunctionKey;
             showStatus(`Функция ${label} табулирована (ID: ${data.id}) в ${payload.pointsCount} точках.`, 'success');
+            const mapped = dtoToPayload(data);
+            if (creationTarget && mapped) {
+                applyPayload(creationTarget, mapped);
+                creationTarget = null;
+                modalManager.open('operations-window');
+            }
             modalManager.close('math-window');
         } catch (e) {
             // Ошибка уже отображена модально

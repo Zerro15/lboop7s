@@ -2,6 +2,7 @@ package com.example.lab5.ui;
 
 import com.example.lab5.framework.dto.CreateFromArraysRequest;
 import com.example.lab5.framework.dto.CreateFromMathRequest;
+import com.example.lab5.framework.dto.FunctionCreationResult;
 import com.example.lab5.framework.dto.FunctionDTO;
 import com.example.lab5.framework.entity.Function;
 import com.example.lab5.framework.service.FunctionService;
@@ -25,19 +26,20 @@ public class TabulatedFunctionUiApiController {
 
     @PostMapping("/arrays")
     public ResponseEntity<FunctionDTO> createFromArrays(@RequestBody CreateFromArraysRequest request) {
-        Function created = functionService.createFromArrays(
+        FunctionCreationResult result = functionService.createFromArrays(
                 request.getUserId(),
                 request.getName(),
                 request.getPoints(),
                 request.getFactoryType()
         );
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(created));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mapper.toDto(result.getFunction(), result.getXValues(), result.getYValues()));
     }
 
     @PostMapping("/math-function")
     public ResponseEntity<FunctionDTO> createFromMathFunction(@RequestBody CreateFromMathRequest request) {
-        Function created = functionService.createFromMathFunction(
+        FunctionCreationResult result = functionService.createFromMathFunction(
                 request.getUserId(),
                 request.getName(),
                 request.getMathFunctionKey(),
@@ -47,6 +49,7 @@ public class TabulatedFunctionUiApiController {
                 request.getFactoryType()
         );
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(created));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mapper.toDto(result.getFunction(), result.getXValues(), result.getYValues()));
     }
 }

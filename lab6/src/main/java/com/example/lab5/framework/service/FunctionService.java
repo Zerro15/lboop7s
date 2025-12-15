@@ -58,9 +58,9 @@ public class FunctionService {
 
     // НОВЫЕ МЕТОДЫ ДЛЯ LAB 7
     @Transactional
-    public Function createFromArrays(Long userId, String name,
-                                     List<CreateFromArraysRequest.PointData> pointsData,
-                                     String factoryType) {
+    public FunctionCreationResult createFromArrays(Long userId, String name,
+                                                   List<CreateFromArraysRequest.PointData> pointsData,
+                                                   String factoryType) {
         logger.info("Создание функции из массивов: user={}, name={}, points={}, factory={}",
                 userId, name, pointsData.size(), factoryType);
 
@@ -102,13 +102,13 @@ public class FunctionService {
         }
 
         logger.info("Создано {} точек для функции {}", resolvedX.length, savedFunction.getId());
-        return savedFunction;
+        return new FunctionCreationResult(savedFunction, resolvedX, resolvedY);
     }
 
     @Transactional
-    public Function createFromMathFunction(Long userId, String name, String mathFunctionKey,
-                                           Integer pointsCount, Double leftBound, Double rightBound,
-                                           String factoryType) {
+    public FunctionCreationResult createFromMathFunction(Long userId, String name, String mathFunctionKey,
+                                                         Integer pointsCount, Double leftBound, Double rightBound,
+                                                         String factoryType) {
         logger.info("Создание функции из MathFunction: user={}, name={}, functionKey={}, points={}, bounds=[{}, {}], factory={}",
                 userId, name, mathFunctionKey, pointsCount, leftBound, rightBound, factoryType);
 
@@ -168,7 +168,7 @@ public class FunctionService {
         }
 
         logger.info("Сгенерировано {} точек для функции {}", pointsCount, savedFunction.getId());
-        return savedFunction;
+        return new FunctionCreationResult(savedFunction, xValues, yValues);
     }
 
     public EvaluateResponse evaluateFunction(Long functionId, Double x) {
