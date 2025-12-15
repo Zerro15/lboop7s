@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Конструктор табулированных функций</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f4f6f8;
+            color: #1f2933;
+        }
+        header {
+            background: #0b65c2;
+            color: #fff;
+            padding: 16px 24px;
+        }
+        main {
+            max-width: 1100px;
+            margin: 24px auto;
+            padding: 0 16px 48px;
+        }
+        h1 {
+            margin: 0;
+        }
+        h2 {
+            margin-top: 32px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+            padding: 20px;
+            margin-top: 16px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px 16px;
+            align-items: end;
+        }
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+        input, select, button, textarea {
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background: #0b65c2;
+            color: #fff;
+            cursor: pointer;
+            border: none;
+            transition: background 0.2s ease;
+        }
+        button:hover {
+            background: #0a58a2;
+        }
+        button.secondary {
+            background: #f3f4f6;
+            color: #1f2933;
+            border: 1px solid #d1d5db;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+        .table th, .table td {
+            border: 1px solid #e5e7eb;
+            padding: 8px;
+            text-align: left;
+        }
+        .actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .status {
+            margin-top: 18px;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .status.success {
+            background: #ecfdf3;
+            color: #065f46;
+            border: 1px solid #bbf7d0;
+        }
+        .status.info {
+            background: #eef2ff;
+            color: #3730a3;
+            border: 1px solid #c7d2fe;
+        }
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: #fff;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        .modal h3 {
+            margin-top: 0;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Создание TabulatedFunction</h1>
+    <p>Два сценария: из массивов точек и из математической функции</p>
+</header>
+<main>
+    <div class="card">
+        <h2>Создание из массивов точек</h2>
+        <p>Укажите пользователя, имя функции, тип фабрики и набор точек (минимум две).</p>
+        <form id="arrays-form">
+            <div class="form-grid">
+                <div>
+                    <label for="arrays-user">ID пользователя</label>
+                    <input type="number" id="arrays-user" name="userId" required min="1" placeholder="Например, 1">
+                </div>
+                <div>
+                    <label for="arrays-name">Название функции</label>
+                    <input type="text" id="arrays-name" name="name" required placeholder="Например, Точки вручную">
+                </div>
+                <div>
+                    <label for="arrays-factory">Тип фабрики</label>
+                    <select id="arrays-factory" name="factoryType" required>
+                        <option value="" disabled selected>Выберите тип</option>
+                        <option th:each="factory : ${factoryTypes}"
+                                th:value="${factory}"
+                                th:text="${factory}"></option>
+                    </select>
+                </div>
+            </div>
+
+            <table class="table" aria-label="Точки функции">
+                <thead>
+                <tr>
+                    <th>X</th>
+                    <th>Y</th>
+                    <th>Действие</th>
+                </tr>
+                </thead>
+                <tbody id="points-body">
+                <tr>
+                    <td><input type="number" step="any" name="x" required></td>
+                    <td><input type="number" step="any" name="y" required></td>
+                    <td><button type="button" class="secondary remove-row">Удалить</button></td>
+                </tr>
+                <tr>
+                    <td><input type="number" step="any" name="x" required></td>
+                    <td><input type="number" step="any" name="y" required></td>
+                    <td><button type="button" class="secondary remove-row">Удалить</button></td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="actions">
+                <button type="button" id="add-point" class="secondary">Добавить точку</button>
+                <button type="submit">Создать функцию</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Создание из математической функции</h2>
+        <p>Выберите готовую математическую функцию и задайте параметры табулирования.</p>
+        <form id="math-form">
+            <div class="form-grid">
+                <div>
+                    <label for="math-user">ID пользователя</label>
+                    <input type="number" id="math-user" name="userId" required min="1" placeholder="Например, 1">
+                </div>
+                <div>
+                    <label for="math-name">Название функции</label>
+                    <input type="text" id="math-name" name="name" required placeholder="Например, Синусовая сетка">
+                </div>
+                <div>
+                    <label for="math-key">Математическая функция</label>
+                    <select id="math-key" name="mathFunctionKey" required>
+                        <option value="" disabled selected>Выберите функцию</option>
+                        <option th:each="func : ${mathFunctions}"
+                                th:value="${func.key}"
+                                th:text="${func.label}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label for="points-count">Количество точек</label>
+                    <input type="number" id="points-count" name="pointsCount" required min="2" value="10">
+                </div>
+                <div>
+                    <label for="left-bound">Левая граница</label>
+                    <input type="number" step="any" id="left-bound" name="leftBound" required value="0">
+                </div>
+                <div>
+                    <label for="right-bound">Правая граница</label>
+                    <input type="number" step="any" id="right-bound" name="rightBound" required value="1">
+                </div>
+                <div>
+                    <label for="math-factory">Тип фабрики</label>
+                    <select id="math-factory" name="factoryType" required>
+                        <option value="" disabled selected>Выберите тип</option>
+                        <option th:each="factory : ${factoryTypes}"
+                                th:value="${factory}"
+                                th:text="${factory}"></option>
+                    </select>
+                </div>
+            </div>
+            <div class="actions">
+                <button type="submit">Создать по формуле</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="status" class="status info">Статус операций будет отображаться здесь.</div>
+</main>
+
+<div id="modal-overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+        <h3>Ошибка</h3>
+        <p id="modal-message">Произошла ошибка.</p>
+        <div class="actions">
+            <button type="button" id="close-modal">Закрыть</button>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const mathFunctions = /*[[${mathFunctions}]]*/ [];
+    const statusPanel = document.getElementById('status');
+    const overlay = document.getElementById('modal-overlay');
+    const modalMessage = document.getElementById('modal-message');
+
+    function showStatus(message, type = 'info') {
+        statusPanel.textContent = message;
+        statusPanel.className = `status ${type}`;
+    }
+
+    function showErrorModal(message) {
+        modalMessage.textContent = message || 'Неизвестная ошибка';
+        overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function hideErrorModal() {
+        overlay.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    document.getElementById('close-modal').addEventListener('click', hideErrorModal);
+
+    function addPointRow() {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="number" step="any" name="x" required></td>
+            <td><input type="number" step="any" name="y" required></td>
+            <td><button type="button" class="secondary remove-row">Удалить</button></td>
+        `;
+        document.getElementById('points-body').appendChild(row);
+    }
+
+    document.getElementById('add-point').addEventListener('click', addPointRow);
+
+    document.getElementById('points-body').addEventListener('click', (event) => {
+        if (event.target.classList.contains('remove-row')) {
+            const rows = document.querySelectorAll('#points-body tr');
+            if (rows.length <= 1) {
+                showErrorModal('Нельзя удалить все строки: нужна хотя бы одна точка.');
+                return;
+            }
+            event.target.closest('tr').remove();
+        }
+    });
+
+    async function handleResponse(response) {
+        if (response.ok) {
+            return response.json();
+        }
+        let errorMessage = 'Не удалось выполнить запрос';
+        try {
+            const errorBody = await response.json();
+            errorMessage = errorBody.message || errorMessage;
+        } catch (e) {
+            // тело не JSON, оставляем сообщение по умолчанию
+        }
+        showErrorModal(errorMessage);
+        throw new Error(errorMessage);
+    }
+
+    document.getElementById('arrays-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const userId = Number(document.getElementById('arrays-user').value);
+        const name = document.getElementById('arrays-name').value.trim();
+        const factoryType = document.getElementById('arrays-factory').value;
+        const points = Array.from(document.querySelectorAll('#points-body tr')).map((row) => {
+            const x = row.querySelector('input[name="x"]').value;
+            const y = row.querySelector('input[name="y"]').value;
+            return { x: Number(x), y: Number(y) };
+        });
+
+        if (points.length < 2) {
+            showErrorModal('Добавьте как минимум две точки.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/ui/api/tabulated-functions/arrays', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, name, factoryType, points })
+            });
+            const data = await handleResponse(response);
+            showStatus(`Функция создана (ID: ${data.id}, имя: ${data.name}).`, 'success');
+        } catch (e) {
+            // Ошибка уже отображена модально
+        }
+    });
+
+    document.getElementById('math-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const payload = {
+            userId: Number(document.getElementById('math-user').value),
+            name: document.getElementById('math-name').value.trim(),
+            mathFunctionKey: document.getElementById('math-key').value,
+            pointsCount: Number(document.getElementById('points-count').value),
+            leftBound: Number(document.getElementById('left-bound').value),
+            rightBound: Number(document.getElementById('right-bound').value),
+            factoryType: document.getElementById('math-factory').value
+        };
+
+        if (payload.pointsCount < 2) {
+            showErrorModal('Количество точек должно быть не менее двух.');
+            return;
+        }
+
+        if (payload.leftBound >= payload.rightBound) {
+            showErrorModal('Левая граница должна быть меньше правой.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/ui/api/tabulated-functions/math-function', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await handleResponse(response);
+            const descriptor = mathFunctions.find((f) => f.key === data.mathFunctionKey);
+            const label = descriptor ? descriptor.label : data.mathFunctionKey;
+            showStatus(`Функция ${label} табулирована (ID: ${data.id}) в ${payload.pointsCount} точках.`, 'success');
+        } catch (e) {
+            // Ошибка уже отображена модально
+        }
+    });
+</script>
+</body>
+</html>

@@ -42,6 +42,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .authorizeRequests()
                 .antMatchers("/api/v1/auth/register").permitAll()
+                .antMatchers("/ui/**", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                 .antMatchers("/api/v1/users").hasRole("ADMIN")
                 .antMatchers("/api/v1/users/**").hasAnyRole("ADMIN", "USER")
                 .antMatchers("/api/v1/functions/**").hasAnyRole("ADMIN", "USER")
