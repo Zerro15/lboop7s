@@ -68,6 +68,19 @@
             color: #1f2933;
             border: 1px solid #d1d5db;
         }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .user-pill {
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #111827;
+            border: 1px solid #c7d2fe;
+            font-weight: bold;
+        }
         button .icon {
             margin-right: 6px;
         }
@@ -182,6 +195,32 @@
         .stacked-form label {
             display: block;
             margin: 6px 0;
+        }
+        .auth-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+        #auth-card form {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        .creation-field[data-hidden="true"] {
+            display: none;
+        }
+        #creator-card .chart-card,
+        #editor-card .chart-card {
+            height: 320px;
+            margin-top: 12px;
+        }
+        .theme-dark .card,
+        body.dark .card {
+            border: 1px solid #1f2937;
         }
         .stacked-form .actions {
             margin-top: 12px;
@@ -362,14 +401,174 @@
             gap: 8px;
             align-items: center;
         }
+        body.dark {
+            background: #0b1220;
+            color: #e5e7eb;
+        }
+        body.dark header {
+            background: #0f172a;
+            color: #e5e7eb;
+        }
+        body.dark .card {
+            background: #111827;
+            color: #e5e7eb;
+            box-shadow: none;
+        }
+        body.dark input,
+        body.dark select,
+        body.dark textarea {
+            background: #0f172a;
+            border-color: #374151;
+            color: #e5e7eb;
+        }
+        body.dark button.secondary {
+            background: #1f2937;
+            color: #e5e7eb;
+            border-color: #374151;
+        }
+        body.dark .user-pill {
+            background: #1f2937;
+            color: #e5e7eb;
+            border-color: #374151;
+        }
+        body.dark .table th,
+        body.dark .table td {
+            border-color: #1f2937;
+        }
     </style>
 </head>
 <body>
 <header>
-    <h1>Центр управления табулированными функциями</h1>
-    <p>Настройте фабрику и открывайте модальные окна для операций.</p>
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div>
+            <h1>Центр управления табулированными функциями</h1>
+            <p>Настройте фабрику, управляйте функциями и работайте через бекэнд.</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" id="theme-toggle">🌙 Темная тема</button>
+            <div class="user-pill" id="user-pill">Гость</div>
+        </div>
+    </div>
 </header>
 <main>
+    <div class="card" id="auth-card">
+        <h2>Авторизация и регистрация</h2>
+        <p>Регистрация сохраняет учетную запись в базе данных, авторизация выдает токен Basic для всех запросов.</p>
+        <div class="auth-grid">
+            <form id="login-form">
+                <h4>Вход</h4>
+                <label for="login-username">Логин</label>
+                <input type="text" id="login-username" required>
+                <label for="login-password">Пароль</label>
+                <input type="password" id="login-password" required>
+                <div class="actions">
+                    <button type="submit">Войти</button>
+                </div>
+            </form>
+            <form id="register-form">
+                <h4>Регистрация</h4>
+                <label for="register-username">Логин</label>
+                <input type="text" id="register-username" required>
+                <label for="register-password">Пароль</label>
+                <input type="password" id="register-password" required>
+                <div class="actions">
+                    <button type="submit" class="secondary">Создать учетную запись</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card" id="creator-card">
+        <h2>Создание функции через API</h2>
+        <p>Функция сохраняется целиком: перед отправкой убедитесь, что авторизованы и выберите способ создания.</p>
+        <form id="create-function-form">
+            <div class="form-grid">
+                <div>
+                    <label for="function-name">Название</label>
+                    <input type="text" id="function-name" required placeholder="Например, Моя функция">
+                </div>
+                <div>
+                    <label for="factory-select">Тип фабрики</label>
+                    <select id="factory-select"></select>
+                </div>
+                <div>
+                    <label for="creation-method">Способ создания</label>
+                    <select id="creation-method">
+                        <option value="arrays">Массив точек</option>
+                        <option value="math">По математической функции</option>
+                    </select>
+                </div>
+                <div class="creation-field" data-method="math">
+                    <label for="math-select">Математическая функция</label>
+                    <select id="math-select"></select>
+                </div>
+                <div class="creation-field" data-method="math">
+                    <label for="points-count-create">Количество точек</label>
+                    <input type="number" id="points-count-create" min="2" value="10">
+                </div>
+                <div class="creation-field" data-method="math">
+                    <label for="left-bound-create">Левая граница</label>
+                    <input type="number" step="any" id="left-bound-create" value="0">
+                </div>
+                <div class="creation-field" data-method="math">
+                    <label for="right-bound-create">Правая граница</label>
+                    <input type="number" step="any" id="right-bound-create" value="1">
+                </div>
+            </div>
+            <label class="creation-field" data-method="arrays" for="points-source">Точки (x;y, по одной на строку)</label>
+            <textarea class="creation-field" data-method="arrays" id="points-source" rows="4" placeholder="0;0\n1;1\n2;4"></textarea>
+            <div class="actions">
+                <button type="submit">Создать и построить</button>
+            </div>
+        </form>
+        <div class="chart-card" aria-live="polite">
+            <canvas id="creation-chart"></canvas>
+        </div>
+    </div>
+
+    <div class="card" id="editor-card">
+        <h2>Редактирование и график сохраненной функции</h2>
+        <p>Выберите сохраненную функцию пользователя, измените имя, добавьте или удалите точки и переиспользуйте график.</p>
+        <div class="form-grid">
+            <div>
+                <label for="user-functions">Функции пользователя</label>
+                <select id="user-functions">
+                    <option value="" disabled selected>Войдите, чтобы загрузить список</option>
+                </select>
+            </div>
+            <div>
+                <label for="rename-input">Новое имя</label>
+                <input type="text" id="rename-input" placeholder="Введите новое имя">
+            </div>
+            <div>
+                <label>&nbsp;</label>
+                <button type="button" id="rename-button">Сохранить имя</button>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table class="table" id="points-table-editor">
+                <thead><tr><th>X</th><th>Y</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="form-grid">
+            <div>
+                <label for="new-point-x">X</label>
+                <input type="number" step="any" id="new-point-x">
+            </div>
+            <div>
+                <label for="new-point-y">Y</label>
+                <input type="number" step="any" id="new-point-y">
+            </div>
+            <div>
+                <label>&nbsp;</label>
+                <button type="button" id="add-point-button">Добавить точку</button>
+            </div>
+        </div>
+        <div class="chart-card">
+            <canvas id="editor-chart"></canvas>
+        </div>
+    </div>
     <div class="card">
         <h2>Главное управление</h2>
         <p>Выберите активную фабрику и открывайте только одно окно каждого типа. Повторное открытие вернет уже
@@ -938,6 +1137,384 @@
         EXPLORER: false,
         INTEGRAL: false,
     };
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const themeToggle = document.getElementById('theme-toggle');
+    const userPill = document.getElementById('user-pill');
+    const factorySelect = document.getElementById('factory-select');
+    const creationMethodSelect = document.getElementById('creation-method');
+    const mathSelect = document.getElementById('math-select');
+    const creationFields = document.querySelectorAll('.creation-field');
+    const createFunctionForm = document.getElementById('create-function-form');
+    const creationChartCanvas = document.getElementById('creation-chart');
+    const editorChartCanvas = document.getElementById('editor-chart');
+    const userFunctionsSelect = document.getElementById('user-functions');
+    const renameInput = document.getElementById('rename-input');
+    const pointsTableEditor = document.getElementById('points-table-editor').querySelector('tbody');
+    const addPointButton = document.getElementById('add-point-button');
+    const renameButton = document.getElementById('rename-button');
+    let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    let authToken = localStorage.getItem('authToken') || '';
+    let creationChartInstance = null;
+    let editorChartInstance = null;
+    let activeFunctionDetails = null;
+
+    function showAlert(message) {
+        alert(message);
+    }
+
+    function applyTheme(theme) {
+        const body = document.body;
+        if (theme === 'dark') {
+            body.classList.add('dark');
+            themeToggle.textContent = '☀️ Светлая тема';
+        } else {
+            body.classList.remove('dark');
+            themeToggle.textContent = '🌙 Темная тема';
+        }
+        localStorage.setItem('ui-theme', theme);
+    }
+
+    function initTheme() {
+        const saved = localStorage.getItem('ui-theme') || 'light';
+        applyTheme(saved);
+    }
+
+    async function apiFetch(url, options = {}) {
+        const opts = { ...options };
+        opts.headers = { ...(options.headers || {}) };
+
+        if (!(opts.body instanceof FormData) && !opts.headers['Content-Type']) {
+            opts.headers['Content-Type'] = 'application/json';
+        }
+        if (authToken) {
+            opts.headers['Authorization'] = authToken;
+        }
+
+        const response = await fetch(url, opts);
+        if (!response.ok) {
+            const text = await response.text();
+            const message = text || `Ошибка ${response.status}`;
+            showAlert(message);
+            throw new Error(message);
+        }
+        return response;
+    }
+
+    function syncUserBadge() {
+        if (currentUser) {
+            userPill.textContent = `${currentUser.login} (${currentUser.role})`;
+        } else {
+            userPill.textContent = 'Гость';
+        }
+    }
+
+    function persistAuth(user, token) {
+        currentUser = user;
+        authToken = token;
+        if (user && token) {
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            localStorage.setItem('authToken', token);
+        } else {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('authToken');
+        }
+        syncUserBadge();
+    }
+
+    function toggleCreationFields(method) {
+        creationFields.forEach((field) => {
+            const shouldShow = field.getAttribute('data-method') === method;
+            field.setAttribute('data-hidden', shouldShow ? 'false' : 'true');
+        });
+    }
+
+    function setLoading(isLoading) {
+        document.getElementById('global-loading').classList.toggle('active', isLoading);
+    }
+
+    function parsePointLines(text) {
+        return text.split(/\n+/)
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .map((line) => {
+                const [x, y] = line.split(/[,;\s]+/).map(Number);
+                if (Number.isNaN(x) || Number.isNaN(y)) {
+                    throw new Error('Каждая строка должна содержать два числа через пробел или точку с запятой');
+                }
+                return { x, y };
+            });
+    }
+
+    async function handleLogin(event) {
+        event.preventDefault();
+        try {
+            const payload = {
+                login: document.getElementById('login-username').value,
+                password: document.getElementById('login-password').value,
+            };
+            const response = await apiFetch('/api/v1/auth/login', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+            const data = await response.json();
+            persistAuth({ id: data.id, login: data.login, role: data.role }, data.token);
+            showAlert('Вход выполнен, можно работать с функциями.');
+            await loadUserFunctions();
+            setUserIdDefaults();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function handleRegister(event) {
+        event.preventDefault();
+        try {
+            const payload = {
+                login: document.getElementById('register-username').value,
+                password: document.getElementById('register-password').value,
+                role: 'USER',
+            };
+            await apiFetch('/api/v1/auth/register', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+            showAlert('Пользователь создан. Теперь войдите, чтобы получить токен.');
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function setUserIdDefaults() {
+        if (currentUser) {
+            const arrayUser = document.getElementById('arrays-user');
+            const mathUser = document.getElementById('math-user');
+            if (arrayUser) arrayUser.value = currentUser.id;
+            if (mathUser) mathUser.value = currentUser.id;
+        }
+    }
+
+    function renderChart(canvas, data, existingChart) {
+        if (!canvas || !data || !data.length) {
+            return existingChart;
+        }
+        const ctx = canvas.getContext('2d');
+        if (existingChart) {
+            existingChart.destroy();
+        }
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map((p) => p.x),
+                datasets: [{
+                    label: 'f(x)',
+                    data: data.map((p) => p.y),
+                    borderColor: '#0b65c2',
+                    backgroundColor: 'rgba(11,101,194,0.15)',
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+            },
+        });
+    }
+
+    async function handleCreateFunction(event) {
+        event.preventDefault();
+        if (!currentUser) {
+            showAlert('Сначала войдите, чтобы создавать функции.');
+            return;
+        }
+        setLoading(true);
+        try {
+            const name = document.getElementById('function-name').value;
+            const factoryType = factorySelect.value || activeFactoryKey;
+            const method = creationMethodSelect.value;
+            let response;
+            if (method === 'arrays') {
+                const pointsText = document.getElementById('points-source').value;
+                const points = parsePointLines(pointsText);
+                response = await apiFetch('/ui/api/tabulated-functions/arrays', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        userId: currentUser.id,
+                        name,
+                        points,
+                        factoryType,
+                    }),
+                });
+            } else {
+                response = await apiFetch('/ui/api/tabulated-functions/math-function', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        userId: currentUser.id,
+                        name,
+                        mathFunctionKey: mathSelect.value,
+                        pointsCount: Number(document.getElementById('points-count-create').value),
+                        leftBound: Number(document.getElementById('left-bound-create').value),
+                        rightBound: Number(document.getElementById('right-bound-create').value),
+                        factoryType,
+                    }),
+                });
+            }
+            const data = await response.json();
+            const points = (data.points || []).map((p) => ({ x: p.x, y: p.y }));
+            creationChartInstance = renderChart(creationChartCanvas, points, creationChartInstance);
+            showAlert('Функция создана и сохранена. График обновлен.');
+            await loadUserFunctions();
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function loadUserFunctions() {
+        if (!currentUser) {
+            return;
+        }
+        const response = await apiFetch(`/api/v1/users/${currentUser.id}/functions`);
+        const functions = await response.json();
+        userFunctionsSelect.innerHTML = '<option value="" disabled selected>Выберите функцию</option>';
+        functions.forEach((fn) => {
+            const option = document.createElement('option');
+            option.value = fn.id;
+            option.textContent = `${fn.name} (${fn.id})`;
+            userFunctionsSelect.appendChild(option);
+        });
+    }
+
+    async function loadFunctionDetails(functionId) {
+        if (!functionId) return;
+        const [fnResponse, pointsResponse] = await Promise.all([
+            apiFetch(`/api/v1/functions/${functionId}`),
+            apiFetch(`/api/v1/functions/${functionId}/points`),
+        ]);
+        activeFunctionDetails = await fnResponse.json();
+        const points = await pointsResponse.json();
+        renameInput.value = activeFunctionDetails.name;
+        renderPoints(points);
+    }
+
+    function renderPoints(points) {
+        pointsTableEditor.innerHTML = '';
+        const prepared = points.map((p) => ({ x: p.xValue, y: p.yValue, id: p.id }));
+        prepared.forEach((point) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${point.x}</td><td>${point.y}</td>`;
+            const td = document.createElement('td');
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = 'Удалить';
+            btn.classList.add('secondary');
+            btn.addEventListener('click', () => deletePoint(point.id));
+            td.appendChild(btn);
+            tr.appendChild(td);
+            pointsTableEditor.appendChild(tr);
+        });
+        editorChartInstance = renderChart(editorChartCanvas, prepared, editorChartInstance);
+    }
+
+    async function deletePoint(pointId) {
+        if (!pointId) return;
+        await apiFetch(`/api/v1/points/${pointId}`, { method: 'DELETE' });
+        showAlert('Точка удалена.');
+        await loadFunctionDetails(userFunctionsSelect.value);
+    }
+
+    async function addPoint() {
+        if (!activeFunctionDetails) {
+            showAlert('Сначала выберите функцию.');
+            return;
+        }
+        const x = Number(document.getElementById('new-point-x').value);
+        const y = Number(document.getElementById('new-point-y').value);
+        if (Number.isNaN(x) || Number.isNaN(y)) {
+            showAlert('Укажите корректные координаты точки.');
+            return;
+        }
+        await apiFetch('/api/v1/points', {
+            method: 'POST',
+            body: JSON.stringify({
+                functionId: activeFunctionDetails.id,
+                xValue: x,
+                yValue: y,
+            }),
+        });
+        showAlert('Точка сохранена.');
+        document.getElementById('new-point-x').value = '';
+        document.getElementById('new-point-y').value = '';
+        await loadFunctionDetails(userFunctionsSelect.value);
+    }
+
+    async function renameFunction() {
+        if (!activeFunctionDetails) {
+            showAlert('Сначала выберите функцию.');
+            return;
+        }
+        const newName = renameInput.value.trim();
+        if (!newName) {
+            showAlert('Введите новое имя.');
+            return;
+        }
+        await apiFetch(`/api/v1/functions/${activeFunctionDetails.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                id: activeFunctionDetails.id,
+                name: newName,
+                userId: activeFunctionDetails.userId,
+                signature: activeFunctionDetails.signature,
+            }),
+        });
+        showAlert('Имя сохранено.');
+        await loadFunctionDetails(activeFunctionDetails.id);
+        await loadUserFunctions();
+    }
+
+    function populateFactorySelect() {
+        factorySelect.innerHTML = '';
+        factoryTypes.forEach((factory) => {
+            const option = document.createElement('option');
+            option.value = factory.key;
+            option.textContent = factory.label || factory.key;
+            if (factory.active) option.selected = true;
+            factorySelect.appendChild(option);
+        });
+    }
+
+    function populateMathSelect() {
+        mathSelect.innerHTML = '';
+        mathFunctions.forEach((fn) => {
+            const option = document.createElement('option');
+            option.value = fn.key;
+            option.textContent = fn.label || fn.key;
+            mathSelect.appendChild(option);
+        });
+    }
+
+    function bindNewUi() {
+        initTheme();
+        syncUserBadge();
+        populateFactorySelect();
+        populateMathSelect();
+        toggleCreationFields(creationMethodSelect.value);
+        creationMethodSelect.addEventListener('change', (event) => toggleCreationFields(event.target.value));
+        themeToggle.addEventListener('click', () => {
+            const next = document.body.classList.contains('dark') ? 'light' : 'dark';
+            applyTheme(next);
+        });
+        loginForm.addEventListener('submit', handleLogin);
+        registerForm.addEventListener('submit', handleRegister);
+        createFunctionForm.addEventListener('submit', handleCreateFunction);
+        userFunctionsSelect.addEventListener('change', (event) => loadFunctionDetails(event.target.value));
+        addPointButton.addEventListener('click', addPoint);
+        renameButton.addEventListener('click', renameFunction);
+        if (currentUser) {
+            setUserIdDefaults();
+            loadUserFunctions();
+        }
+    }
     const selectedRows = {
         A: null,
         B: null,
@@ -1706,7 +2283,7 @@
                 formData.append('file', file);
                 try {
                     setLoading(true, 'Загрузка файла функции…');
-                    const response = await fetch(`/ui/api/tabulated-functions/files/deserialize?format=${format}`, {
+                    const response = await apiFetch(`/ui/api/tabulated-functions/files/deserialize?format=${format}`, {
                         method: 'POST',
                         body: formData,
                     });
@@ -1764,16 +2341,11 @@
         const payload = functionsState[slot];
         setLoading(true, 'Сохранение функции…');
         try {
-            const response = await fetch(`/ui/api/tabulated-functions/files/serialize?format=${format}`, {
+            const response = await apiFetch(`/ui/api/tabulated-functions/files/serialize?format=${format}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-            if (!response.ok) {
-                const message = await readErrorMessage(response);
-                showErrorModal(message);
-                throw new Error(message);
-            }
             const blob = await response.blob();
             const extension = format === 'xml' ? 'xml' : format === 'dat' ? 'dat' : 'json';
             const link = document.createElement('a');
@@ -1863,7 +2435,7 @@
                     onConfirm: async () => {
                         try {
                             setLoading(true, 'Удаление точки…');
-                            const response = await fetch('/ui/api/tabulated-functions/remove', {
+                            const response = await apiFetch('/ui/api/tabulated-functions/remove', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
@@ -1911,7 +2483,7 @@
 
             try {
                 setLoading(true, 'Вставка точки…');
-                const response = await fetch('/ui/api/tabulated-functions/insert', {
+                const response = await apiFetch('/ui/api/tabulated-functions/insert', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1952,7 +2524,7 @@
 
         try {
             setLoading(true, 'Выполнение операции…');
-            const response = await fetch('/ui/api/tabulated-functions/operations', {
+            const response = await apiFetch('/ui/api/tabulated-functions/operations', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1984,7 +2556,7 @@
 
         try {
             setLoading(true, 'Выполнение дифференцирования…');
-            const response = await fetch('/ui/api/tabulated-functions/differential', {
+            const response = await apiFetch('/ui/api/tabulated-functions/differential', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2018,7 +2590,7 @@
         const xValue = Number(String(explorerXInput.value).replace(',', '.'));
         try {
             setLoading(true, 'Вычисление значения…');
-            const response = await fetch('/ui/api/tabulated-functions/apply', {
+            const response = await apiFetch('/ui/api/tabulated-functions/apply', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2058,7 +2630,7 @@
 
         try {
             setLoading(true, 'Вычисление интеграла…');
-            const response = await fetch('/ui/api/tabulated-functions/integration', {
+            const response = await apiFetch('/ui/api/tabulated-functions/integration', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2096,7 +2668,7 @@
 
         try {
             setLoading(true, 'Создание композитной функции…');
-            const response = await fetch('/api/v1/math-functions/composite', {
+            const response = await apiFetch('/api/v1/math-functions/composite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, outerKey, innerKey })
@@ -2119,7 +2691,7 @@
         }
         try {
             setLoading(true, 'Переименование функции…');
-            const response = await fetch('/api/v1/math-functions/composite/rename', {
+            const response = await apiFetch('/api/v1/math-functions/composite/rename', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ oldName: name, newName })
@@ -2140,7 +2712,7 @@
             onConfirm: async () => {
                 try {
                     setLoading(true, 'Удаление функции…');
-                    const response = await fetch('/api/v1/math-functions/composite/delete', {
+                    const response = await apiFetch('/api/v1/math-functions/composite/delete', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name })
@@ -2178,6 +2750,7 @@
         });
     }
 
+    bindNewUi();
     syncFactoryDisplay();
 
     document.getElementById('open-array-window').addEventListener('click', () => modalManager.open('arrays-window'));
@@ -2282,7 +2855,7 @@
 
         try {
             setLoading(true, 'Создание функции из массивов…');
-            const response = await fetch('/ui/api/tabulated-functions/arrays', {
+            const response = await apiFetch('/ui/api/tabulated-functions/arrays', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, name, factoryType, points })
@@ -2335,7 +2908,7 @@
 
         try {
             setLoading(true, 'Табулирование функции…');
-            const response = await fetch('/ui/api/tabulated-functions/math-function', {
+            const response = await apiFetch('/ui/api/tabulated-functions/math-function', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -2369,7 +2942,7 @@
             return;
         }
         try {
-            const response = await fetch('/ui/api/factories/activate', {
+            const response = await apiFetch('/ui/api/factories/activate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key: selected.value })
