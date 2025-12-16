@@ -544,6 +544,10 @@
                 <label>&nbsp;</label>
                 <button type="button" id="rename-button">Сохранить имя</button>
             </div>
+            <div>
+                <label>&nbsp;</label>
+                <button type="button" class="secondary" id="editor-back-button">Вернуться назад</button>
+            </div>
         </div>
         <div class="table-wrapper">
             <table class="table" id="points-table-editor">
@@ -1153,6 +1157,7 @@
     const pointsTableEditor = document.getElementById('points-table-editor').querySelector('tbody');
     const addPointButton = document.getElementById('add-point-button');
     const renameButton = document.getElementById('rename-button');
+    const editorBackButton = document.getElementById('editor-back-button');
     let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
     let authToken = localStorage.getItem('authToken') || '';
     let creationChartInstance = null;
@@ -1416,6 +1421,20 @@
         editorChartInstance = renderChart(editorChartCanvas, prepared, editorChartInstance);
     }
 
+    function resetEditorSelection() {
+        if (userFunctionsSelect) {
+            userFunctionsSelect.selectedIndex = 0;
+        }
+        activeFunctionDetails = null;
+        renameInput.value = '';
+        pointsTableEditor.innerHTML = '';
+        if (editorChartInstance) {
+            editorChartInstance.destroy();
+            editorChartInstance = null;
+        }
+        showStatus('Вы вернулись к списку функций. Выберите запись, чтобы продолжить.', 'info');
+    }
+
     async function deletePoint(pointId) {
         if (!pointId) return;
         await apiFetch(`/api/v1/points/${pointId}`, { method: 'DELETE' });
@@ -1510,6 +1529,7 @@
         userFunctionsSelect.addEventListener('change', (event) => loadFunctionDetails(event.target.value));
         addPointButton.addEventListener('click', addPoint);
         renameButton.addEventListener('click', renameFunction);
+        editorBackButton.addEventListener('click', resetEditorSelection);
         if (currentUser) {
             setUserIdDefaults();
             loadUserFunctions();
