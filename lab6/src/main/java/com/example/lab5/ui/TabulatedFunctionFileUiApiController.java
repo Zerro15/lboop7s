@@ -11,6 +11,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +24,7 @@ import java.io.IOException;
 import java.util.Locale;
 
 @RestController
-@RequestMapping("/ui/api/tabulated-functions/files")
+@RequestMapping("/ui/api/tabulated-functions/advanced/files") // ИЗМЕНИЛ: добавил /advanced
 public class TabulatedFunctionFileUiApiController {
 
     private final TabulatedFunctionFactoryHolder factoryHolder;
@@ -33,6 +34,7 @@ public class TabulatedFunctionFileUiApiController {
     }
 
     @PostMapping(value = "/serialize", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<ByteArrayResource> serialize(@RequestParam String format,
                                                        @RequestBody TabulatedFunctionPayload payload) throws IOException {
         TabulatedFunction function = toFunction(payload);
@@ -68,6 +70,7 @@ public class TabulatedFunctionFileUiApiController {
     }
 
     @PostMapping(value = "/deserialize", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<TabulatedFunctionPayload> deserialize(@RequestParam String format,
                                                                 @RequestParam("file") MultipartFile file) throws IOException {
         String normalized = normalizeFormat(format);

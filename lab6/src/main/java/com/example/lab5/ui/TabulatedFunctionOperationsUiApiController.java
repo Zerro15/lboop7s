@@ -10,13 +10,11 @@ import com.example.lab5.functions.TabulatedFunction;
 import com.example.lab5.functions.TabulatedFunctionFactory;
 import com.example.lab5.functions.TabulatedFunctionOperationService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/ui/api/tabulated-functions/operations")
+@RequestMapping("/ui/api/advanced-operations") // ИЗМЕНИЛИ ПУТЬ!
 public class TabulatedFunctionOperationsUiApiController {
 
     private final TabulatedFunctionFactoryHolder factoryHolder;
@@ -25,7 +23,8 @@ public class TabulatedFunctionOperationsUiApiController {
         this.factoryHolder = factoryHolder;
     }
 
-    @PostMapping
+    @PostMapping("/apply")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<OperationResponse> applyOperation(@RequestBody OperationRequest request) {
         TabulatedFunctionFactory factory = factoryHolder.resolveFactory(request.getFactoryType());
         TabulatedFunctionOperationService service = new TabulatedFunctionOperationService(factory);
@@ -67,5 +66,11 @@ public class TabulatedFunctionOperationsUiApiController {
             throw new IllegalArgumentException("Оба операнда должны быть заданы полностью");
         }
         return new TabulatedFunction(payload.getXValues(), payload.getYValues());
+    }
+
+    @GetMapping("/available")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    public ResponseEntity<?> getAvailableOperations() {
+        return ResponseEntity.ok(new String[]{"add", "subtract", "multiply", "divide"});
     }
 }

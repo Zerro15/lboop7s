@@ -58,19 +58,22 @@ public class TabulatedFunctionUiController {
         return uiService.toResponse(result, request.getFactoryType());
     }
 
-    @PostMapping("/tabulated-functions/operations")
+    // ИЗМЕНИЛ: /basic-operations вместо /operations
+    @PostMapping("/tabulated-functions/basic-operations")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public OperationResponse calculate(@RequestBody OperationRequest request) {
         return uiService.operate(request);
     }
 
-    @PostMapping("/tabulated-functions/differential")
+    // ИЗМЕНИЛ: /basic-differentiate вместо /differential
+    @PostMapping("/tabulated-functions/basic-differentiate")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public DifferentiationResponse differentiate(@RequestBody DifferentiationRequest request) {
         return uiService.differentiate(request);
     }
 
-    @PostMapping("/tabulated-functions/integration")
+    // ИЗМЕНИЛ: /basic-integrate вместо /integration
+    @PostMapping("/tabulated-functions/basic-integrate")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public IntegrationResponse integrate(@RequestBody IntegrationRequest request) {
         return uiService.integrate(request);
@@ -94,7 +97,8 @@ public class TabulatedFunctionUiController {
         return uiService.remove(request);
     }
 
-    @PostMapping(value = "/tabulated-functions/files/serialize", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    // ИЗМЕНИЛ: добавил /basic/ перед files
+    @PostMapping(value = "/tabulated-functions/basic/files/serialize", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<ByteArrayResource> serialize(@RequestParam(defaultValue = "json") String format,
                                                        @RequestBody TabulatedFunctionPayload payload) throws IOException {
@@ -107,7 +111,8 @@ public class TabulatedFunctionUiController {
                 .body(resource);
     }
 
-    @PostMapping(value = "/tabulated-functions/files/deserialize", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // ИЗМЕНИЛ: добавил /basic/ перед files
+    @PostMapping(value = "/tabulated-functions/basic/files/deserialize", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public TabulatedFunctionPayload deserialize(@RequestParam(defaultValue = "json") String format,
                                                 @RequestParam("file") MultipartFile file,

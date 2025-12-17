@@ -10,13 +10,14 @@ import com.example.lab5.functions.TabulatedDifferentialOperator;
 import com.example.lab5.functions.TabulatedFunction;
 import com.example.lab5.functions.TabulatedFunctionFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/ui/api/tabulated-functions/differential")
+@RequestMapping("/ui/api/tabulated-functions/advanced") // ИЗМЕНИЛ ПУТЬ!
 public class TabulatedFunctionDifferentiationUiApiController {
 
     private final TabulatedFunctionFactoryHolder factoryHolder;
@@ -25,7 +26,8 @@ public class TabulatedFunctionDifferentiationUiApiController {
         this.factoryHolder = factoryHolder;
     }
 
-    @PostMapping
+    @PostMapping("/differentiate")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<DifferentiationResponse> differentiate(@RequestBody DifferentiationRequest request) {
         TabulatedFunctionFactory factory = factoryHolder.resolveFactory(request.getFactoryType());
         TabulatedDifferentialOperator operator = new TabulatedDifferentialOperator(factory);
