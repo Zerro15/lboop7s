@@ -7,6 +7,9 @@ import com.example.lab5.framework.entity.User;
 import com.example.lab5.framework.repository.FunctionRepository;
 import com.example.lab5.framework.repository.PointRepository;
 import com.example.lab5.framework.repository.UserRepository;
+import com.example.lab5.functions.MathFunction;
+import com.example.lab5.functions.TabulatedFunction;
+import com.example.lab5.functions.TabulatedFunctionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +33,12 @@ public class FunctionService {
     @Autowired
     private PointRepository pointRepository;
 
+    @Autowired
+    private MathFunctionService mathFunctionService;
+
+    @Autowired
+    private TabulatedFunctionFactoryHolder factoryHolder;
+
     // Существующие методы...
 
     public Function createFunction(Long userId, String name, String signature) {
@@ -49,11 +58,11 @@ public class FunctionService {
 
     // НОВЫЕ МЕТОДЫ ДЛЯ LAB 7
     @Transactional
-    public Function createFromArrays(Long userId, String name,
-                                     List<CreateFromArraysRequest.PointData> pointsData,
-                                     String factoryType) {
+    public FunctionCreationResult createFromArrays(Long userId, String name,
+                                                   List<CreateFromArraysRequest.PointData> pointsData,
+                                                   String factoryType) {
         logger.info("Создание функции из массивов: user={}, name={}, points={}, factory={}",
-                userId, name, pointsData.size(), factoryType);
+                (Object) userId, (Object) name, (Object) pointsData.size(), factoryType);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
@@ -62,40 +71,44 @@ public class FunctionService {
                 });
 
         // Создаем функцию
+        String effectiveFactoryKey = factoryHolder.resolveKey(factoryType);
+        TabulatedFunctionFactory chosenFactory = factoryHolder.resolveFactory(factoryType);
+
+        double[] xValues = pointsData.stream().mapToDouble(CreateFromArraysRequest.PointData::getX).toArray();
+        double[] yValues = pointsData.stream().mapToDouble(CreateFromArraysRequest.PointData::getY).toArray();
+
+        TabulatedFunction tabulatedFunction = chosenFactory.create(xValues, yValues);
+
+        double[] resolvedX = tabulatedFunction.getXValues();
+        double[] resolvedY = tabulatedFunction.getYValues();
         Function function = new Function();
         function.setName(name);
         function.setUser(user);
         function.setSignature("tabulated");
-        function.setFactoryType(factoryType);
+        function.setFactoryType(effectiveFactoryKey);
         function.setCreationMethod("from_arrays");
-        function.setPointsCount(pointsData.size());
-
-        // Находим min/max X для границ
-        double minX = pointsData.stream().mapToDouble(CreateFromArraysRequest.PointData::getX).min().orElse(0);
-        double maxX = pointsData.stream().mapToDouble(CreateFromArraysRequest.PointData::getX).max().orElse(0);
-        function.setLeftBound(minX);
-        function.setRightBound(maxX);
+        function.setPointsCount(resolvedX.length);
+        function.setLeftBound(Double.valueOf(resolvedX[0]));
+        function.setRightBound(Double.valueOf(resolvedX[resolvedX.length - 1]));
 
         Function savedFunction = functionRepository.save(function);
         logger.info("Функция создана с ID: {}", savedFunction.getId());
-
-        // Создаем точки
-        for (CreateFromArraysRequest.PointData pointData : pointsData) {
+        for (int i = 0; i < resolvedX.length; i++) {
             Point point = new Point();
-            point.setXValue(pointData.getX());
-            point.setYValue(pointData.getY());
+            point.setXValue(Double.valueOf(resolvedX[i]));
+            point.setYValue(Double.valueOf(resolvedY[i]));
             point.setFunction(savedFunction);
             pointRepository.save(point);
         }
 
-        logger.info("Создано {} точек для функции {}", pointsData.size(), savedFunction.getId());
-        return savedFunction;
+        logger.info("Создано {} точек для функции {}", Optional.of(resolvedX.length), savedFunction.getId());
+        return new FunctionCreationResult(savedFunction, resolvedX, resolvedY);
     }
 
     @Transactional
-    public Function createFromMathFunction(Long userId, String name, String mathFunctionKey,
-                                           Integer pointsCount, Double leftBound, Double rightBound,
-                                           String factoryType) {
+    public FunctionCreationResult createFromMathFunction(Long userId, String name, String mathFunctionKey,
+                                                         Integer pointsCount, Double leftBound, Double rightBound,
+                                                         String factoryType) {
         logger.info("Создание функции из MathFunction: user={}, name={}, functionKey={}, points={}, bounds=[{}, {}], factory={}",
                 userId, name, mathFunctionKey, pointsCount, leftBound, rightBound, factoryType);
 
@@ -114,12 +127,15 @@ public class FunctionService {
         }
 
         // Создаем функцию
+        String effectiveFactoryKey = factoryHolder.resolveKey(factoryType);
+        TabulatedFunctionFactory chosenFactory = factoryHolder.resolveFactory(factoryType);
+
         Function function = new Function();
         function.setName(name);
         function.setUser(user);
         function.setSignature("math_function_tabulated");
         function.setMathFunctionKey(mathFunctionKey);
-        function.setFactoryType(factoryType);
+        function.setFactoryType(effectiveFactoryKey);
         function.setCreationMethod("from_math_function");
         function.setPointsCount(pointsCount);
         function.setLeftBound(leftBound);
@@ -128,27 +144,31 @@ public class FunctionService {
         Function savedFunction = functionRepository.save(function);
         logger.info("Функция создана с ID: {}", savedFunction.getId());
 
-        // Генерируем точки из математической функции
-        double step = (rightBound - leftBound) / (pointsCount - 1);
+        MathFunction mathFunction = mathFunctionService.getFunctionByKey(mathFunctionKey);
+        if (mathFunction == null) {
+            throw new IllegalArgumentException("Неизвестная математическая функция: " + mathFunctionKey);
+        }
 
-        for (int i = 0; i < pointsCount; i++) {
-            double x = leftBound + i * step;
-            double y = calculateMathFunction(mathFunctionKey, x);
+        TabulatedFunction tabulated = chosenFactory.create(mathFunction, leftBound, rightBound, pointsCount);
 
+        double[] xValues = tabulated.getXValues();
+        double[] yValues = tabulated.getYValues();
+
+        for (int i = 0; i < xValues.length; i++) {
             Point point = new Point();
-            point.setXValue(x);
-            point.setYValue(y);
+            point.setXValue(Double.valueOf(xValues[i]));
+            point.setYValue(Double.valueOf(yValues[i]));
             point.setFunction(savedFunction);
             pointRepository.save(point);
 
             // Логируем каждые 100 точек
-            if (i % 100 == 0 || i == pointsCount - 1) {
-                logger.debug("Создана точка {}: x={}, y={}", i, x, y);
+            if (i % 100 == 0 || i == xValues.length - 1) {
+                logger.debug("Создана точка {}: x={}, y={}");
             }
         }
 
         logger.info("Сгенерировано {} точек для функции {}", pointsCount, savedFunction.getId());
-        return savedFunction;
+        return new FunctionCreationResult(savedFunction, xValues, yValues);
     }
 
     public EvaluateResponse evaluateFunction(Long functionId, Double x) {
@@ -195,7 +215,7 @@ public class FunctionService {
                     double y = p1.getYValue() + ratio * (p2.getYValue() - p1.getYValue());
 
                     logger.debug("Интерполяция: x={} между [{}, {}], y={}",
-                            x, p1.getXValue(), p2.getXValue(), y);
+                            (Object) x, (Object) p1.getXValue(), (Object) p2.getXValue(), (Object) y);
 
                     return new EvaluateResponse(x, y, function.getName(), functionId);
                 }
@@ -214,24 +234,33 @@ public class FunctionService {
         return null;
     }
 
-    private double calculateMathFunction(String functionKey, double x) {
-        switch (functionKey) {
-            case "sqr":
-                return x * x;
-            case "identity":
-                return x;
-            case "sin":
-                return Math.sin(x);
-            case "cos":
-                return Math.cos(x);
-            case "exp":
-                return Math.exp(x);
-            case "log":
-                return x > 0 ? Math.log(x) : Double.NaN;
-            default:
-                logger.warn("Неизвестная функция: {}", functionKey);
-                return 0;
+    public EvaluateTabulatedResponse evaluateTabulated(EvaluateTabulatedRequest request) {
+        if (request == null || request.getFunction() == null) {
+            throw new IllegalArgumentException("Функция для вычисления не задана");
         }
+        if (request.getX() == null) {
+            throw new IllegalArgumentException("Значение X должно быть указано");
+        }
+
+        TabulatedFunctionPayload payload = request.getFunction();
+        TabulatedFunctionFactory chosenFactory = factoryHolder.resolveFactory(request.getFactoryType());
+        TabulatedFunction tabulatedFunction = chosenFactory.create(payload.getXValues(), payload.getYValues());
+
+        double y = tabulatedFunction.apply(request.getX());
+        EvaluateTabulatedResponse response = new EvaluateTabulatedResponse();
+        response.setX(request.getX());
+        response.setY(Double.valueOf(y));
+        response.setName(payload.getName());
+        return response;
+    }
+
+    private double calculateMathFunction(String functionKey, double x) {
+        MathFunction function = mathFunctionService.getFunctionByKey(functionKey);
+        if (function == null) {
+            logger.warn("Неизвестная функция: {}", functionKey);
+            return 0;
+        }
+        return function.apply(x);
     }
 
     // Остальные существующие методы...
@@ -263,7 +292,7 @@ public class FunctionService {
         if (existingFunction.isPresent()) {
             Optional<User> user = userRepository.findById(userId);
             if (!user.isPresent()) {
-                logger.error("Пользователь с ID {} не существует", userId);
+                logger.error("Пользователь с ID {} не существует1", userId);
                 return null;
             }
 
@@ -320,7 +349,7 @@ public class FunctionService {
             );
 
             logger.info("Статистика функции {}: {} точек, x=[{}, {}], y=[{}, {}]",
-                    function.get().getName(), points.size(), minX, maxX, minY, maxY);
+                    (Object) function.get().getName(), (Object) points.size(), (Object) minX, (Object) maxX, (Object) minY, (Object) maxY);
 
             return stats;
         }
@@ -364,7 +393,7 @@ public class FunctionService {
         public String toString() {
             return String.format(
                     "FunctionStatistics{function='%s', points=%d, x=[%.2f, %.2f], y=[%.2f, %.2f], avgY=%.2f}",
-                    functionName, pointCount, minX, maxX, minY, maxY, averageY
+                    (Object) functionName, (Object) pointCount, (Object) minX, (Object) maxX, (Object) minY, (Object) maxY, (Object) averageY
             );
         }
     }

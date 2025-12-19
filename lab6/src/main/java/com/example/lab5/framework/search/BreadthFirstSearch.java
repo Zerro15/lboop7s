@@ -59,7 +59,7 @@ public class BreadthFirstSearch {
             }
         }
 
-        logger.info("BFS search completed. Found {} users", result.size());
+        logger.info("BFS search completed. Found {} users", Optional.of(result.size()));
         return result;
     }
 
@@ -103,7 +103,7 @@ public class BreadthFirstSearch {
             }
         }
 
-        logger.info("BFS search with multiple criteria completed. Found {} users", result.size());
+        logger.info("BFS search with multiple criteria completed. Found {} users", Optional.of(result.size()));
         return result;
     }
 
@@ -139,7 +139,7 @@ public class BreadthFirstSearch {
             return "DESC".equalsIgnoreCase(sortDirection) ? -result : result;
         });
 
-        logger.info("BFS search with sorting completed. Found {} users", users.size());
+        logger.info("BFS search with sorting completed. Found {} users", Optional.of(users.size()));
         return users;
     }
 
@@ -165,7 +165,7 @@ public class BreadthFirstSearch {
             return 0;
         });
 
-        logger.info("BFS search with multiple sorting completed. Found {} users", users.size());
+        logger.info("BFS search with multiple sorting completed. Found {} users", Optional.of(users.size()));
         return users;
     }
 

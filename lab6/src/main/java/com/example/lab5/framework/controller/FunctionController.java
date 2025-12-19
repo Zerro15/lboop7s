@@ -3,8 +3,6 @@ package com.example.lab5.framework.controller;
 import com.example.lab5.framework.dto.*;
 import com.example.lab5.framework.entity.Function;
 import com.example.lab5.framework.service.FunctionService;
-import com.example.lab5.framework.service.MathFunctionService;
-import com.example.lab5.framework.service.FactoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -25,11 +23,7 @@ public class FunctionController {
     @Autowired
     private FunctionService functionService;
 
-    @Autowired
-    private MathFunctionService mathFunctionService;
-
-    @Autowired
-    private FactoryService factoryService;
+    // УДАЛЕНО: MathFunctionService и FactoryService - они в своих контроллерах
 
     private FunctionDTO toDTO(Function function) {
         FunctionDTO dto = new FunctionDTO();
@@ -49,7 +43,8 @@ public class FunctionController {
         return dto;
     }
 
-    // Существующие методы...
+    // Методы для работы с функциями (Function entity)
+
     @GetMapping("/functions")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public List<FunctionDTO> getAllFunctions() {
@@ -57,7 +52,7 @@ public class FunctionController {
         List<FunctionDTO> result = functionService.getAllFunctions().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
-        logger.info("Получено {} функций", result.size());
+        logger.info("Получено {} функций", Optional.of(result.size()));
         return result;
     }
 
@@ -83,7 +78,7 @@ public class FunctionController {
         List<FunctionDTO> result = functionService.getFunctionsByUserId(userId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
-        logger.info("Найдено {} функций для пользователя {}", result.size(), userId);
+        logger.info("Найдено {} функций для пользователя {}", Optional.of(result.size()), userId);
         return result;
     }
 
@@ -106,14 +101,14 @@ public class FunctionController {
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public FunctionDTO createFromArrays(@RequestBody CreateFromArraysRequest request) {
         logger.info("POST /api/v1/functions/create-from-arrays - создание из массивов: name={}, points={}, factory={}",
-                request.getName(), request.getPoints().size(), request.getFactoryType());
+                (Object) request.getName(), (Object) request.getPoints().size(), request.getFactoryType());
 
         Function created = functionService.createFromArrays(
                 request.getUserId(),
                 request.getName(),
                 request.getPoints(),
                 request.getFactoryType()
-        );
+        ).getFunction();
 
         logger.info("Функция создана из массивов с ID: {}", created.getId());
         return toDTO(created);
@@ -133,7 +128,7 @@ public class FunctionController {
                 request.getLeftBound(),
                 request.getRightBound(),
                 request.getFactoryType()
-        );
+        ).getFunction();
 
         logger.info("Функция создана из MathFunction с ID: {}", created.getId());
         return toDTO(created);
@@ -155,57 +150,6 @@ public class FunctionController {
             logger.warn("Не удалось вычислить значение функции {} в точке {}", functionId, request.getX());
             return ResponseEntity.badRequest().build();
         }
-    }
-
-    // MathFunction API
-    @GetMapping("/math-functions")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    public List<MathFunctionDTO> getAllMathFunctions() {
-        logger.info("GET /api/v1/math-functions - получение всех математических функций");
-        return mathFunctionService.getAllMathFunctions();
-    }
-
-    @GetMapping("/math-functions/map")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    public Map<String, MathFunctionDTO> getFunctionMap() {
-        logger.info("GET /api/v1/math-functions/map - получение Map функций");
-        return mathFunctionService.getFunctionMap();
-    }
-
-    @PostMapping("/math-functions/preview")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    public PreviewResponse previewMathFunction(@RequestBody PreviewRequest request) {
-        logger.info("POST /api/v1/math-functions/preview - предпросмотр функции: key={}, points={}",
-                request.getMathFunctionKey(), request.getPointsCount());
-
-        return mathFunctionService.previewMathFunction(
-                request.getMathFunctionKey(),
-                request.getPointsCount(),
-                request.getLeftBound(),
-                request.getRightBound()
-        );
-    }
-
-    // Factory API
-    @GetMapping("/factory/current")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    public FactoryResponse getCurrentFactory() {
-        logger.info("GET /api/v1/factory/current - получение текущей фабрики");
-        return factoryService.getCurrentFactory();
-    }
-
-    @PostMapping("/factory/set")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    public FactoryResponse setFactory(@RequestBody FactoryRequest request) {
-        logger.info("POST /api/v1/factory/set - установка фабрики: {}", request.getFactoryType());
-        return factoryService.setFactory(request.getFactoryType());
-    }
-
-    @GetMapping("/factory/info")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    public Map<String, Object> getFactoryInfo() {
-        logger.info("GET /api/v1/factory/info - получение информации о фабриках");
-        return factoryService.getFactoryInfo();
     }
 
     @PutMapping("/functions/{id}")

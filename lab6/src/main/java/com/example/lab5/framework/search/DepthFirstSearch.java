@@ -41,7 +41,7 @@ public class DepthFirstSearch {
             }
         }
 
-        logger.info("DFS search completed. Found {} users", result.size());
+        logger.info("DFS search completed. Found {} users", Optional.of(result.size()));
         return result;
     }
 
@@ -119,7 +119,7 @@ public class DepthFirstSearch {
             return "DESC".equalsIgnoreCase(sortDirection) ? -result : result;
         });
 
-        logger.info("DFS search with sorting completed. Found {} users", users.size());
+        logger.info("DFS search with sorting completed. Found {} users", Optional.of(users.size()));
         return users;
     }
 
@@ -145,7 +145,7 @@ public class DepthFirstSearch {
             return 0;
         });
 
-        logger.info("DFS search with multiple sorting completed. Found {} users", users.size());
+        logger.info("DFS search with multiple sorting completed. Found {} users", Optional.of(users.size()));
         return users;
     }
 

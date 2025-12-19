@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -38,7 +39,7 @@ public class PointController {
         List<PointDTO> result = pointService.getAllPoints().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
-        logger.info("Получено {} точек", result.size());
+        logger.info("Получено {} точек", Optional.of(result.size()));
         return result;
     }
 
@@ -64,7 +65,7 @@ public class PointController {
         List<PointDTO> result = pointService.getPointsByFunctionId(functionId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
-        logger.info("Найдено {} точек для функции {}", result.size(), functionId);
+        logger.info("Найдено {} точек для функции {}", Optional.of(result.size()), functionId);
         return result;
     }
 
@@ -121,11 +122,11 @@ public class PointController {
             @RequestParam double step) {
 
         logger.info("POST /api/v1/points/generate/{} - генерация точек. Тип: {}, от {} до {} шаг {}",
-                functionId, functionType, start, end, step);
+                (Object) functionId, (Object) functionType, (Object) start, (Object) end, (Object) step);
 
         int count = pointService.generateFunctionPoints(functionId, functionType, start, end, step);
 
-        logger.info("Сгенерировано {} точек для функции {}", count, functionId);
+        logger.info("Сгенерировано {} точек для функции {}", Optional.of(count), functionId);
         return ResponseEntity.ok("Сгенерировано " + count + " точек");
     }
 }

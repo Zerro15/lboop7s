@@ -35,18 +35,20 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
-                .cors().configurationSource(corsConfigurationSource())  // ← ДОБАВИТЬ ЭТУ СТРОКУ
+                .cors().configurationSource(corsConfigurationSource())
                 .and()
                 .csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
                 .antMatchers("/api/v1/auth/register").permitAll()
+                .antMatchers("/ui/**", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                 .antMatchers("/api/v1/users").hasRole("ADMIN")
                 .antMatchers("/api/v1/users/**").hasAnyRole("ADMIN", "USER")
                 .antMatchers("/api/v1/functions/**").hasAnyRole("ADMIN", "USER")
                 .antMatchers("/api/v1/points/**").hasAnyRole("ADMIN", "USER")
-                .antMatchers("/api/v1/math-functions/**").hasAnyRole("ADMIN", "USER")
+                // ИСПРАВЬТЕ ЭТУ СТРОКУ - ваш путь /math/all-functions, а не /math-functions
+                .antMatchers("/api/v1/math/**").hasAnyRole("ADMIN", "USER")  // Изменено с /math-functions
                 .antMatchers("/api/v1/factory/**").hasAnyRole("ADMIN", "USER")
                 .anyRequest().authenticated()
                 .and()
@@ -55,21 +57,23 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .headers().frameOptions().disable();
     }
 
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Разрешаем запросы с фронтенда
+        // Разрешаем запросы с фронтенда - ДОБАВЛЕНО localhost:63342
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",    // React dev server
-                "http://localhost:5173",    // Vite dev server
+                "http://localhost:63342",    // IntelliJ IDEA frontend
+                "http://127.0.0.1:63342",    // IntelliJ IDEA frontend (альтернативный)
+                "http://localhost:3000",     // React dev server
+                "http://localhost:5173",     // Vite dev server
                 "http://127.0.0.1:3000",
-                "http://127.0.0.1:5173"
+                "http://127.0.0.1:5173",
+                "http://localhost:8080"      // Для прямых запросов
         ));
 
         configuration.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"
         ));
 
         configuration.setAllowedHeaders(Arrays.asList(
@@ -79,14 +83,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 "Accept",
                 "Origin",
                 "Access-Control-Request-Method",
-                "Access-Control-Request-Headers"
+                "Access-Control-Request-Headers",
+                "Cache-Control"
         ));
 
         configuration.setExposedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type",
                 "Access-Control-Allow-Origin",
-                "Access-Control-Allow-Credentials"
+                "Access-Control-Allow-Credentials",
+                "Access-Control-Expose-Headers"
         ));
 
         configuration.setAllowCredentials(true);
