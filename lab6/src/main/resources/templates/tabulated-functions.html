@@ -1,2982 +1,548 @@
 <!DOCTYPE html>
-<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Конструктор табулированных функций</title>
+    <title>Функции только в памяти браузера</title>
     <style>
+        :root {
+            color-scheme: light dark;
+        }
+        * { box-sizing: border-box; }
         body {
-            font-family: Arial, sans-serif;
             margin: 0;
-            padding: 0;
-            background: #f4f6f8;
-            color: #1f2933;
+            font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at 10% 20%, #f5f7fb 0, #eef2ff 22%, #f8fafc 45%, #ffffff 100%);
+            color: #0f172a;
+            line-height: 1.55;
         }
         header {
-            background: #0b65c2;
+            padding: 20px 24px;
+            background: linear-gradient(120deg, #0b65c2, #2563eb);
             color: #fff;
-            padding: 16px 24px;
+            box-shadow: 0 10px 30px rgba(11, 101, 194, 0.25);
         }
+        header h1 { margin: 0 0 6px; font-size: 26px; }
+        header p { margin: 0; max-width: 780px; opacity: 0.9; }
         main {
             max-width: 1100px;
-            margin: 24px auto;
-            padding: 0 16px 48px;
-        }
-        h1 {
-            margin: 0;
-        }
-        h2 {
-            margin-top: 0;
+            margin: 20px auto 64px;
+            padding: 0 16px;
+            display: grid;
+            gap: 16px;
         }
         .card {
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-            padding: 20px;
-            margin-top: 16px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 10px 40px rgba(15, 23, 42, 0.05);
+            border: 1px solid #e5e7eb;
         }
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 12px 16px;
-            align-items: end;
-        }
-        label {
-            display: block;
-            margin-bottom: 4px;
-            font-weight: bold;
-        }
-        input, select, button, textarea {
-            padding: 10px;
-            font-size: 14px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
+        h2 { margin-top: 0; margin-bottom: 6px; }
+        .subtext { color: #475569; margin-top: 0; margin-bottom: 14px; }
+        label { font-weight: 600; display: block; margin-bottom: 6px; }
+        input, select, textarea, button {
             width: 100%;
-            box-sizing: border-box;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #d4d7dd;
+            font-size: 14px;
+            background: #fff;
         }
+        textarea { resize: vertical; min-height: 110px; }
         button {
             background: #0b65c2;
             color: #fff;
             cursor: pointer;
             border: none;
-            transition: background 0.2s ease;
+            font-weight: 700;
+            letter-spacing: 0.01em;
         }
-        button:hover {
-            background: #0a58a2;
-        }
-        button.secondary {
-            background: #f3f4f6;
-            color: #1f2933;
-            border: 1px solid #d1d5db;
-        }
-        .header-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .user-pill {
-            padding: 10px 14px;
-            border-radius: 999px;
-            background: #eef2ff;
-            color: #111827;
-            border: 1px solid #c7d2fe;
-            font-weight: bold;
-        }
-        button .icon {
-            margin-right: 6px;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 12px;
-        }
-        .table th, .table td {
-            border: 1px solid #e5e7eb;
-            padding: 8px;
-            text-align: left;
-        }
-        .actions {
-            margin-top: 12px;
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .status {
-            margin-top: 8px;
-            padding: 12px;
-            border-radius: 8px;
-        }
-        .status.success {
-            background: #ecfdf3;
-            color: #065f46;
-            border: 1px solid #bbf7d0;
-        }
-        .status.info {
-            background: #eef2ff;
-            color: #3730a3;
-            border: 1px solid #c7d2fe;
-        }
-        .status-bar {
-            background: #e5f0ff;
-            border: 1px solid #c7d2fe;
-            padding: 10px 14px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            margin-top: 12px;
-        }
-        .divider {
-            border-top: 1px solid #e5e7eb;
-            margin: 12px 0;
-        }
-        .recent-list {
-            list-style: none;
-            padding-left: 0;
-            margin: 0;
-        }
-        .recent-list li {
-            padding: 6px 0;
-            border-bottom: 1px solid #f3f4f6;
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            align-items: center;
-        }
-        .recent-list span.name {
-            font-weight: bold;
-        }
-        .recent-list span.meta {
-            color: #6b7280;
-            font-size: 12px;
-        }
-        .loading-indicator {
-            display: none;
-            align-items: center;
-            gap: 8px;
-            color: #0b65c2;
-            font-weight: bold;
-        }
-        .loading-indicator.active {
-            display: inline-flex;
-        }
-        .spinner {
-            width: 16px;
-            height: 16px;
-            border: 3px solid #c7d2fe;
-            border-top-color: #0b65c2;
-            border-radius: 50%;
-            animation: spin 0.9s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .table-meta {
-            margin-top: 6px;
-            color: #4b5563;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-        }
-        .table-meta .label {
-            font-weight: bold;
-        }
-        .input-error {
-            border-color: #b91c1c;
-            background: #fef2f2;
-        }
-        .inline-actions .spacer {
-            width: 1px;
-            background: #e5e7eb;
-            align-self: stretch;
-        }
-        .stacked-form label {
-            display: block;
-            margin: 6px 0;
-        }
-        .auth-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px;
-        }
-        #auth-card form {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            padding: 12px;
-            border-radius: 8px;
-        }
-        .table-wrapper {
-            overflow-x: auto;
-        }
-        .creation-field[data-hidden="true"] {
-            display: none;
-        }
-        #creator-card .chart-card,
-        #editor-card .chart-card {
-            height: 320px;
-            margin-top: 12px;
-        }
-        .theme-dark .card,
-        body.dark .card {
-            border: 1px solid #1f2937;
-        }
-        .stacked-form .actions {
-            margin-top: 12px;
-            justify-content: flex-start;
-        }
-        .field-error {
-            color: #b91c1c;
-            display: block;
-            margin-top: 4px;
-        }
-        .hint {
-            display: block;
-            margin-top: 6px;
-            color: #6b7280;
-        }
-        .overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.45);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        #window-overlay {
-            z-index: 900;
-        }
-        #modal-overlay {
-            z-index: 1200;
-        }
-        .modal {
-            background: #fff;
-            padding: 24px;
+        button.secondary { background: #f4f6fb; color: #0f172a; border: 1px solid #d4d7dd; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .row { display: grid; gap: 12px; }
+        .row.cols-2 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+        .pill { display: inline-flex; padding: 6px 12px; border-radius: 999px; background: #e0f2fe; color: #0b65c2; font-weight: 700; }
+        .list { display: grid; gap: 10px; margin-top: 8px; }
+        .item {
+            border: 1px dashed #d7dde6;
             border-radius: 12px;
-            max-width: 420px;
-            width: 90%;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            position: relative;
-        }
-        .modal.window {
-            max-width: 760px;
-            width: 95%;
-        }
-        .modal h3 {
-            margin-top: 0;
-        }
-        .hidden {
-            display: none;
-        }
-        .modal.highlight {
-            box-shadow: 0 0 0 3px rgba(11, 101, 194, 0.3), 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-        }
-        .close-btn {
-            width: auto;
-            padding: 6px 10px;
-            font-size: 16px;
-            border-radius: 6px;
-            background: #e5e7eb;
-            color: #1f2933;
-        }
-        .chip-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-        }
-        .chip {
-            background: #eef2ff;
-            border: 1px solid #c7d2fe;
-            color: #3730a3;
-            padding: 8px 12px;
-            border-radius: 999px;
-            font-weight: bold;
-        }
-        .factory-option {
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
             padding: 12px;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            margin-top: 8px;
+            background: #f9fbff;
         }
-        .factory-summary {
-            flex: 1;
-        }
-        .factory-title {
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-        .factory-badge {
-            display: inline-block;
-            background: #ecfdf3;
-            border: 1px solid #bbf7d0;
-            color: #065f46;
-            padding: 4px 8px;
+        .item h4 { margin: 0 0 6px; }
+        .muted { color: #6b7280; }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .inline { display: inline-flex; gap: 8px; align-items: center; }
+        .info-banner {
+            border-left: 4px solid #0ea5e9;
+            padding: 10px 12px;
+            background: #f0f9ff;
             border-radius: 8px;
-            margin-top: 6px;
+            color: #0f172a;
+            margin: 8px 0 0;
         }
-        .operations-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px;
-            margin-top: 12px;
-        }
-        .operations-panel {
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 12px;
-            background: #f9fafb;
-        }
-        .operations-panel h4 {
-            margin-top: 0;
-        }
-        .inline-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
-        }
-        .table.readonly td input {
-            background: #f3f4f6;
-            border-color: #e5e7eb;
-            cursor: default;
-        }
-        .table tr.selected td {
-            background: #e5f1ff;
-        }
-        .mini-note {
-            color: #6b7280;
-            font-size: 13px;
-            margin-top: 6px;
-        }
-        .factory-badge.hidden {
-            display: none;
-        }
-        .explorer-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 16px;
-            margin-top: 12px;
-        }
-        .chart-panel {
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 12px;
-            background: #f9fafb;
-        }
-        .chart-card {
-            height: 360px;
-            position: relative;
-        }
-        .chart-card canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-        .badge {
-            display: inline-block;
-            background: #eef2ff;
-            color: #3730a3;
-            border: 1px solid #c7d2fe;
-            border-radius: 10px;
-            padding: 6px 10px;
-            font-weight: bold;
-        }
-        .composite-actions button {
-            width: auto;
-        }
-        .apply-panel {
-            margin-top: 10px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 8px;
-            align-items: center;
-        }
-        body.dark {
-            background: #0b1220;
-            color: #e5e7eb;
-        }
-        body.dark header {
-            background: #0f172a;
-            color: #e5e7eb;
-        }
-        body.dark .card {
-            background: #111827;
-            color: #e5e7eb;
-            box-shadow: none;
-        }
-        body.dark input,
-        body.dark select,
-        body.dark textarea {
-            background: #0f172a;
-            border-color: #374151;
-            color: #e5e7eb;
-        }
-        body.dark button.secondary {
-            background: #1f2937;
-            color: #e5e7eb;
-            border-color: #374151;
-        }
-        body.dark .user-pill {
-            background: #1f2937;
-            color: #e5e7eb;
-            border-color: #374151;
-        }
-        body.dark .table th,
-        body.dark .table td {
-            border-color: #1f2937;
+        .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: #eef2ff; border-radius: 999px; font-weight: 600; }
+        .value-list { margin: 8px 0 0; padding-left: 16px; color: #0f172a; }
+        .value-list li { margin-bottom: 4px; }
+        .tag { background: #ecfeff; color: #0f172a; padding: 4px 8px; border-radius: 8px; border: 1px solid #a5f3fc; font-weight: 700; }
+        .result-box { padding: 10px; border-radius: 10px; background: #f7fee7; border: 1px solid #d9f99d; margin-top: 8px; font-weight: 700; }
+        details summary { cursor: pointer; font-weight: 700; }
+        @media (prefers-color-scheme: dark) {
+            body { background: #0b1220; color: #e5e7eb; }
+            .card { background: #0f172a; border-color: #1f2937; box-shadow: none; }
+            input, select, textarea { background: #0b162b; border-color: #1f2937; color: #e5e7eb; }
+            button.secondary { background: #111827; color: #e5e7eb; border-color: #1f2937; }
+            .item { background: #0b162b; border-color: #1f2937; }
+            .info-banner { background: #0b2742; border-left-color: #38bdf8; }
         }
     </style>
 </head>
 <body>
 <header>
-    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <div>
-            <h1>Центр управления табулированными функциями</h1>
-            <p>Настройте фабрику, управляйте функциями и работайте через бекэнд.</p>
-        </div>
-        <div class="header-actions">
-            <button type="button" id="theme-toggle">🌙 Темная тема</button>
-            <div class="user-pill" id="user-pill">Гость</div>
-        </div>
-    </div>
+    <h1>Конструктор функций без базы данных</h1>
+    <p>Все данные живут только в памяти вашего браузера. Закрытие или перезагрузка страницы очищает состояние.</p>
 </header>
 <main>
-    <div class="card" id="auth-card">
-        <h2>Авторизация и регистрация</h2>
-        <p>Регистрация сохраняет учетную запись в базе данных, авторизация выдает токен Basic для всех запросов.</p>
-        <div class="auth-grid">
-            <form id="login-form">
-                <h4>Вход</h4>
-                <label for="login-username">Логин</label>
-                <input type="text" id="login-username" required>
-                <label for="login-password">Пароль</label>
-                <input type="password" id="login-password" required>
-                <div class="actions">
-                    <button type="submit">Войти</button>
-                </div>
-            </form>
-            <form id="register-form">
-                <h4>Регистрация</h4>
-                <label for="register-username">Логин</label>
-                <input type="text" id="register-username" required>
-                <label for="register-password">Пароль</label>
-                <input type="password" id="register-password" required>
-                <div class="actions">
-                    <button type="submit" class="secondary">Создать учетную запись</button>
-                </div>
-            </form>
+    <section class="card">
+        <h2>Как это работает</h2>
+        <p class="subtext">Никаких сетевых запросов и таблиц: вводите данные вручную, сохраняйте в оперативной памяти и сразу применяйте к расчётам.</p>
+        <div class="info-banner">
+            <span class="chip">🧠 Память браузера</span>
+            <span>Все созданные функции исчезнут после закрытия вкладки. Сохраняйте точечные значения, параметры построения и результаты операций только на время текущей сессии.</span>
         </div>
-    </div>
+    </section>
 
-    <div class="card" id="creator-card">
-        <h2>Создание функции через API</h2>
-        <p>Функция сохраняется целиком: перед отправкой убедитесь, что авторизованы и выберите способ создания.</p>
-        <form id="create-function-form">
-            <div class="form-grid">
+    <section class="card">
+        <h2>Создание функции по точкам</h2>
+        <p class="subtext">Введите X и Y через точку с запятой или пробел, каждая пара — на новой строке.</p>
+        <form id="points-form" class="row">
+            <div class="row cols-2">
                 <div>
-                    <label for="function-name">Название</label>
-                    <input type="text" id="function-name" required placeholder="Например, Моя функция">
-                </div>
-                <div>
-                    <label for="factory-select">Тип фабрики</label>
-                    <select id="factory-select"></select>
+                    <label for="points-name">Название функции</label>
+                    <input id="points-name" required placeholder="Например, Ручная сетка" />
                 </div>
                 <div>
-                    <label for="creation-method">Способ создания</label>
-                    <select id="creation-method">
-                        <option value="arrays">Массив точек</option>
-                        <option value="math">По математической функции</option>
-                    </select>
-                </div>
-                <div class="creation-field" data-method="math">
-                    <label for="math-select">Математическая функция</label>
-                    <select id="math-select"></select>
-                </div>
-                <div class="creation-field" data-method="math">
-                    <label for="points-count-create">Количество точек</label>
-                    <input type="number" id="points-count-create" min="2" value="10">
-                </div>
-                <div class="creation-field" data-method="math">
-                    <label for="left-bound-create">Левая граница</label>
-                    <input type="number" step="any" id="left-bound-create" value="0">
-                </div>
-                <div class="creation-field" data-method="math">
-                    <label for="right-bound-create">Правая граница</label>
-                    <input type="number" step="any" id="right-bound-create" value="1">
+                    <label for="points-origin">Описание/пометка</label>
+                    <input id="points-origin" placeholder="Произвольный источник данных" />
                 </div>
             </div>
-            <label class="creation-field" data-method="arrays" for="points-source">Точки (x;y, по одной на строку)</label>
-            <textarea class="creation-field" data-method="arrays" id="points-source" rows="4" placeholder="0;0\n1;1\n2;4"></textarea>
+            <div>
+                <label for="points-source">Значения</label>
+                <textarea id="points-source" placeholder="0;0\n1;2\n2;4"></textarea>
+            </div>
             <div class="actions">
-                <button type="submit">Создать и построить</button>
+                <button type="submit">Сохранить функцию в памяти</button>
+                <button type="button" class="secondary" id="clear-points">Очистить поля</button>
             </div>
         </form>
-        <div class="chart-card" aria-live="polite">
-            <canvas id="creation-chart"></canvas>
-        </div>
-    </div>
+    </section>
 
-    <div class="card" id="editor-card">
-        <h2>Редактирование и график сохраненной функции</h2>
-        <p>Выберите сохраненную функцию пользователя, измените имя, добавьте или удалите точки и переиспользуйте график.</p>
-        <div class="form-grid">
+    <section class="card">
+        <h2>Создание по математической формуле</h2>
+        <p class="subtext">Генерация точек на отрезке без сохранения в базе: выберите формулу, задайте диапазон и шагов.</p>
+        <form id="formula-form" class="row">
+            <div class="row cols-2">
+                <div>
+                    <label for="formula-name">Название функции</label>
+                    <input id="formula-name" required placeholder="Например, sin(x)" />
+                </div>
+                <div>
+                    <label for="formula-key">Математическая функция</label>
+                    <select id="formula-key">
+                        <option value="sin">sin(x)</option>
+                        <option value="cos">cos(x)</option>
+                        <option value="exp">exp(x)</option>
+                        <option value="sqr">x^2</option>
+                        <option value="log">ln(x)</option>
+                        <option value="identity">x</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row cols-2">
+                <div>
+                    <label for="formula-left">Левая граница</label>
+                    <input id="formula-left" type="number" step="any" value="0" />
+                </div>
+                <div>
+                    <label for="formula-right">Правая граница</label>
+                    <input id="formula-right" type="number" step="any" value="6.283" />
+                </div>
+                <div>
+                    <label for="formula-count">Количество точек</label>
+                    <input id="formula-count" type="number" min="2" value="12" />
+                </div>
+                <div class="inline" style="margin-top: 26px;">
+                    <input id="formula-degrees" type="checkbox" style="width:auto;" />
+                    <label for="formula-degrees" style="margin:0; font-weight:500;">Интерпретировать значения как градусы (для sin/cos)</label>
+                </div>
+            </div>
+            <div class="actions">
+                <button type="submit">Сгенерировать и сохранить</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="card">
+        <h2>Быстрые расчёты</h2>
+        <p class="subtext">Работайте с сохранёнными функциями или вычисляйте тригонометрию по углу.</p>
+        <div class="row cols-2">
+            <form id="evaluate-form" class="row">
+                <label for="evaluate-select">Функция из памяти</label>
+                <select id="evaluate-select"></select>
+                <label for="evaluate-x">Значение X</label>
+                <input id="evaluate-x" type="number" step="any" placeholder="Например, 1.5" />
+                <button type="submit">Вычислить f(x)</button>
+                <div class="result-box" id="evaluate-result">Результат появится здесь</div>
+            </form>
+            <form id="angle-form" class="row">
+                <label for="angle-fn">Тригонометрия по углу</label>
+                <select id="angle-fn">
+                    <option value="sin">sin(угол)</option>
+                    <option value="cos">cos(угол)</option>
+                    <option value="tan">tan(угол)</option>
+                </select>
+                <label for="angle-value">Угол в градусах</label>
+                <input id="angle-value" type="number" step="any" placeholder="Например, 45" />
+                <button type="submit">Посчитать значение</button>
+                <div class="result-box" id="angle-result">Ожидает ввода параметров</div>
+            </form>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Бинарная операция над функциями</h2>
+        <p class="subtext">Результат записывается как новая функция. X-значения берутся попарно по индексу, минимальный объём точек выбирается автоматически.</p>
+        <form id="operation-form" class="row cols-2">
             <div>
-                <label for="user-functions">Функции пользователя</label>
-                <select id="user-functions">
-                    <option value="" disabled selected>Войдите, чтобы загрузить список</option>
+                <label for="op-a">Функция A</label>
+                <select id="op-a"></select>
+            </div>
+            <div>
+                <label for="op-b">Функция B</label>
+                <select id="op-b"></select>
+            </div>
+            <div>
+                <label for="op-type">Операция</label>
+                <select id="op-type">
+                    <option value="add">Сложение (Y1 + Y2)</option>
+                    <option value="subtract">Вычитание (Y1 - Y2)</option>
+                    <option value="multiply">Умножение (Y1 * Y2)</option>
+                    <option value="divide">Деление (Y1 / Y2)</option>
                 </select>
             </div>
             <div>
-                <label for="rename-input">Новое имя</label>
-                <input type="text" id="rename-input" placeholder="Введите новое имя">
+                <label for="op-name">Название результата</label>
+                <input id="op-name" placeholder="Например, A+B" />
             </div>
-            <div>
-                <label>&nbsp;</label>
-                <button type="button" id="rename-button">Сохранить имя</button>
+            <div class="actions">
+                <button type="submit">Создать результирующую функцию</button>
             </div>
-            <div>
-                <label>&nbsp;</label>
-                <button type="button" class="secondary" id="editor-back-button">Вернуться назад</button>
-            </div>
-        </div>
-        <div class="table-wrapper">
-            <table class="table" id="points-table-editor">
-                <thead><tr><th>X</th><th>Y</th><th></th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-        <div class="form-grid">
-            <div>
-                <label for="new-point-x">X</label>
-                <input type="number" step="any" id="new-point-x">
-            </div>
-            <div>
-                <label for="new-point-y">Y</label>
-                <input type="number" step="any" id="new-point-y">
-            </div>
-            <div>
-                <label>&nbsp;</label>
-                <button type="button" id="add-point-button">Добавить точку</button>
-            </div>
-        </div>
-        <div class="chart-card">
-            <canvas id="editor-chart"></canvas>
-        </div>
-    </div>
-    <div class="card">
-        <h2>Главное управление</h2>
-        <p>Выберите активную фабрику и открывайте только одно окно каждого типа. Повторное открытие вернет уже
-            существующее окно на передний план.</p>
-        <div class="status-bar">
-            <div><strong>Текущая фабрика:</strong> <span data-active-factory-label th:text="${activeFactoryLabel}"></span></div>
-            <div class="loading-indicator" id="global-loading"><span class="spinner"></span> <span id="loading-text">Выполнение…</span></div>
-        </div>
-        <div class="actions">
-            <button type="button" id="open-array-window"><span class="icon">📄</span>Создать функцию (массивы)</button>
-            <button type="button" id="open-math-window"><span class="icon">📐</span>Создать функцию (формула)</button>
-            <button type="button" id="open-composite-window"><span class="icon">🪢</span>Композитные функции</button>
-            <button type="button" id="open-explorer-window"><span class="icon">📊</span>Графический анализ функции</button>
-            <button type="button" id="open-operations-window"><span class="icon">🧮</span>Операции над функциями</button>
-            <button type="button" id="open-diff-window"><span class="icon">🔀</span>Дифференцирование функции</button>
-            <button type="button" id="open-integral-window"><span class="icon">🧵</span>Параллельный интеграл</button>
-            <button type="button" id="open-factory-window"><span class="icon">⚙️</span>Настройки</button>
-            <button type="button" class="secondary" id="open-about-window"><span class="icon">ℹ️</span>О программе</button>
-        </div>
-        <div class="divider"></div>
-        <div>
-            <div class="chip">Последние действия отображаются ниже.</div>
-            <h4>Последние открытые файлы</h4>
-            <ul class="recent-list" id="recent-files">
-                <li><span class="meta">Список пуст</span></li>
-            </ul>
-        </div>
-    </div>
+        </form>
+    </section>
 
-    <div class="card">
-        <h2>Текущий статус</h2>
-        <div id="status" class="status info">Статус операций будет отображаться здесь.</div>
-    </div>
+    <section class="card">
+        <h2>Функции, сохранённые в памяти</h2>
+        <p class="subtext">Никаких таблиц: каждая функция отображается карточкой с компактным списком значений.</p>
+        <div id="functions-list" class="list"></div>
+    </section>
 </main>
 
-<div id="window-overlay" class="overlay hidden" role="presentation">
-    <div class="modal window hidden" data-modal="arrays-window">
-        <div class="modal-header">
-            <h3>Создание из массивов точек</h3>
-            <button type="button" class="close-btn" data-close-modal="arrays-window">×</button>
-        </div>
-        <p>Активная фабрика: <strong data-active-factory-label></strong></p>
-        <form id="arrays-form">
-            <input type="hidden" id="arrays-factory" name="factoryType" data-active-factory-input>
-            <div class="form-grid">
-                <div>
-                    <label for="arrays-user">ID пользователя</label>
-                    <input type="number" id="arrays-user" name="userId" required min="1" placeholder="Например, 1">
-                </div>
-                <div>
-                    <label for="arrays-name">Название функции</label>
-                    <input type="text" id="arrays-name" name="name" required placeholder="Например, Точки вручную">
-                </div>
-                <div>
-                    <label for="points-count-input">Количество точек</label>
-                    <input type="number" id="points-count-input" name="pointsCountInput" min="2" required placeholder="Например, 5">
-                    <small id="points-count-error" class="field-error hidden">Введите положительное целое число.</small>
-                </div>
-                <div>
-                    <label>&nbsp;</label>
-                    <button type="button" id="generate-table">Сгенерировать таблицу</button>
-                    <small class="hint">Текущие данные будут стерты при повторной генерации после подтверждения.</small>
-                </div>
-            </div>
-
-            <table class="table hidden" aria-label="Точки функции" id="points-table">
-                <thead>
-                <tr>
-                    <th>X</th>
-                    <th>Y</th>
-                </tr>
-                </thead>
-                <tbody id="points-body">
-                </tbody>
-            </table>
-            <div class="actions">
-                <button type="submit">Создать функцию</button>
-                <button type="button" class="secondary" data-close-modal="arrays-window">Закрыть окно</button>
-            </div>
-        </form>
-    </div>
-
-    <div class="modal window hidden" data-modal="math-window">
-        <div class="modal-header">
-            <h3>Создание через математическую функцию</h3>
-            <button type="button" class="close-btn" data-close-modal="math-window">×</button>
-        </div>
-        <p>Активная фабрика: <strong data-active-factory-label></strong></p>
-        <form id="math-form">
-            <input type="hidden" id="math-factory" name="factoryType" data-active-factory-input>
-            <div class="form-grid">
-                <div>
-                    <label for="math-user">ID пользователя</label>
-                    <input type="number" id="math-user" name="userId" required min="1" placeholder="Например, 1">
-                </div>
-                <div>
-                    <label for="math-name">Название функции</label>
-                    <input type="text" id="math-name" name="name" required placeholder="Например, Синусовая сетка">
-                </div>
-                <div>
-                    <label for="math-key">Математическая функция</label>
-                    <select id="math-key" name="mathFunctionKey" required>
-                        <option value="" disabled selected>Выберите функцию</option>
-                        <optgroup label="Базовые функции">
-                            <option th:each="func : ${baseFunctions}"
-                                    th:value="${func.key}"
-                                    th:text="${func.label}"></option>
-                        </optgroup>
-                        <optgroup th:if="${#lists.size(customFunctions) > 0}" label="Пользовательские композитные функции">
-                            <option th:each="func : ${customFunctions}"
-                                    th:value="${func.key}"
-                                    th:text="${func.label}"></option>
-                        </optgroup>
-                    </select>
-                </div>
-                <div>
-                    <label for="points-count">Количество точек</label>
-                    <input type="number" id="points-count" name="pointsCount" required min="2" value="10">
-                </div>
-                <div>
-                    <label for="left-bound">Левая граница</label>
-                    <input type="number" step="any" id="left-bound" name="leftBound" required value="0">
-                </div>
-                <div>
-                    <label for="right-bound">Правая граница</label>
-                    <input type="number" step="any" id="right-bound" name="rightBound" required value="1">
-                </div>
-            </div>
-            <div class="actions">
-                <button type="submit">Создать по формуле</button>
-                <button type="button" class="secondary" data-close-modal="math-window">Закрыть окно</button>
-            </div>
-        </form>
-    </div>
-
-    <div class="modal window hidden" data-modal="composite-window">
-        <div class="modal-header">
-            <h3>Создание композитной функции g(f(x))</h3>
-            <button type="button" class="close-btn" data-close-modal="composite-window">×</button>
-        </div>
-        <p>Выберите внешнюю и внутреннюю функции, задайте уникальное имя и добавьте результат в список доступных.</p>
-        <form id="composite-form" class="stacked-form">
-            <label for="composite-name">Название новой функции</label>
-            <input type="text" id="composite-name" required placeholder="Например, sin(sqr(x))">
-            <label for="composite-outer">Внешняя функция g(x)</label>
-            <select id="composite-outer" required>
-                <option value="" disabled selected>Выберите внешнюю функцию</option>
-                <optgroup label="Базовые функции">
-                    <option th:each="func : ${baseFunctions}" th:value="${func.key}" th:text="${func.label}"></option>
-                </optgroup>
-                <optgroup th:if="${#lists.size(customFunctions) > 0}" label="Пользовательские композитные функции">
-                    <option th:each="func : ${customFunctions}" th:value="${func.key}" th:text="${func.label}"></option>
-                </optgroup>
-            </select>
-            <label for="composite-inner">Внутренняя функция f(x)</label>
-            <select id="composite-inner" required>
-                <option value="" disabled selected>Выберите внутреннюю функцию</option>
-                <optgroup label="Базовые функции">
-                    <option th:each="func : ${baseFunctions}" th:value="${func.key}" th:text="${func.label}"></option>
-                </optgroup>
-                <optgroup th:if="${#lists.size(customFunctions) > 0}" label="Пользовательские композитные функции">
-                    <option th:each="func : ${customFunctions}" th:value="${func.key}" th:text="${func.label}"></option>
-                </optgroup>
-            </select>
-            <div class="actions">
-                <button type="submit">Создать композитную g(f(x))</button>
-                <button type="button" class="secondary" data-close-modal="composite-window">Закрыть окно</button>
-            </div>
-        </form>
-        <div class="divider"></div>
-        <h4>Созданные композитные функции</h4>
-        <table class="table">
-            <thead>
-            <tr>
-                <th>Название</th>
-                <th>Формула</th>
-                <th>Действия</th>
-            </tr>
-            </thead>
-            <tbody id="composite-table-body">
-            <tr><td colspan="3">Пока нет композитных функций</td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="modal window hidden" data-modal="factory-window">
-        <div class="modal-header">
-            <h3>Настройки</h3>
-            <button type="button" class="close-btn" data-close-modal="factory-window">×</button>
-        </div>
-        <p>Текущая фабрика применяется ко всем операциям создания и табуляции функций.</p>
-        <form id="factory-form">
-            <fieldset>
-                <legend><strong>Фабрика функций</strong></legend>
-                <div class="factory-list">
-                    <label class="factory-option" th:each="factory : ${factoryTypes}" th:attr="data-factory-key=${factory.key}">
-                        <input type="radio" name="factoryKey" th:value="${factory.key}" th:checked="${factory.active}">
-                        <div class="factory-summary">
-                            <div class="factory-title" th:text="${factory.label}"></div>
-                            <div class="factory-description" th:text="${factory.description}"></div>
-                            <span class="factory-badge" th:classappend="${factory.active} ? '' : ' hidden'">Текущая</span>
-                        </div>
-                    </label>
-                </div>
-            </fieldset>
-            <div class="actions">
-                <button type="submit">Сохранить</button>
-                <button type="button" class="secondary" id="cancel-factory-window">Отмена</button>
-            </div>
-        </form>
-    </div>
-
-    <div class="modal window hidden" data-modal="operations-window">
-        <div class="modal-header">
-            <h3>Окно бинарных операций</h3>
-            <button type="button" class="close-btn" data-close-modal="operations-window">×</button>
-        </div>
-        <p>Складывайте, вычитайте, умножайте и делите табулированные функции. Окно единично и блокирует фон.</p>
-        <div class="operations-grid">
-            <div class="operations-panel" id="operand-a-panel">
-                <h4>Функция 1 (Операнд A)</h4>
-                <table class="table" aria-label="Операнд A" id="operand-a-table">
-                    <thead><tr><th>X</th><th>Y</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-                <div class="inline-actions">
-                    <button type="button" data-create-target="A"><span class="icon">➕</span>Создать…</button>
-                    <label class="secondary" style="padding: 10px; cursor: pointer;">
-                        <span class="icon">📂</span>Загрузить…
-                        <input type="file" accept=".json,.xml,.dat,.csv,application/json,text/csv" data-load-target="A" class="hidden">
-                    </label>
-                    <div class="spacer"></div>
-                    <button type="button" class="secondary hidden" data-insert-target="A"><span class="icon">📌</span>Вставить</button>
-                    <button type="button" class="secondary hidden" data-remove-target="A"><span class="icon">🗑️</span>Удалить</button>
-                    <div class="spacer"></div>
-                    <button type="button" class="secondary" data-save-target="A"><span class="icon">💾</span>Сохранить…</button>
-                    <button type="button" class="secondary" data-clear-target="A"><span class="icon">🧹</span>Очистить</button>
-                </div>
-                <div class="mini-note">Y редактируемые. Изменения применяются сразу.</div>
-                <div class="table-meta"><span class="label">Файл/имя:</span> <span data-slot-label="A">—</span></div>
-            </div>
-
-            <div class="operations-panel" id="operand-b-panel">
-                <h4>Функция 2 (Операнд B)</h4>
-                <table class="table" aria-label="Операнд B" id="operand-b-table">
-                    <thead><tr><th>X</th><th>Y</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-                <div class="inline-actions">
-                    <button type="button" data-create-target="B"><span class="icon">➕</span>Создать…</button>
-                    <label class="secondary" style="padding: 10px; cursor: pointer;">
-                        <span class="icon">📂</span>Загрузить…
-                        <input type="file" accept=".json,.xml,.dat,.csv,application/json,text/csv" data-load-target="B" class="hidden">
-                    </label>
-                    <div class="spacer"></div>
-                    <button type="button" class="secondary hidden" data-insert-target="B"><span class="icon">📌</span>Вставить</button>
-                    <button type="button" class="secondary hidden" data-remove-target="B"><span class="icon">🗑️</span>Удалить</button>
-                    <div class="spacer"></div>
-                    <button type="button" class="secondary" data-save-target="B"><span class="icon">💾</span>Сохранить…</button>
-                    <button type="button" class="secondary" data-clear-target="B"><span class="icon">🧹</span>Очистить</button>
-                </div>
-                <div class="mini-note">Загрузите или создайте функцию для дальнейших операций.</div>
-                <div class="table-meta"><span class="label">Файл/имя:</span> <span data-slot-label="B">—</span></div>
-            </div>
-
-            <div class="operations-panel" id="result-panel">
-                <h4>Результат</h4>
-                <table class="table readonly" aria-label="Результат" id="result-table">
-                    <thead><tr><th>X</th><th>Y</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-                <div class="inline-actions">
-                    <button type="button" data-operation="add"><span class="icon">➕</span>+</button>
-                    <button type="button" data-operation="subtract"><span class="icon">➖</span>-</button>
-                    <button type="button" data-operation="multiply"><span class="icon">✖️</span>*</button>
-                    <button type="button" data-operation="divide"><span class="icon">➗</span>/</button>
-                    <div class="spacer"></div>
-                    <button type="button" class="secondary" data-save-target="RESULT"><span class="icon">💾</span>Сохранить…</button>
-                </div>
-                <div class="mini-note">X и Y недоступны для редактирования; поддерживаются форматы JSON, XML и DAT.</div>
-                <div class="table-meta"><span class="label">Имя результата:</span> <span data-slot-label="RESULT">—</span></div>
-            </div>
-        </div>
-        <div class="actions">
-            <button type="button" class="secondary" data-close-modal="operations-window">Закрыть окно</button>
-        </div>
-    </div>
-
-    <div class="modal window hidden" data-modal="explorer-window">
-        <div class="modal-header">
-            <h3>Графический анализ функции</h3>
-            <button type="button" class="close-btn" data-close-modal="explorer-window">×</button>
-        </div>
-        <p>Редактируйте значения Y, визуализируйте точки и вычисляйте f(x) по табулированной функции.</p>
-        <div class="explorer-grid">
-            <div class="operations-panel" id="explorer-panel">
-                <h4>Исследуемая функция <span class="badge" data-slot-label="EXPLORER">—</span></h4>
-                <table class="table" aria-label="Исследуемая функция" id="explorer-table">
-                    <thead><tr><th>X</th><th>Y</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-                <div class="inline-actions">
-                    <button type="button" data-create-target="EXPLORER"><span class="icon">➕</span>Создать…</button>
-                    <label class="secondary" style="padding: 10px; cursor: pointer;">
-                        <span class="icon">📂</span>Загрузить…
-                        <input type="file" accept=".json,.xml,.dat,.csv,application/json,text/csv" data-load-target="EXPLORER" class="hidden">
-                    </label>
-                    <div class="spacer"></div>
-                    <button type="button" class="secondary hidden" data-insert-target="EXPLORER"><span class="icon">📌</span>Вставить</button>
-                    <button type="button" class="secondary hidden" data-remove-target="EXPLORER"><span class="icon">🗑️</span>Удалить</button>
-                    <div class="spacer"></div>
-                    <button type="button" class="secondary" data-save-target="EXPLORER"><span class="icon">💾</span>Сохранить…</button>
-                    <button type="button" class="secondary" data-save-target="EXPLORER" data-save-format="csv"><span class="icon">📑</span>Сохранить CSV…</button>
-                    <button type="button" class="secondary" data-clear-target="EXPLORER"><span class="icon">🧹</span>Очистить</button>
-                </div>
-                <div class="apply-panel">
-                    <div>
-                        <label for="explorer-x">Значение X</label>
-                        <input type="number" step="any" id="explorer-x" placeholder="Например, 0.5">
-                    </div>
-                    <div>
-                        <label for="explorer-y">Результат f(x)</label>
-                        <input type="text" id="explorer-y" readonly>
-                    </div>
-                    <div>
-                        <label>&nbsp;</label>
-                        <button type="button" id="evaluate-button"><span class="icon">🧭</span>Вычислить в точке</button>
-                    </div>
-                </div>
-            </div>
-            <div class="chart-panel">
-                <h4>Визуализация</h4>
-                <div class="chart-card">
-                    <canvas id="explorer-chart" aria-label="График функции"></canvas>
-                </div>
-                <p class="mini-note">График обновляется при загрузке и редактировании точек. Используйте колесо мыши для масштабирования и перетаскивайте для панорамирования.</p>
-            </div>
-        </div>
-        <div class="actions">
-            <button type="button" class="secondary" data-close-modal="explorer-window">Закрыть окно</button>
-        </div>
-    </div>
-
-    <div class="modal window hidden" data-modal="diff-window">
-        <div class="modal-header">
-            <h3>Окно дифференцирования</h3>
-            <button type="button" class="close-btn" data-close-modal="diff-window">×</button>
-        </div>
-        <p>Задайте исходную функцию и получите ее табулированную производную. Окно открывается модально и не
-            допускает дубликатов.</p>
-        <div class="operations-grid">
-            <div class="operations-panel" id="diff-source-panel">
-                <h4>Исходная функция</h4>
-                <table class="table" aria-label="Исходная функция" id="diff-source-table">
-                    <thead><tr><th>X</th><th>Y</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-                <div class="inline-actions">
-                    <button type="button" data-create-target="DIFF_SOURCE"><span class="icon">➕</span>Создать…</button>
-                    <label class="secondary" style="padding: 10px; cursor: pointer;">
-                        <span class="icon">📂</span>Загрузить…
-                        <input type="file" accept=".json,.xml,.dat,.csv,application/json,text/csv" data-load-target="DIFF_SOURCE" class="hidden">
-                    </label>
-                    <div class="spacer"></div>
-                    <button type="button" class="secondary hidden" data-insert-target="DIFF_SOURCE"><span class="icon">📌</span>Вставить</button>
-                    <button type="button" class="secondary hidden" data-remove-target="DIFF_SOURCE"><span class="icon">🗑️</span>Удалить</button>
-                    <div class="spacer"></div>
-                    <button type="button" class="secondary" data-save-target="DIFF_SOURCE"><span class="icon">💾</span>Сохранить…</button>
-                    <button type="button" class="secondary" data-clear-target="DIFF_SOURCE"><span class="icon">🧹</span>Очистить</button>
-                </div>
-                <div class="mini-note">Y редактируемые. Изменения применяются сразу.</div>
-                <div class="table-meta"><span class="label">Файл/имя:</span> <span data-slot-label="DIFF_SOURCE">—</span></div>
-            </div>
-
-            <div class="operations-panel" id="diff-result-panel">
-                <h4>Производная (результат)</h4>
-                <table class="table readonly" aria-label="Производная" id="diff-result-table">
-                    <thead><tr><th>X</th><th>Y</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-                <div class="inline-actions">
-                    <button type="button" id="derive-button"><span class="icon">🔀</span>Дифференцировать</button>
-                    <div class="spacer"></div>
-                    <button type="button" class="secondary" data-save-target="DIFF_RESULT"><span class="icon">💾</span>Сохранить…</button>
-                </div>
-                <div class="mini-note">Результат нельзя редактировать, но можно сохранить как JSON.</div>
-                <div class="table-meta"><span class="label">Имя результата:</span> <span data-slot-label="DIFF_RESULT">—</span></div>
-            </div>
-        </div>
-        <div class="actions">
-            <button type="button" class="secondary" data-close-modal="diff-window">Закрыть окно</button>
-        </div>
-    </div>
-
-    <div class="modal window hidden" data-modal="integral-window">
-        <div class="modal-header">
-            <h3>Параллельное вычисление интеграла</h3>
-            <button type="button" class="close-btn" data-close-modal="integral-window">×</button>
-        </div>
-        <p>Выберите табулированную функцию, задайте число потоков и вычислите определенный интеграл параллельно.</p>
-        <div class="operations-grid">
-            <div class="operations-panel" id="integral-source-panel">
-                <h4>Функция для интегрирования</h4>
-                <table class="table" aria-label="Функция для интегрирования" id="integral-table">
-                    <thead><tr><th>X</th><th>Y</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-                <div class="inline-actions">
-                    <button type="button" data-create-target="INTEGRAL"><span class="icon">➕</span>Создать…</button>
-                    <label class="secondary" style="padding: 10px; cursor: pointer;">
-                        <span class="icon">📂</span>Загрузить…
-                        <input type="file" accept=".json,.xml,.dat,.csv,application/json,text/csv" data-load-target="INTEGRAL" class="hidden">
-                    </label>
-                    <div class="spacer"></div>
-                    <button type="button" class="secondary" data-save-target="INTEGRAL"><span class="icon">💾</span>Сохранить…</button>
-                    <button type="button" class="secondary" data-clear-target="INTEGRAL"><span class="icon">🧹</span>Очистить</button>
-                </div>
-                <div class="mini-note">Y можно редактировать; после изменений интеграл пересчитывайте заново.</div>
-                <div class="table-meta"><span class="label">Имя/файл:</span> <span data-slot-label="INTEGRAL">—</span></div>
-            </div>
-            <div class="operations-panel">
-                <h4>Параметры и результат</h4>
-                <div class="stacked-form">
-                    <label for="integral-threads">Количество потоков (1–16)</label>
-                    <input type="number" id="integral-threads" min="1" max="16" value="4" step="1">
-                    <small class="hint">При вводе значения выше 16 появится предупреждение.</small>
-                    <div class="actions">
-                        <button type="button" id="integral-compute"><span class="icon">🧵</span>Вычислить интеграл</button>
-                    </div>
-                    <label for="integral-result">Результат</label>
-                    <input type="text" id="integral-result" readonly placeholder="Появится после вычисления">
-                </div>
-            </div>
-        </div>
-        <div class="actions">
-            <button type="button" class="secondary" data-close-modal="integral-window">Закрыть окно</button>
-        </div>
-    </div>
-
-    <div class="modal window hidden" data-modal="about-window">
-        <div class="modal-header">
-            <h3>О программе</h3>
-            <button type="button" class="close-btn" data-close-modal="about-window">×</button>
-        </div>
-        <p>Центр управления табулированными функциями объединяет создание из массивов, табулирование существующих
-            математических функций и настройки фабрик в единый модальный интерфейс.</p>
-        <p>Каждое окно открывается единожды: при повторном выборе существующий диалог поднимается на передний план.</p>
-        <div class="actions">
-            <button type="button" class="secondary" data-close-modal="about-window">Закрыть окно</button>
-        </div>
-    </div>
-
-    <div class="modal window hidden" data-modal="insert-window">
-        <div class="modal-header">
-            <h3>Вставка точки</h3>
-            <button type="button" class="close-btn" data-close-modal="insert-window">×</button>
-        </div>
-        <p>Добавьте новую точку в выбранную функцию. X должен сохранять строгий порядок возрастания.</p>
-        <form id="insert-form" class="stacked-form">
-            <div>
-                <label for="insert-slot">Область</label>
-                <input type="text" id="insert-slot" readonly>
-            </div>
-            <div>
-                <label for="insert-x">Значение X</label>
-                <input type="number" step="any" id="insert-x" required>
-            </div>
-            <div>
-                <label for="insert-y">Значение Y</label>
-                <input type="number" step="any" id="insert-y" required>
-            </div>
-            <div class="actions">
-                <button type="submit">Вставить точку</button>
-                <button type="button" class="secondary" data-close-modal="insert-window">Отмена</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div id="modal-overlay" class="overlay hidden" role="dialog" aria-modal="true">
-    <div class="modal">
-        <h3>Ошибка</h3>
-        <p id="modal-message">Произошла ошибка.</p>
-        <div class="actions">
-            <button type="button" id="confirm-modal" class="hidden">Продолжить</button>
-            <button type="button" id="close-modal">Закрыть</button>
-        </div>
-    </div>
-</div>
-
-<div id="format-overlay" class="overlay hidden" role="dialog" aria-modal="true">
-    <div class="modal">
-        <h3>Выбор формата файла</h3>
-        <form id="format-form" class="stacked-form">
-            <label><input type="radio" name="file-format" value="json" checked> JSON (.json)</label>
-            <label><input type="radio" name="file-format" value="xml"> XML (.xml)</label>
-            <label><input type="radio" name="file-format" value="dat"> Бинарный (.dat)</label>
-            <div class="actions">
-                <button type="submit" id="format-confirm">Сохранить</button>
-                <button type="button" class="secondary" id="format-cancel">Отмена</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
-<script th:inline="javascript">
-    let baseMathFunctions = /*[[${baseFunctions}]]*/ [];
-    let customMathFunctions = /*[[${customFunctions}]]*/ [];
-    let mathFunctions = [...baseMathFunctions, ...customMathFunctions];
-    let factoryState = /*[[${factoryState}]]*/ { factories: [], activeKey: 'array' };
-    let factoryTypes = factoryState.factories || [];
-    let activeFactoryKey = factoryState.activeKey || 'array';
-
-    const statusPanel = document.getElementById('status');
-    const errorOverlay = document.getElementById('modal-overlay');
-    const modalMessage = document.getElementById('modal-message');
-    const confirmModalBtn = document.getElementById('confirm-modal');
-    const closeModalBtn = document.getElementById('close-modal');
-    const formatOverlay = document.getElementById('format-overlay');
-    const formatForm = document.getElementById('format-form');
-    const formatCancelBtn = document.getElementById('format-cancel');
-    let pendingSaveSlot = null;
-
-    const windowOverlay = document.getElementById('window-overlay');
-    const pointsTable = document.getElementById('points-table');
-    const pointsBody = document.getElementById('points-body');
-    const pointsCountInput = document.getElementById('points-count-input');
-    const pointsCountError = document.getElementById('points-count-error');
-    const MAX_POINTS = 1000;
-    const explorerXInput = document.getElementById('explorer-x');
-    const explorerYOutput = document.getElementById('explorer-y');
-    const insertSlotInput = document.getElementById('insert-slot');
-    const insertXInput = document.getElementById('insert-x');
-    const insertYInput = document.getElementById('insert-y');
-    const integralThreadsInput = document.getElementById('integral-threads');
-    const integralResultOutput = document.getElementById('integral-result');
-    const compositeOuterSelect = document.getElementById('composite-outer');
-    const compositeInnerSelect = document.getElementById('composite-inner');
-    const compositeNameInput = document.getElementById('composite-name');
-    const compositeTableBody = document.getElementById('composite-table-body');
-    let explorerChart = null;
-    let insertTarget = null;
-
-    const zoomPlugin = window['chartjs-plugin-zoom'] || window.ChartZoom;
-    if (typeof Chart !== 'undefined' && Chart.register && zoomPlugin) {
-        Chart.register(zoomPlugin);
-    }
-    let confirmHandler = null;
-    let closeHandler = null;
-    let creationTarget = null;
-    const functionsState = {
-        A: null,
-        B: null,
-        RESULT: null,
-        DIFF_SOURCE: null,
-        DIFF_RESULT: null,
-        EXPLORER: null,
-        INTEGRAL: null,
+<script>
+    const state = {
+        functions: [],
+        counter: 1,
     };
-    const dirtySlots = {
-        A: false,
-        B: false,
-        DIFF_SOURCE: false,
-        EXPLORER: false,
-        INTEGRAL: false,
-    };
-    const loginForm = document.getElementById('login-form');
-    const registerForm = document.getElementById('register-form');
-    const themeToggle = document.getElementById('theme-toggle');
-    const userPill = document.getElementById('user-pill');
-    const factorySelect = document.getElementById('factory-select');
-    const creationMethodSelect = document.getElementById('creation-method');
-    const mathSelect = document.getElementById('math-select');
-    const creationFields = document.querySelectorAll('.creation-field');
-    const createFunctionForm = document.getElementById('create-function-form');
-    const creationChartCanvas = document.getElementById('creation-chart');
-    const editorChartCanvas = document.getElementById('editor-chart');
-    const userFunctionsSelect = document.getElementById('user-functions');
-    const renameInput = document.getElementById('rename-input');
-    const pointsTableEditor = document.getElementById('points-table-editor').querySelector('tbody');
-    const addPointButton = document.getElementById('add-point-button');
-    const renameButton = document.getElementById('rename-button');
-    const editorBackButton = document.getElementById('editor-back-button');
-    let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-    let authToken = localStorage.getItem('authToken') || '';
-    let creationChartInstance = null;
-    let editorChartInstance = null;
-    let activeFunctionDetails = null;
 
-    function showAlert(message) {
-        alert(message);
-    }
+    const pointsForm = document.getElementById('points-form');
+    const pointsNameInput = document.getElementById('points-name');
+    const pointsOriginInput = document.getElementById('points-origin');
+    const pointsSourceInput = document.getElementById('points-source');
+    const clearPointsButton = document.getElementById('clear-points');
+    const formulaForm = document.getElementById('formula-form');
+    const evaluateForm = document.getElementById('evaluate-form');
+    const evaluateSelect = document.getElementById('evaluate-select');
+    const evaluateInput = document.getElementById('evaluate-x');
+    const evaluateResult = document.getElementById('evaluate-result');
+    const angleForm = document.getElementById('angle-form');
+    const angleResult = document.getElementById('angle-result');
+    const operationForm = document.getElementById('operation-form');
+    const opASelect = document.getElementById('op-a');
+    const opBSelect = document.getElementById('op-b');
+    const opTypeSelect = document.getElementById('op-type');
+    const opNameInput = document.getElementById('op-name');
+    const functionsList = document.getElementById('functions-list');
 
-    function applyTheme(theme) {
-        const body = document.body;
-        if (theme === 'dark') {
-            body.classList.add('dark');
-            themeToggle.textContent = '☀️ Светлая тема';
-        } else {
-            body.classList.remove('dark');
-            themeToggle.textContent = '🌙 Темная тема';
-        }
-        localStorage.setItem('ui-theme', theme);
-    }
-
-    function initTheme() {
-        const saved = localStorage.getItem('ui-theme') || 'light';
-        applyTheme(saved);
-    }
-
-    async function apiFetch(url, options = {}) {
-        const opts = { ...options };
-        opts.headers = { ...(options.headers || {}) };
-
-        if (!(opts.body instanceof FormData) && !opts.headers['Content-Type']) {
-            opts.headers['Content-Type'] = 'application/json';
-        }
-        if (authToken) {
-            opts.headers['Authorization'] = authToken;
-        }
-
-        const response = await fetch(url, opts);
-        if (!response.ok) {
-            const text = await response.text();
-            const message = text || `Ошибка ${response.status}`;
-            showAlert(message);
-            throw new Error(message);
-        }
-        return response;
-    }
-
-    function syncUserBadge() {
-        if (currentUser) {
-            userPill.textContent = `${currentUser.login} (${currentUser.role})`;
-        } else {
-            userPill.textContent = 'Гость';
-        }
-    }
-
-    function persistAuth(user, token) {
-        currentUser = user;
-        authToken = token;
-        if (user && token) {
-            localStorage.setItem('currentUser', JSON.stringify(user));
-            localStorage.setItem('authToken', token);
-        } else {
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('authToken');
-        }
-        syncUserBadge();
-    }
-
-    function toggleCreationFields(method) {
-        creationFields.forEach((field) => {
-            const shouldShow = field.getAttribute('data-method') === method;
-            field.setAttribute('data-hidden', shouldShow ? 'false' : 'true');
-        });
-    }
-
-    function setLoading(isLoading) {
-        document.getElementById('global-loading').classList.toggle('active', isLoading);
-    }
-
-    function parsePointLines(text) {
-        return text.split(/\n+/)
+    function parsePairs(source) {
+        return source
+            .split(/\n+/)
             .map((line) => line.trim())
             .filter(Boolean)
             .map((line) => {
-                const [x, y] = line.split(/[,;\s]+/).map(Number);
+                const [xRaw, yRaw] = line.split(/[;\s,]+/);
+                const x = Number(xRaw);
+                const y = Number(yRaw);
                 if (Number.isNaN(x) || Number.isNaN(y)) {
-                    throw new Error('Каждая строка должна содержать два числа через пробел или точку с запятой');
+                    throw new Error('Каждая строка должна содержать два числа X и Y.');
                 }
                 return { x, y };
-            });
+            })
+            .sort((a, b) => a.x - b.x);
     }
 
-    async function handleLogin(event) {
-        event.preventDefault();
-        try {
-            const payload = {
-                login: document.getElementById('login-username').value,
-                password: document.getElementById('login-password').value,
-            };
-            const response = await apiFetch('/api/v1/auth/login', {
-                method: 'POST',
-                body: JSON.stringify(payload),
-            });
-            const data = await response.json();
-            persistAuth({ id: data.id, login: data.login, role: data.role }, data.token);
-            showAlert('Вход выполнен, можно работать с функциями.');
-            await loadUserFunctions();
-            setUserIdDefaults();
-        } catch (e) {
-            console.error(e);
+    function degToRad(value) {
+        return value * Math.PI / 180;
+    }
+
+    function buildMathPoint(key, x, useDegrees) {
+        const input = (useDegrees && (key === 'sin' || key === 'cos' || key === 'tan')) ? degToRad(x) : x;
+        switch (key) {
+            case 'sin': return { x, y: Math.sin(input) };
+            case 'cos': return { x, y: Math.cos(input) };
+            case 'tan': return { x, y: Math.tan(input) };
+            case 'exp': return { x, y: Math.exp(input) };
+            case 'sqr': return { x, y: input * input };
+            case 'log': return { x, y: Math.log(input) };
+            default: return { x, y: input };
         }
     }
 
-    async function handleRegister(event) {
-        event.preventDefault();
-        try {
-            const payload = {
-                login: document.getElementById('register-username').value,
-                password: document.getElementById('register-password').value,
-                role: 'USER',
-            };
-            await apiFetch('/api/v1/auth/register', {
-                method: 'POST',
-                body: JSON.stringify(payload),
-            });
-            showAlert('Пользователь создан. Теперь войдите, чтобы получить токен.');
-        } catch (e) {
-            console.error(e);
+    function generatePointsFromFormula(key, count, left, right, useDegrees) {
+        if (count < 2) {
+            throw new Error('Нужно не меньше двух точек.');
         }
-    }
-
-    function setUserIdDefaults() {
-        if (currentUser) {
-            const arrayUser = document.getElementById('arrays-user');
-            const mathUser = document.getElementById('math-user');
-            if (arrayUser) arrayUser.value = currentUser.id;
-            if (mathUser) mathUser.value = currentUser.id;
+        if (right < left) {
+            throw new Error('Правая граница должна быть больше или равна левой.');
         }
-    }
-
-    function renderChart(canvas, data, existingChart) {
-        if (!canvas || !data || !data.length) {
-            return existingChart;
-        }
-        const ctx = canvas.getContext('2d');
-        if (existingChart) {
-            existingChart.destroy();
-        }
-        return new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.map((p) => p.x),
-                datasets: [{
-                    label: 'f(x)',
-                    data: data.map((p) => p.y),
-                    borderColor: '#0b65c2',
-                    backgroundColor: 'rgba(11,101,194,0.15)',
-                }],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-            },
-        });
-    }
-
-    async function handleCreateFunction(event) {
-        event.preventDefault();
-        if (!currentUser) {
-            showAlert('Сначала войдите, чтобы создавать функции.');
-            return;
-        }
-        setLoading(true);
-        try {
-            const name = document.getElementById('function-name').value;
-            const factoryType = factorySelect.value || activeFactoryKey;
-            const method = creationMethodSelect.value;
-            let response;
-            if (method === 'arrays') {
-                const pointsText = document.getElementById('points-source').value;
-                const points = parsePointLines(pointsText);
-                response = await apiFetch('/ui/api/tabulated-functions/arrays', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        userId: currentUser.id,
-                        name,
-                        points,
-                        factoryType,
-                    }),
-                });
-            } else {
-                response = await apiFetch('/ui/api/tabulated-functions/math-function', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        userId: currentUser.id,
-                        name,
-                        mathFunctionKey: mathSelect.value,
-                        pointsCount: Number(document.getElementById('points-count-create').value),
-                        leftBound: Number(document.getElementById('left-bound-create').value),
-                        rightBound: Number(document.getElementById('right-bound-create').value),
-                        factoryType,
-                    }),
-                });
-            }
-            const data = await response.json();
-            const points = (data.points || []).map((p) => ({ x: p.x, y: p.y }));
-            creationChartInstance = renderChart(creationChartCanvas, points, creationChartInstance);
-            showAlert('Функция создана и сохранена. График обновлен.');
-            await loadUserFunctions();
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function loadUserFunctions() {
-        if (!currentUser) {
-            return;
-        }
-        const response = await apiFetch(`/api/v1/users/${currentUser.id}/functions`);
-        const functions = await response.json();
-        userFunctionsSelect.innerHTML = '<option value="" disabled selected>Выберите функцию</option>';
-        functions.forEach((fn) => {
-            const option = document.createElement('option');
-            option.value = fn.id;
-            option.textContent = `${fn.name} (${fn.id})`;
-            userFunctionsSelect.appendChild(option);
-        });
-    }
-
-    async function loadFunctionDetails(functionId) {
-        if (!functionId) return;
-        const [fnResponse, pointsResponse] = await Promise.all([
-            apiFetch(`/api/v1/functions/${functionId}`),
-            apiFetch(`/api/v1/functions/${functionId}/points`),
-        ]);
-        activeFunctionDetails = await fnResponse.json();
-        const points = await pointsResponse.json();
-        renameInput.value = activeFunctionDetails.name;
-        renderPoints(points);
-    }
-
-    function renderPoints(points) {
-        pointsTableEditor.innerHTML = '';
-        const prepared = points.map((p) => ({ x: p.xValue, y: p.yValue, id: p.id }));
-        prepared.forEach((point) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${point.x}</td><td>${point.y}</td>`;
-            const td = document.createElement('td');
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = 'Удалить';
-            btn.classList.add('secondary');
-            btn.addEventListener('click', () => deletePoint(point.id));
-            td.appendChild(btn);
-            tr.appendChild(td);
-            pointsTableEditor.appendChild(tr);
-        });
-        editorChartInstance = renderChart(editorChartCanvas, prepared, editorChartInstance);
-    }
-
-    function resetEditorSelection() {
-        if (userFunctionsSelect) {
-            userFunctionsSelect.selectedIndex = 0;
-        }
-        activeFunctionDetails = null;
-        renameInput.value = '';
-        pointsTableEditor.innerHTML = '';
-        if (editorChartInstance) {
-            editorChartInstance.destroy();
-            editorChartInstance = null;
-        }
-        showStatus('Вы вернулись к списку функций. Выберите запись, чтобы продолжить.', 'info');
-    }
-
-    async function deletePoint(pointId) {
-        if (!pointId) return;
-        await apiFetch(`/api/v1/points/${pointId}`, { method: 'DELETE' });
-        showAlert('Точка удалена.');
-        await loadFunctionDetails(userFunctionsSelect.value);
-    }
-
-    async function addPoint() {
-        if (!activeFunctionDetails) {
-            showAlert('Сначала выберите функцию.');
-            return;
-        }
-        const x = Number(document.getElementById('new-point-x').value);
-        const y = Number(document.getElementById('new-point-y').value);
-        if (Number.isNaN(x) || Number.isNaN(y)) {
-            showAlert('Укажите корректные координаты точки.');
-            return;
-        }
-        await apiFetch('/api/v1/points', {
-            method: 'POST',
-            body: JSON.stringify({
-                functionId: activeFunctionDetails.id,
-                xValue: x,
-                yValue: y,
-            }),
-        });
-        showAlert('Точка сохранена.');
-        document.getElementById('new-point-x').value = '';
-        document.getElementById('new-point-y').value = '';
-        await loadFunctionDetails(userFunctionsSelect.value);
-    }
-
-    async function renameFunction() {
-        if (!activeFunctionDetails) {
-            showAlert('Сначала выберите функцию.');
-            return;
-        }
-        const newName = renameInput.value.trim();
-        if (!newName) {
-            showAlert('Введите новое имя.');
-            return;
-        }
-        await apiFetch(`/api/v1/functions/${activeFunctionDetails.id}`, {
-            method: 'PUT',
-            body: JSON.stringify({
-                id: activeFunctionDetails.id,
-                name: newName,
-                userId: activeFunctionDetails.userId,
-                signature: activeFunctionDetails.signature,
-            }),
-        });
-        showAlert('Имя сохранено.');
-        await loadFunctionDetails(activeFunctionDetails.id);
-        await loadUserFunctions();
-    }
-
-    function populateFactorySelect() {
-        factorySelect.innerHTML = '';
-        factoryTypes.forEach((factory) => {
-            const option = document.createElement('option');
-            option.value = factory.key;
-            option.textContent = factory.label || factory.key;
-            if (factory.active) option.selected = true;
-            factorySelect.appendChild(option);
-        });
-    }
-
-    function populateMathSelect() {
-        mathSelect.innerHTML = '';
-        mathFunctions.forEach((fn) => {
-            const option = document.createElement('option');
-            option.value = fn.key;
-            option.textContent = fn.label || fn.key;
-            mathSelect.appendChild(option);
-        });
-    }
-
-    function bindNewUi() {
-        initTheme();
-        syncUserBadge();
-        populateFactorySelect();
-        populateMathSelect();
-        toggleCreationFields(creationMethodSelect.value);
-        creationMethodSelect.addEventListener('change', (event) => toggleCreationFields(event.target.value));
-        themeToggle.addEventListener('click', () => {
-            const next = document.body.classList.contains('dark') ? 'light' : 'dark';
-            applyTheme(next);
-        });
-        loginForm.addEventListener('submit', handleLogin);
-        registerForm.addEventListener('submit', handleRegister);
-        createFunctionForm.addEventListener('submit', handleCreateFunction);
-        userFunctionsSelect.addEventListener('change', (event) => loadFunctionDetails(event.target.value));
-        addPointButton.addEventListener('click', addPoint);
-        renameButton.addEventListener('click', renameFunction);
-        editorBackButton.addEventListener('click', resetEditorSelection);
-        if (currentUser) {
-            setUserIdDefaults();
-            loadUserFunctions();
-        }
-    }
-    const selectedRows = {
-        A: null,
-        B: null,
-        DIFF_SOURCE: null,
-        EXPLORER: null,
-        INTEGRAL: null,
-    };
-    const recentFiles = [];
-    const slotConfig = {
-        A: { tableId: 'operand-a-table', editable: true },
-        B: { tableId: 'operand-b-table', editable: true },
-        RESULT: { tableId: 'result-table', editable: false },
-        DIFF_SOURCE: { tableId: 'diff-source-table', editable: true },
-        DIFF_RESULT: { tableId: 'diff-result-table', editable: false },
-        EXPLORER: { tableId: 'explorer-table', editable: true },
-        INTEGRAL: { tableId: 'integral-table', editable: true }
-    };
-
-    function renderMathSelectOptions(selectElement) {
-        if (!selectElement) return;
-        const currentValue = selectElement.value;
-        selectElement.innerHTML = '';
-        const placeholder = document.createElement('option');
-        placeholder.value = '';
-        placeholder.disabled = true;
-        placeholder.selected = true;
-        placeholder.textContent = 'Выберите функцию';
-        selectElement.appendChild(placeholder);
-
-        const baseGroup = document.createElement('optgroup');
-        baseGroup.label = 'Базовые функции';
-        baseMathFunctions.forEach((func) => {
-            const option = document.createElement('option');
-            option.value = func.key;
-            option.textContent = func.label;
-            baseGroup.appendChild(option);
-        });
-        selectElement.appendChild(baseGroup);
-
-        if (customMathFunctions.length > 0) {
-            const customGroup = document.createElement('optgroup');
-            customGroup.label = 'Пользовательские композитные функции';
-            customMathFunctions.forEach((func) => {
-                const option = document.createElement('option');
-                option.value = func.key;
-                option.textContent = func.label;
-                customGroup.appendChild(option);
-            });
-            selectElement.appendChild(customGroup);
-        }
-
-        const availableOptions = Array.from(selectElement.querySelectorAll('option')).map((opt) => opt.value);
-        if (currentValue && availableOptions.includes(currentValue)) {
-            selectElement.value = currentValue;
-        }
-    }
-
-    function renderCompositeTable() {
-        if (!compositeTableBody) { return; }
-        compositeTableBody.innerHTML = '';
-        if (!customMathFunctions || customMathFunctions.length === 0) {
-            const row = document.createElement('tr');
-            const cell = document.createElement('td');
-            cell.colSpan = 3;
-            cell.textContent = 'Пока нет композитных функций';
-            row.appendChild(cell);
-            compositeTableBody.appendChild(row);
-            return;
-        }
-        customMathFunctions.forEach((func) => {
-            const row = document.createElement('tr');
-            row.dataset.name = func.key;
-            const nameCell = document.createElement('td');
-            nameCell.textContent = func.label;
-            const formulaCell = document.createElement('td');
-            formulaCell.textContent = func.formula || 'g(f(x))';
-            const actionsCell = document.createElement('td');
-            actionsCell.className = 'composite-actions';
-            actionsCell.innerHTML = `
-                <button type="button" data-action="rename">Переименовать</button>
-                <button type="button" class="secondary" data-action="delete">Удалить</button>
-            `;
-            row.appendChild(nameCell);
-            row.appendChild(formulaCell);
-            row.appendChild(actionsCell);
-            compositeTableBody.appendChild(row);
-        });
-    }
-
-    function renderAllMathSelects() {
-        renderMathSelectOptions(document.getElementById('math-key'));
-        renderMathSelectOptions(compositeOuterSelect);
-        renderMathSelectOptions(compositeInnerSelect);
-    }
-
-    function refreshMathFunctions(groups) {
-        baseMathFunctions = groups && Array.isArray(groups.baseFunctions) ? groups.baseFunctions : [];
-        customMathFunctions = groups && Array.isArray(groups.customFunctions) ? groups.customFunctions : [];
-        mathFunctions = [...baseMathFunctions, ...customMathFunctions];
-        renderAllMathSelects();
-        renderCompositeTable();
-    }
-
-    const modalManager = {
-        openModals: new Map(),
-        zIndex: 1100,
-        open(id) {
-            const modal = document.querySelector(`[data-modal="${id}"]`);
-            if (!modal) {
-                return;
-            }
-            if (this.openModals.has(id)) {
-                this.focus(id);
-                return;
-            }
-            windowOverlay.classList.remove('hidden');
-            modal.classList.remove('hidden');
-            modal.style.zIndex = `${++this.zIndex}`;
-            this.openModals.set(id, modal);
-            document.body.style.overflow = 'hidden';
-        },
-        close(id) {
-            const modal = this.openModals.get(id);
-            if (!modal) {
-                return;
-            }
-            modal.classList.add('hidden');
-            this.openModals.delete(id);
-            if (this.openModals.size === 0) {
-                windowOverlay.classList.add('hidden');
-                document.body.style.overflow = 'auto';
-            }
-        },
-        focus(id) {
-            const modal = this.openModals.get(id);
-            if (!modal) {
-                return;
-            }
-            this.zIndex += 1;
-            modal.style.zIndex = `${this.zIndex}`;
-            modal.classList.add('highlight');
-            setTimeout(() => modal.classList.remove('highlight'), 300);
-        }
-    };
-
-    const modalSlots = {
-        'operations-window': ['A', 'B'],
-        'diff-window': ['DIFF_SOURCE'],
-        'explorer-window': ['EXPLORER'],
-        'integral-window': ['INTEGRAL'],
-    };
-
-    function hasDirtySlots(modalId) {
-        const slots = modalSlots[modalId];
-        if (!slots) return false;
-        return slots.some((slot) => dirtySlots[slot]);
-    }
-
-    function requestCloseModal(modalId) {
-        if (hasDirtySlots(modalId)) {
-            showModal('Есть несохранённые изменения Y. Закрыть окно?', {
-                confirmText: 'Закрыть',
-                onConfirm: () => {
-                    (modalSlots[modalId] || []).forEach((slot) => setDirty(slot, false));
-                    modalManager.close(modalId);
-                },
-                closeText: 'Отмена'
-            });
-            return;
-        }
-        modalManager.close(modalId);
-    }
-
-    document.querySelectorAll('[data-close-modal]').forEach((button) => {
-        button.addEventListener('click', () => requestCloseModal(button.dataset.closeModal));
-    });
-
-    function showStatus(message, type = 'info') {
-        statusPanel.textContent = message;
-        statusPanel.className = `status ${type}`;
-    }
-
-    function setLoading(isLoading, text = 'Выполнение…') {
-        const indicator = document.getElementById('global-loading');
-        const label = document.getElementById('loading-text');
-        if (!indicator) {
-            return;
-        }
-        if (label) {
-            label.textContent = text;
-        }
-        indicator.classList.toggle('active', isLoading);
-    }
-
-    function showModal(message, options = {}) {
-        const { confirmText, onConfirm, closeText, onClose } = options;
-        modalMessage.textContent = message || 'Неизвестная ошибка';
-        confirmHandler = typeof onConfirm === 'function' ? onConfirm : null;
-        closeHandler = typeof onClose === 'function' ? onClose : null;
-
-        if (confirmHandler) {
-            confirmModalBtn.textContent = confirmText || 'Продолжить';
-            confirmModalBtn.classList.remove('hidden');
-        } else {
-            confirmModalBtn.classList.add('hidden');
-        }
-
-        closeModalBtn.textContent = closeText || 'Закрыть';
-        errorOverlay.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function showErrorModal(message) {
-        showModal(message);
-    }
-
-    function hideErrorModal() {
-        errorOverlay.classList.add('hidden');
-        if (modalManager.openModals.size === 0) {
-            document.body.style.overflow = 'auto';
-        }
-        const handler = closeHandler;
-        confirmHandler = null;
-        closeHandler = null;
-        if (handler) {
-            handler();
-        }
-    }
-
-    function openFormatModal(slot) {
-        pendingSaveSlot = slot;
-        const defaultOption = formatForm.querySelector('input[name="file-format"][value="json"]');
-        if (defaultOption) {
-            defaultOption.checked = true;
-        }
-        formatOverlay.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeFormatModal() {
-        pendingSaveSlot = null;
-        formatOverlay.classList.add('hidden');
-        if (modalManager.openModals.size === 0 && errorOverlay.classList.contains('hidden')) {
-            document.body.style.overflow = 'auto';
-        }
-    }
-
-    confirmModalBtn.addEventListener('click', () => {
-        const handler = confirmHandler;
-        hideErrorModal();
-        if (handler) {
-            handler();
-        }
-    });
-
-    closeModalBtn.addEventListener('click', hideErrorModal);
-
-    function setDirty(slot, dirty) {
-        if (Object.prototype.hasOwnProperty.call(dirtySlots, slot)) {
-            dirtySlots[slot] = dirty;
-        }
-    }
-
-    function updateSlotLabel(slot) {
-        const labelEl = document.querySelector(`[data-slot-label="${slot}"]`);
-        const data = functionsState[slot];
-        if (!labelEl) {
-            return;
-        }
-        labelEl.textContent = data && data.name ? data.name : '—';
-    }
-
-    function getSlotTitle(slot) {
-        const titles = {
-            A: 'Операнд A',
-            B: 'Операнд B',
-            DIFF_SOURCE: 'Исходная функция',
-            EXPLORER: 'Исследуемая функция',
-            INTEGRAL: 'Функция для интеграла',
-        };
-        return titles[slot] || slot;
-    }
-
-    function syncMutationControls(slot) {
-        const data = functionsState[slot];
-        const insertBtn = document.querySelector(`[data-insert-target="${slot}"]`);
-        const removeBtn = document.querySelector(`[data-remove-target="${slot}"]`);
-        const insertable = Boolean(data && data.insertable);
-        const removable = Boolean(data && data.removable);
-
-        if (insertBtn) {
-            insertBtn.classList.toggle('hidden', !insertable);
-            insertBtn.disabled = !insertable;
-        }
-        if (removeBtn) {
-            removeBtn.classList.toggle('hidden', !removable);
-            removeBtn.disabled = !removable || selectedRows[slot] === null || selectedRows[slot] === undefined;
-        }
-    }
-
-    function renderRecentFiles() {
-        const list = document.getElementById('recent-files');
-        if (!list) { return; }
-        list.innerHTML = '';
-        if (recentFiles.length === 0) {
-            const empty = document.createElement('li');
-            const meta = document.createElement('span');
-            meta.className = 'meta';
-            meta.textContent = 'Список пуст';
-            empty.appendChild(meta);
-            list.appendChild(empty);
-            return;
-        }
-        recentFiles.forEach((item) => {
-            const li = document.createElement('li');
-            const name = document.createElement('span');
-            name.className = 'name';
-            name.textContent = item.name;
-            const meta = document.createElement('span');
-            meta.className = 'meta';
-            meta.textContent = item.slot;
-            li.appendChild(name);
-            li.appendChild(meta);
-            list.appendChild(li);
-        });
-    }
-
-    function trackRecentFile(name, slot) {
-        if (!name) return;
-        recentFiles.unshift({ name, slot });
-        if (recentFiles.length > 5) {
-            recentFiles.pop();
-        }
-        renderRecentFiles();
-    }
-
-    function ensureExplorerChart() {
-        const canvas = document.getElementById('explorer-chart');
-        if (!canvas || !Chart) {
-            return null;
-        }
-        if (!explorerChart) {
-            explorerChart = new Chart(canvas, {
-                type: 'line',
-                data: { datasets: [{ label: 'f(x)', data: [], showLine: true, borderColor: '#0b65c2', backgroundColor: 'rgba(11,101,194,0.15)', pointRadius: 4 }] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    parsing: false,
-                    scales: {
-                        x: { type: 'linear', title: { display: true, text: 'X' }, grid: { color: 'rgba(0,0,0,0.05)' } },
-                        y: { title: { display: true, text: 'Y' }, grid: { color: 'rgba(0,0,0,0.05)' } },
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: true },
-                        zoom: {
-                            zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' },
-                            pan: { enabled: true, mode: 'xy' },
-                        },
-                    },
-                },
-            });
-        }
-        return explorerChart;
-    }
-
-    function updateExplorerChart() {
-        const chart = ensureExplorerChart();
-        if (!chart) { return; }
-        const data = functionsState.EXPLORER;
-        if (!data || !data.xValues || !data.yValues) {
-            chart.data.datasets[0].data = [];
-            chart.update();
-            return;
-        }
-        chart.data.datasets[0].data = data.xValues.map((x, idx) => ({ x, y: data.yValues[idx] }));
-        chart.update();
-    }
-
-    function parseCsvToPayload(content, nameHint) {
-        const lines = content.split(/\r?\n/).map((line) => line.trim()).filter((line) => line.length > 0);
-        if (lines.length < 2) {
-            throw new Error('Недостаточно строк в CSV');
-        }
-        const xValues = [];
-        const yValues = [];
-        lines.forEach((line, idx) => {
-            const parts = line.split(/[;,\s]+/).filter((token) => token.length > 0);
-            if (parts.length < 2) {
-                throw new Error(`Строка ${idx + 1} не содержит две колонки`);
-            }
-            const x = Number(parts[0].replace(',', '.'));
-            const y = Number(parts[1].replace(',', '.'));
-            if (Number.isNaN(x) || Number.isNaN(y)) {
-                throw new Error(`Строка ${idx + 1} содержит нечисловые данные`);
-            }
-            xValues.push(x);
-            yValues.push(y);
-        });
-        return { name: nameHint, xValues, yValues, factoryType: activeFactoryKey, insertable: true, removable: true };
-    }
-
-    function stringifyCsv(payload) {
-        return payload.xValues.map((x, idx) => `${x};${payload.yValues[idx]}`).join('\n');
-    }
-
-    function createPointRow(index) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td><input type="number" step="any" name="x" required aria-label="X ${index + 1}"></td>
-            <td><input type="number" step="any" name="y" required aria-label="Y ${index + 1}"></td>
-        `;
-        return row;
-    }
-
-    function clearPointsTable() {
-        pointsBody.innerHTML = '';
-    }
-
-    function buildPointsTable(count) {
-        clearPointsTable();
+        const step = count === 1 ? 0 : (right - left) / (count - 1);
+        const result = [];
         for (let i = 0; i < count; i += 1) {
-            pointsBody.appendChild(createPointRow(i));
+            const x = left + step * i;
+            result.push(buildMathPoint(key, x, useDegrees));
         }
-        pointsTable.classList.remove('hidden');
+        return result;
     }
 
-    function validateCountInput() {
-        const raw = pointsCountInput.value.trim();
-        pointsCountError.classList.add('hidden');
-
-        if (raw === '') {
-            pointsCountError.textContent = 'Введите количество точек.';
-            pointsCountError.classList.remove('hidden');
-            return null;
-        }
-
-        const count = Number(raw);
-        if (!Number.isInteger(count) || count < 2) {
-            pointsCountError.textContent = 'Введите целое число не меньше 2.';
-            pointsCountError.classList.remove('hidden');
-            return null;
-        }
-
-        if (count > MAX_POINTS) {
-            showModal(`Количество точек ограничено ${MAX_POINTS}. Введите меньшее значение.`, { closeText: 'Понятно' });
-            return null;
-        }
-
-        return count;
+    function addFunction(name, points, origin = '') {
+        const id = state.counter++;
+        state.functions.push({ id, name: name || `Функция ${id}`, points, origin: origin || 'Без пометки' });
+        renderFunctionOptions();
+        renderFunctionCards();
     }
 
-    document.getElementById('generate-table').addEventListener('click', () => {
-        const count = validateCountInput();
-        if (!count) {
-            return;
-        }
-
-        const rebuild = () => {
-            buildPointsTable(count);
-            showStatus(`Подготовлена таблица на ${count} точек.`, 'info');
-        };
-
-        if (pointsBody.children.length > 0) {
-            showModal('Текущие данные будут потеряны. Продолжить?', {
-                confirmText: 'Пересоздать',
-                onConfirm: rebuild,
-                closeText: 'Отмена',
-            });
-        } else {
-            rebuild();
-        }
-    });
-
-    async function readErrorMessage(response) {
-        let errorMessage = 'Не удалось выполнить запрос';
-        try {
-            const errorBody = await response.json();
-            errorMessage = errorBody.message || errorMessage;
-        } catch (e) {
-            // тело не JSON, оставляем сообщение по умолчанию
-        }
-        return errorMessage;
+    function removeFunction(id) {
+        state.functions = state.functions.filter((fn) => fn.id !== id);
+        renderFunctionOptions();
+        renderFunctionCards();
     }
 
-    async function handleResponse(response) {
-        if (response.ok) {
-            return response.json();
-        }
-        const errorMessage = await readErrorMessage(response);
-        showErrorModal(errorMessage);
-        throw new Error(errorMessage);
-    }
-
-    function getFactoryLabel(key) {
-        const match = factoryTypes.find((factory) => factory.key === key);
-        return match ? match.label : key;
-    }
-
-    function detectFormat(filename = '') {
-        const lower = filename.toLowerCase();
-        if (lower.endsWith('.json')) return 'json';
-        if (lower.endsWith('.xml')) return 'xml';
-        if (lower.endsWith('.dat')) return 'dat';
-        if (lower.endsWith('.csv')) return 'csv';
-        return null;
-    }
-
-    function dtoToPayload(dto) {
-        if (!dto || !Array.isArray(dto.points) || dto.points.length === 0) {
-            return null;
-        }
-        return {
-            name: dto.name || 'Функция',
-            xValues: dto.points.map((p) => p.x),
-            yValues: dto.points.map((p) => p.y),
-            factoryType: dto.factoryType,
-            insertable: dto.insertable,
-            removable: dto.removable,
-        };
-    }
-
-    function isValidNumberInput(value) {
-        if (value === null || value === undefined) {
-            return false;
-        }
-        const normalized = String(value).trim();
-        if (normalized === '') {
-            return false;
-        }
-        return !Number.isNaN(Number(normalized));
-    }
-
-    function attachYInputHandlers(yInput, data, index, slot) {
-        yInput.addEventListener('input', () => {
-            yInput.value = yInput.value.replace(',', '.');
-            if (!isValidNumberInput(yInput.value)) {
-                yInput.classList.add('input-error');
-                return;
-            }
-            yInput.classList.remove('input-error');
-        });
-
-        yInput.addEventListener('change', () => {
-            const normalized = yInput.value.replace(',', '.');
-            if (!isValidNumberInput(normalized)) {
-                showErrorModal('Введите числовое значение Y.');
-                yInput.value = data.yValues[index];
-                yInput.classList.remove('input-error');
-                return;
-            }
-            yInput.classList.remove('input-error');
-            data.yValues[index] = Number(normalized);
-            setDirty(slot, true);
-            if (slot === 'EXPLORER') {
-                updateExplorerChart();
-            }
-        });
-    }
-
-    function renderSlot(slot) {
-        const config = slotConfig[slot];
-        if (!config) {
-            showErrorModal('Неизвестная область для отображения.');
-            return;
-        }
-        const data = functionsState[slot];
-        const table = document.getElementById(config.tableId);
-        const tbody = table.querySelector('tbody');
-        tbody.innerHTML = '';
-        updateSlotLabel(slot);
-
-        if (!data || !data.xValues || !data.yValues || data.xValues.length === 0) {
-            const row = document.createElement('tr');
-            const cell = document.createElement('td');
-            cell.colSpan = 2;
-            cell.textContent = 'Нет данных';
-            row.appendChild(cell);
-            tbody.appendChild(row);
-            syncMutationControls(slot);
-            return;
-        }
-
-        for (let i = 0; i < data.xValues.length; i += 1) {
-            const row = document.createElement('tr');
-            const xCell = document.createElement('td');
-            const xInput = document.createElement('input');
-            xInput.type = 'number';
-            xInput.readOnly = true;
-            xInput.value = data.xValues[i];
-            xCell.appendChild(xInput);
-
-            const yCell = document.createElement('td');
-            const yInput = document.createElement('input');
-            yInput.type = 'number';
-            yInput.step = 'any';
-            yInput.value = data.yValues[i];
-            yInput.readOnly = !config.editable;
-            if (config.editable) {
-                attachYInputHandlers(yInput, data, i, slot);
-            }
-            yCell.appendChild(yInput);
-
-            row.appendChild(xCell);
-            row.appendChild(yCell);
-            tbody.appendChild(row);
-
-            if (Object.prototype.hasOwnProperty.call(selectedRows, slot)) {
-                if (selectedRows[slot] === i) {
-                    row.classList.add('selected');
-                }
-                row.addEventListener('click', () => {
-                    selectedRows[slot] = i;
-                    Array.from(tbody.children).forEach((r, idx) => {
-                        r.classList.toggle('selected', idx === i);
-                    });
-                    syncMutationControls(slot);
-                });
-            }
-        }
-        syncMutationControls(slot);
-    }
-
-    function applyPayload(slot, payload, displayName) {
-        if (!payload || !Array.isArray(payload.xValues) || !Array.isArray(payload.yValues)) {
-            showErrorModal('Не удалось применить данные функции.');
-            return;
-        }
-        if (payload.xValues.length !== payload.yValues.length || payload.xValues.length < 2) {
-            showErrorModal('Количество точек должно совпадать и быть не меньше двух.');
-            return;
-        }
-        functionsState[slot] = {
-            name: displayName || payload.name || `Функция ${slot}`,
-            xValues: payload.xValues.slice(),
-            yValues: payload.yValues.slice(),
-            factoryType: payload.factoryType || activeFactoryKey,
-            insertable: Boolean(payload.insertable),
-            removable: Boolean(payload.removable),
-        };
-        setDirty(slot, false);
-        if (Object.prototype.hasOwnProperty.call(selectedRows, slot)) {
-            selectedRows[slot] = null;
-        }
-        if (slot === 'INTEGRAL' && integralResultOutput) {
-            integralResultOutput.value = '';
-        }
-        if (slot === 'DIFF_SOURCE') {
-            functionsState.DIFF_RESULT = null;
-            renderSlot('DIFF_RESULT');
-        }
-        renderSlot(slot);
-        if (slot === 'EXPLORER') {
-            updateExplorerChart();
-        }
-        syncMutationControls(slot);
-        showStatus(`Обновлена область ${slot}: ${functionsState[slot].name}.`, 'info');
-    }
-
-    function clearSlot(slot) {
-        functionsState[slot] = null;
-        setDirty(slot, false);
-        if (Object.prototype.hasOwnProperty.call(selectedRows, slot)) {
-            selectedRows[slot] = null;
-        }
-        renderSlot(slot);
-        if (slot === 'EXPLORER') {
-            updateExplorerChart();
-        }
-        if (slot === 'INTEGRAL' && integralResultOutput) {
-            integralResultOutput.value = '';
-        }
-        syncMutationControls(slot);
-        showStatus(`Область ${slot} очищена.`, 'info');
-    }
-
-    function ensureSlotValid(slot) {
-        const data = functionsState[slot];
-        if (!data) {
-            return true;
-        }
-        const invalidIndex = data.yValues.findIndex((val) => Number.isNaN(Number(val)));
-        if (invalidIndex !== -1) {
-            showErrorModal(`Значение Y в строке ${invalidIndex + 1} должно быть числом.`);
-            return false;
-        }
-        return true;
-    }
-
-    function showCreationChooser(target) {
-        showModal('Выберите способ создания функции', {
-            confirmText: 'Из массивов',
-            onConfirm: () => {
-                creationTarget = target;
-                modalManager.open('arrays-window');
-            },
-            closeText: 'Из MathFunction',
-            onClose: () => {
-                creationTarget = target;
-                modalManager.open('math-window');
-            }
-        });
-    }
-
-    function resolveWindowForTarget(target) {
-        if (!target) {
-            return null;
-        }
-        if (['A', 'B', 'RESULT'].includes(target)) {
-            return 'operations-window';
-        }
-        if (target.startsWith('DIFF')) {
-            return 'diff-window';
-        }
-        if (target === 'EXPLORER') {
-            return 'explorer-window';
-        }
-        if (target === 'INTEGRAL') {
-            return 'integral-window';
-        }
-        return null;
-    }
-
-    function bindFileLoading() {
-        document.querySelectorAll('[data-load-target]').forEach((input) => {
-            input.addEventListener('change', async (event) => {
-                const { files } = event.target;
-                if (!files || files.length === 0) {
-                    return;
-                }
-                const slot = event.target.dataset.loadTarget;
-                const file = files[0];
-                const format = detectFormat(file.name);
-                if (!format) {
-                    showErrorModal('Неподдерживаемое расширение файла.');
-                    event.target.value = '';
-                    return;
-                }
-
-                if (format === 'csv') {
-                    setLoading(true, 'Загрузка CSV файла…');
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        try {
-                            const parsedCsv = parseCsvToPayload(reader.result, file.name);
-                            applyPayload(slot, parsedCsv, parsedCsv.name || file.name);
-                            trackRecentFile(file.name, slot);
-                            setDirty(slot, false);
-                        } catch (csvError) {
-                            showErrorModal('Не удалось разобрать CSV файл функции.');
-                        } finally {
-                            setLoading(false);
-                        }
-                    };
-                    reader.onerror = () => {
-                        showErrorModal('Ошибка при чтении файла функции.');
-                        setLoading(false);
-                    };
-                    reader.readAsText(file);
-                    event.target.value = '';
-                    return;
-                }
-
-                const formData = new FormData();
-                formData.append('file', file);
-                try {
-                    setLoading(true, 'Загрузка файла функции…');
-                    const response = await apiFetch(`/ui/api/tabulated-functions/files/deserialize?format=${format}`, {
-                        method: 'POST',
-                        body: formData,
-                    });
-                    const payload = await handleResponse(response);
-                    applyPayload(slot, payload, payload.name || file.name);
-                    trackRecentFile(file.name, slot);
-                    setDirty(slot, false);
-                } catch (e) {
-                    // сообщение уже показано
-                } finally {
-                    setLoading(false);
-                    event.target.value = '';
-                }
+    function renderFunctionOptions() {
+        const selects = [evaluateSelect, opASelect, opBSelect];
+        selects.forEach((select) => {
+            if (!select) return;
+            select.innerHTML = '';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = state.functions.length === 0 ? 'Сначала создайте функцию' : 'Выберите функцию';
+            placeholder.disabled = state.functions.length > 0;
+            placeholder.selected = true;
+            select.appendChild(placeholder);
+            state.functions.forEach((fn) => {
+                const option = document.createElement('option');
+                option.value = fn.id;
+                option.textContent = `${fn.name} (${fn.points.length} точек)`;
+                select.appendChild(option);
             });
         });
     }
 
-    function bindSaving() {
-        formatForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const selected = formatForm.querySelector('input[name="file-format"]:checked');
-            const format = selected ? selected.value : 'json';
-            if (!pendingSaveSlot) {
-                closeFormatModal();
-                return;
-            }
-            try {
-                await saveWithFormat(pendingSaveSlot, format);
-            } finally {
-                closeFormatModal();
-            }
-        });
-
-        formatCancelBtn.addEventListener('click', () => closeFormatModal());
-
-        document.querySelectorAll('[data-save-target]').forEach((button) => {
-            button.addEventListener('click', async () => {
-                const slot = button.dataset.saveTarget;
-                const payload = functionsState[slot];
-                if (!payload || !payload.xValues || payload.xValues.length === 0) {
-                    showErrorModal('Нет данных для сохранения.');
-                    return;
-                }
-                const format = button.dataset.saveFormat;
-                if (format === 'csv') {
-                    saveCsv(slot, payload);
-                    return;
-                }
-                openFormatModal(slot);
-            });
-        });
-    }
-
-    async function saveWithFormat(slot, format) {
-        const payload = functionsState[slot];
-        setLoading(true, 'Сохранение функции…');
-        try {
-            const response = await apiFetch(`/ui/api/tabulated-functions/files/serialize?format=${format}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            const blob = await response.blob();
-            const extension = format === 'xml' ? 'xml' : format === 'dat' ? 'dat' : 'json';
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `${payload.name || slot}.${extension}`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
-            showStatus(`Функция сохранена в формате ${extension.toUpperCase()}.`, 'success');
-            setDirty(slot, false);
-        } finally {
-            setLoading(false);
+    function renderFunctionCards() {
+        functionsList.innerHTML = '';
+        if (state.functions.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'muted';
+            empty.textContent = 'Пока нет данных. Создайте функцию по точкам или формуле.';
+            functionsList.appendChild(empty);
+            return;
         }
-    }
-
-    function saveCsv(slot, payload) {
-        const content = stringifyCsv(payload);
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(new Blob([content], { type: 'text/csv' }));
-        link.download = `${payload.name || slot}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-        showStatus('Функция сохранена в формате CSV.', 'success');
-        setDirty(slot, false);
-    }
-
-    function bindClearing() {
-        document.querySelectorAll('[data-clear-target]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const slot = button.dataset.clearTarget;
-                if (!functionsState[slot]) {
-                    showStatus('Нет данных для очистки.', 'info');
-                    return;
-                }
-                showModal('Очистить таблицу функции?', {
-                    confirmText: 'Очистить',
-                    onConfirm: () => clearSlot(slot),
-                    closeText: 'Отмена'
-                });
+        state.functions.forEach((fn) => {
+            const card = document.createElement('div');
+            card.className = 'item';
+            const title = document.createElement('h4');
+            title.textContent = fn.name;
+            const meta = document.createElement('div');
+            meta.className = 'muted';
+            meta.textContent = `${fn.points.length} точек • ${fn.origin}`;
+            const details = document.createElement('details');
+            const summary = document.createElement('summary');
+            summary.textContent = 'Показать значения X и Y';
+            const list = document.createElement('ul');
+            list.className = 'value-list';
+            fn.points.forEach((p) => {
+                const li = document.createElement('li');
+                li.textContent = `x=${p.x}, y=${p.y}`;
+                list.appendChild(li);
             });
+            details.appendChild(summary);
+            details.appendChild(list);
+            const actions = document.createElement('div');
+            actions.className = 'actions';
+            const pickBtn = document.createElement('button');
+            pickBtn.type = 'button';
+            pickBtn.textContent = 'Сделать активной в селекторах';
+            pickBtn.addEventListener('click', () => {
+                evaluateSelect.value = fn.id;
+                opASelect.value = fn.id;
+            });
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'secondary';
+            removeBtn.textContent = 'Удалить';
+            removeBtn.addEventListener('click', () => removeFunction(fn.id));
+            actions.appendChild(pickBtn);
+            actions.appendChild(removeBtn);
+
+            card.appendChild(title);
+            card.appendChild(meta);
+            card.appendChild(details);
+            card.appendChild(actions);
+            functionsList.appendChild(card);
         });
     }
 
-    function bindMutations() {
-        document.querySelectorAll('[data-insert-target]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const slot = button.dataset.insertTarget;
-                const data = functionsState[slot];
-                if (!data) {
-                    showErrorModal('Сначала создайте или загрузите функцию.');
-                    return;
-                }
-                if (!data.insertable) {
-                    showErrorModal('Эта функция не поддерживает вставку точек.');
-                    return;
-                }
-                insertTarget = slot;
-                insertSlotInput.value = getSlotTitle(slot);
-                insertXInput.value = '';
-                insertYInput.value = '';
-                modalManager.open('insert-window');
-            });
-        });
-
-        document.querySelectorAll('[data-remove-target]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const slot = button.dataset.removeTarget;
-                const data = functionsState[slot];
-                if (!data) {
-                    showErrorModal('Нет данных для удаления.');
-                    return;
-                }
-                if (!data.removable) {
-                    showErrorModal('Эта функция не поддерживает удаление точек.');
-                    return;
-                }
-                const index = selectedRows[slot];
-                if (index === null || index === undefined) {
-                    showErrorModal('Выберите строку для удаления.');
-                    return;
-                }
-                showModal(`Удалить точку №${index + 1}?`, {
-                    confirmText: 'Удалить',
-                    onConfirm: async () => {
-                        try {
-                            setLoading(true, 'Удаление точки…');
-                            const response = await apiFetch('/ui/api/tabulated-functions/remove', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    function: data,
-                                    index,
-                                    factoryType: data.factoryType || activeFactoryKey,
-                                }),
-                            });
-                            const updated = await handleResponse(response);
-                            applyPayload(slot, updated, updated.name || data.name);
-                            setDirty(slot, true);
-                            if (Object.prototype.hasOwnProperty.call(selectedRows, slot)) {
-                                selectedRows[slot] = null;
-                            }
-                        } catch (e) {
-                            // Ошибка уже показана
-                        } finally {
-                            setLoading(false);
-                        }
-                    },
-                    closeText: 'Отмена',
-                });
-            });
-        });
-
-        const insertForm = document.getElementById('insert-form');
-        insertForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            if (!insertTarget) {
-                modalManager.close('insert-window');
-                return;
+    function linearInterpolate(points, x) {
+        if (!points || points.length === 0) {
+            throw new Error('Нет точек для вычисления.');
+        }
+        if (points.length === 1) {
+            return points[0].y;
+        }
+        const sorted = [...points].sort((a, b) => a.x - b.x);
+        if (x <= sorted[0].x) return sorted[0].y;
+        if (x >= sorted[sorted.length - 1].x) return sorted[sorted.length - 1].y;
+        for (let i = 0; i < sorted.length - 1; i += 1) {
+            const left = sorted[i];
+            const right = sorted[i + 1];
+            if (x >= left.x && x <= right.x) {
+                const ratio = (x - left.x) / (right.x - left.x);
+                return left.y + ratio * (right.y - left.y);
             }
-            const data = functionsState[insertTarget];
-            if (!data || !data.insertable) {
-                showErrorModal('Эта функция недоступна для вставки.');
-                return;
-            }
-
-            const xValue = Number(insertXInput.value);
-            const yValue = Number(insertYInput.value);
-            if (!isValidNumberInput(xValue) || !isValidNumberInput(yValue)) {
-                showErrorModal('Введите числовые значения X и Y.');
-                return;
-            }
-
-            try {
-                setLoading(true, 'Вставка точки…');
-                const response = await apiFetch('/ui/api/tabulated-functions/insert', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        function: data,
-                        x: xValue,
-                        y: yValue,
-                        factoryType: data.factoryType || activeFactoryKey,
-                    }),
-                });
-                const updated = await handleResponse(response);
-                applyPayload(insertTarget, updated, updated.name || data.name);
-                setDirty(insertTarget, true);
-                modalManager.close('insert-window');
-                insertTarget = null;
-            } catch (e) {
-                // Ошибка уже показана
-            } finally {
-                setLoading(false);
-            }
-        });
-
-        document.querySelectorAll('[data-close-modal="insert-window"]').forEach((button) => {
-            button.addEventListener('click', () => {
-                insertTarget = null;
-            });
-        });
+        }
+        return sorted[sorted.length - 1].y;
     }
 
-    async function performOperation(operation) {
-        if (!functionsState.A || !functionsState.B) {
-            showErrorModal('Задайте обе функции-операнды.');
-            return;
-        }
-
-        if (!ensureSlotValid('A') || !ensureSlotValid('B')) {
-            return;
-        }
-
-        try {
-            setLoading(true, 'Выполнение операции…');
-            const response = await apiFetch('/ui/api/tabulated-functions/operations', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    operation,
-                    factoryType: activeFactoryKey,
-                    left: functionsState.A,
-                    right: functionsState.B,
-                })
-            });
-            const data = await handleResponse(response);
-            applyPayload('RESULT', data.result);
-            showStatus('Операция успешно выполнена.', 'success');
-        } catch (e) {
-            // ошибки выводятся модально
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function performDifferentiation() {
-        if (!functionsState.DIFF_SOURCE) {
-            showErrorModal('Загрузите или создайте исходную функцию.');
-            return;
-        }
-
-        if (!ensureSlotValid('DIFF_SOURCE')) {
-            return;
-        }
-
-        try {
-            setLoading(true, 'Выполнение дифференцирования…');
-            const response = await apiFetch('/ui/api/tabulated-functions/differential', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    factoryType: activeFactoryKey,
-                    function: functionsState.DIFF_SOURCE
-                })
-            });
-            const data = await handleResponse(response);
-            applyPayload('DIFF_RESULT', data.result);
-            showStatus('Производная успешно получена.', 'success');
-        } catch (e) {
-            // отображено модально
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function evaluateExplorer() {
-        if (!functionsState.EXPLORER) {
-            showErrorModal('Загрузите или создайте функцию для анализа.');
-            return;
-        }
-        if (!ensureSlotValid('EXPLORER')) {
-            return;
-        }
-        if (!isValidNumberInput(explorerXInput.value)) {
-            showErrorModal('Введите числовое значение X.');
-            return;
-        }
-
-        const xValue = Number(String(explorerXInput.value).replace(',', '.'));
-        try {
-            setLoading(true, 'Вычисление значения…');
-            const response = await apiFetch('/ui/api/tabulated-functions/apply', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    factoryType: activeFactoryKey,
-                    x: xValue,
-                    function: functionsState.EXPLORER,
-                })
-            });
-            const data = await handleResponse(response);
-            explorerYOutput.value = data.y;
-            showStatus(`Значение f(${xValue}) = ${data.y}.`, 'success');
-        } catch (e) {
-            // Ошибка отображена модально
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function computeIntegral() {
-        const slot = 'INTEGRAL';
-        if (!functionsState[slot]) {
-            showErrorModal('Сначала загрузите или создайте функцию для интегрирования.');
-            return;
-        }
-        if (!ensureSlotValid(slot)) {
-            return;
-        }
-        const threads = Number(integralThreadsInput.value);
-        if (!Number.isInteger(threads) || threads < 1) {
-            showErrorModal('Количество потоков должно быть целым числом от 1 до 16.');
-            return;
-        }
-        if (threads > 16) {
-            showModal('Максимум поддерживается 16 потоков. Укажите меньшее значение.', { closeText: 'Понятно' });
-            return;
-        }
-
-        try {
-            setLoading(true, 'Вычисление интеграла…');
-            const response = await apiFetch('/ui/api/tabulated-functions/integration', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    function: functionsState[slot],
-                    threads,
-                    factoryType: functionsState[slot].factoryType || activeFactoryKey,
-                }),
-            });
-            const data = await handleResponse(response);
-            if (integralResultOutput) {
-                integralResultOutput.value = String(data.result);
-            }
-            showStatus(`Интеграл вычислен с использованием ${threads} потоков.`, 'success');
-        } catch (e) {
-            // ошибка уже показана
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function submitComposite(event) {
+    function handlePointsSubmit(event) {
         event.preventDefault();
-        const name = compositeNameInput.value.trim();
-        const outerKey = compositeOuterSelect.value;
-        const innerKey = compositeInnerSelect.value;
-
-        if (!name) {
-            showErrorModal('Введите название композитной функции.');
-            return;
-        }
-        if (!outerKey || !innerKey) {
-            showErrorModal('Выберите обе функции g и f.');
-            return;
-        }
-
         try {
-            setLoading(true, 'Создание композитной функции…');
-            const response = await apiFetch('/api/v1/math-functions/composite', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, outerKey, innerKey })
-            });
-            const groups = await handleResponse(response);
-            refreshMathFunctions(groups);
-            compositeNameInput.value = '';
-            showStatus(`Создана композитная функция «${name}».`, 'success');
-        } catch (e) {
-            // ошибка показана модально
-        } finally {
-            setLoading(false);
+            const name = pointsNameInput.value.trim();
+            const origin = pointsOriginInput.value.trim();
+            const points = parsePairs(pointsSourceInput.value);
+            addFunction(name, points, origin);
+            pointsSourceInput.value = '';
+            pointsOriginInput.value = '';
+        } catch (err) {
+            alert(err.message);
         }
     }
 
-    async function renameComposite(name) {
-        const newName = window.prompt('Новое имя для композитной функции', name);
-        if (!newName) {
-            return;
-        }
-        try {
-            setLoading(true, 'Переименование функции…');
-            const response = await apiFetch('/api/v1/math-functions/composite/rename', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ oldName: name, newName })
-            });
-            const groups = await handleResponse(response);
-            refreshMathFunctions(groups);
-            showStatus(`Функция переименована в «${newName.trim()}».`, 'success');
-        } catch (e) {
-            // отображено модально
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    function deleteComposite(name) {
-        showModal(`Удалить композитную функцию «${name}»?`, {
-            confirmText: 'Удалить',
-            onConfirm: async () => {
-                try {
-                    setLoading(true, 'Удаление функции…');
-                    const response = await apiFetch('/api/v1/math-functions/composite/delete', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name })
-                    });
-                    const groups = await handleResponse(response);
-                    refreshMathFunctions(groups);
-                    showStatus('Функция удалена из списка.', 'info');
-                } catch (e) {
-                    // сообщение уже показано
-                } finally {
-                    setLoading(false);
-                }
-            },
-            closeText: 'Отмена'
-        });
-    }
-
-    function syncFactoryDisplay() {
-        document.querySelectorAll('[data-active-factory-label]').forEach((element) => {
-            element.textContent = getFactoryLabel(activeFactoryKey);
-        });
-        document.querySelectorAll('[data-active-factory-input]').forEach((input) => {
-            input.value = activeFactoryKey;
-        });
-        document.querySelectorAll('[data-factory-key]').forEach((container) => {
-            const key = container.dataset.factoryKey;
-            const badge = container.querySelector('.factory-badge');
-            const radio = container.querySelector('input[name="factoryKey"]');
-            if (radio) {
-                radio.checked = key === activeFactoryKey;
-            }
-            if (badge) {
-                badge.classList.toggle('hidden', key !== activeFactoryKey);
-            }
-        });
-    }
-
-    bindNewUi();
-    syncFactoryDisplay();
-
-    document.getElementById('open-array-window').addEventListener('click', () => modalManager.open('arrays-window'));
-    document.getElementById('open-math-window').addEventListener('click', () => modalManager.open('math-window'));
-    document.getElementById('open-composite-window').addEventListener('click', () => modalManager.open('composite-window'));
-    document.getElementById('open-factory-window').addEventListener('click', () => {
-        syncFactoryDisplay();
-        modalManager.open('factory-window');
-    });
-    document.getElementById('cancel-factory-window').addEventListener('click', () => {
-        syncFactoryDisplay();
-        modalManager.close('factory-window');
-    });
-    document.getElementById('open-explorer-window').addEventListener('click', () => modalManager.open('explorer-window'));
-    document.getElementById('open-operations-window').addEventListener('click', () => modalManager.open('operations-window'));
-    document.getElementById('open-diff-window').addEventListener('click', () => modalManager.open('diff-window'));
-    document.getElementById('open-integral-window').addEventListener('click', () => modalManager.open('integral-window'));
-    document.getElementById('open-about-window').addEventListener('click', () => modalManager.open('about-window'));
-
-    document.querySelectorAll('[data-create-target]').forEach((button) => {
-        button.addEventListener('click', () => showCreationChooser(button.dataset.createTarget));
-    });
-
-    document.querySelectorAll('[data-operation]').forEach((button) => {
-        button.addEventListener('click', () => performOperation(button.dataset.operation));
-    });
-
-    const deriveButton = document.getElementById('derive-button');
-    if (deriveButton) {
-        deriveButton.addEventListener('click', () => performDifferentiation());
-    }
-    const evaluateButton = document.getElementById('evaluate-button');
-    if (evaluateButton) {
-        evaluateButton.addEventListener('click', () => evaluateExplorer());
-    }
-    const integralButton = document.getElementById('integral-compute');
-    if (integralButton) {
-        integralButton.addEventListener('click', () => computeIntegral());
-    }
-
-    if (document.getElementById('composite-form')) {
-        document.getElementById('composite-form').addEventListener('submit', submitComposite);
-    }
-    if (compositeTableBody) {
-        compositeTableBody.addEventListener('click', (event) => {
-            const action = event.target.dataset.action;
-            const row = event.target.closest('tr');
-            const name = row ? row.dataset.name : null;
-            if (!action || !name) return;
-            if (action === 'rename') {
-                renameComposite(name);
-            }
-            if (action === 'delete') {
-                deleteComposite(name);
-            }
-        });
-    }
-
-    bindFileLoading();
-    bindSaving();
-    bindClearing();
-    bindMutations();
-    renderAllMathSelects();
-    renderCompositeTable();
-    renderRecentFiles();
-    renderSlot('A');
-    renderSlot('B');
-    renderSlot('RESULT');
-    renderSlot('DIFF_SOURCE');
-    renderSlot('DIFF_RESULT');
-    renderSlot('EXPLORER');
-    renderSlot('INTEGRAL');
-    updateExplorerChart();
-
-    document.getElementById('arrays-form').addEventListener('submit', async (event) => {
+    function handleFormulaSubmit(event) {
         event.preventDefault();
-        const userId = Number(document.getElementById('arrays-user').value);
-        const name = document.getElementById('arrays-name').value.trim();
-        const factoryType = document.getElementById('arrays-factory').value;
+        const name = document.getElementById('formula-name').value.trim();
+        const key = document.getElementById('formula-key').value;
+        const left = Number(document.getElementById('formula-left').value);
+        const right = Number(document.getElementById('formula-right').value);
+        const count = Number(document.getElementById('formula-count').value);
+        const useDegrees = document.getElementById('formula-degrees').checked;
+        try {
+            const points = generatePointsFromFormula(key, count, left, right, useDegrees);
+            addFunction(name, points, `Формула ${key}${useDegrees ? ' (углы в градусах)' : ''}`);
+        } catch (err) {
+            alert(err.message);
+        }
+    }
 
-        if (pointsBody.children.length === 0) {
-            showErrorModal('Сначала сгенерируйте таблицу точек.');
+    function handleEvaluate(event) {
+        event.preventDefault();
+        const fnId = Number(evaluateSelect.value);
+        const x = Number(evaluateInput.value);
+        const fn = state.functions.find((f) => f.id === fnId);
+        if (!fn) {
+            evaluateResult.textContent = 'Сначала выберите функцию.';
             return;
         }
+        if (Number.isNaN(x)) {
+            evaluateResult.textContent = 'Введите числовое значение X.';
+            return;
+        }
+        try {
+            const y = linearInterpolate(fn.points, x);
+            evaluateResult.textContent = `f(${x}) = ${y}`;
+        } catch (err) {
+            evaluateResult.textContent = err.message;
+        }
+    }
 
-        const points = Array.from(pointsBody.querySelectorAll('tr')).map((row) => {
-            const x = Number(row.querySelector('input[name="x"]').value);
-            const y = Number(row.querySelector('input[name="y"]').value);
-            return { x, y };
+    function handleAngle(event) {
+        event.preventDefault();
+        const key = document.getElementById('angle-fn').value;
+        const angle = Number(document.getElementById('angle-value').value);
+        if (Number.isNaN(angle)) {
+            angleResult.textContent = 'Введите угол в градусах.';
+            return;
+        }
+        const point = buildMathPoint(key, angle, true);
+        angleResult.textContent = `${key}(${angle}°) = ${point.y}`;
+    }
+
+    function handleOperation(event) {
+        event.preventDefault();
+        const aId = Number(opASelect.value);
+        const bId = Number(opBSelect.value);
+        const type = opTypeSelect.value;
+        const name = opNameInput.value.trim() || `Результат ${type}`;
+        const fnA = state.functions.find((f) => f.id === aId);
+        const fnB = state.functions.find((f) => f.id === bId);
+        if (!fnA || !fnB) {
+            alert('Выберите обе функции.');
+            return;
+        }
+        const limit = Math.min(fnA.points.length, fnB.points.length);
+        if (limit === 0) {
+            alert('Нет точек для операции.');
+            return;
+        }
+        const points = [];
+        for (let i = 0; i < limit; i += 1) {
+            const left = fnA.points[i];
+            const right = fnB.points[i];
+            let y = 0;
+            switch (type) {
+                case 'add': y = left.y + right.y; break;
+                case 'subtract': y = left.y - right.y; break;
+                case 'multiply': y = left.y * right.y; break;
+                case 'divide': y = right.y === 0 ? NaN : left.y / right.y; break;
+                default: y = left.y;
+            }
+            points.push({ x: left.x, y });
+        }
+        addFunction(name, points, `Операция ${type}`);
+    }
+
+    function init() {
+        pointsForm.addEventListener('submit', handlePointsSubmit);
+        clearPointsButton.addEventListener('click', () => {
+            pointsSourceInput.value = '';
+            pointsOriginInput.value = '';
+            pointsNameInput.value = '';
         });
+        formulaForm.addEventListener('submit', handleFormulaSubmit);
+        evaluateForm.addEventListener('submit', handleEvaluate);
+        angleForm.addEventListener('submit', handleAngle);
+        operationForm.addEventListener('submit', handleOperation);
+        renderFunctionOptions();
+        renderFunctionCards();
+    }
 
-        const invalidIndex = points.findIndex((point) => Number.isNaN(point.x) || Number.isNaN(point.y));
-        if (invalidIndex !== -1) {
-            showErrorModal(`Заполните корректно все значения в строке ${invalidIndex + 1}.`);
-            return;
-        }
-
-        if (points.length < 2) {
-            showErrorModal('Добавьте как минимум две точки.');
-            return;
-        }
-
-        try {
-            setLoading(true, 'Создание функции из массивов…');
-            const response = await apiFetch('/ui/api/tabulated-functions/arrays', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, name, factoryType, points })
-            });
-            const data = await handleResponse(response);
-            showStatus(`Функция создана (ID: ${data.id}, имя: ${data.name}).`, 'success');
-            const payload = dtoToPayload(data);
-            if (creationTarget && payload) {
-                applyPayload(creationTarget, payload);
-                const targetWindow = resolveWindowForTarget(creationTarget);
-                creationTarget = null;
-                if (targetWindow) {
-                    modalManager.open(targetWindow);
-                }
-            }
-            modalManager.close('arrays-window');
-        } catch (e) {
-            // Ошибка уже отображена модально
-        } finally {
-            setLoading(false);
-        }
-    });
-
-    document.getElementById('math-form').addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const payload = {
-            userId: Number(document.getElementById('math-user').value),
-            name: document.getElementById('math-name').value.trim(),
-            mathFunctionKey: document.getElementById('math-key').value,
-            pointsCount: Number(document.getElementById('points-count').value),
-            leftBound: Number(document.getElementById('left-bound').value),
-            rightBound: Number(document.getElementById('right-bound').value),
-            factoryType: document.getElementById('math-factory').value
-        };
-
-        if (!payload.mathFunctionKey) {
-            showErrorModal('Выберите математическую функцию для табулирования.');
-            return;
-        }
-
-        if (payload.pointsCount < 2) {
-            showErrorModal('Количество точек должно быть не менее двух.');
-            return;
-        }
-
-        if (payload.leftBound >= payload.rightBound) {
-            showErrorModal('Левая граница должна быть меньше правой.');
-            return;
-        }
-
-        try {
-            setLoading(true, 'Табулирование функции…');
-            const response = await apiFetch('/ui/api/tabulated-functions/math-function', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await handleResponse(response);
-            const descriptor = mathFunctions.find((f) => f.key === data.mathFunctionKey);
-            const label = descriptor ? descriptor.label : data.mathFunctionKey;
-            showStatus(`Функция ${label} табулирована (ID: ${data.id}) в ${payload.pointsCount} точках.`, 'success');
-            const mapped = dtoToPayload(data);
-            if (creationTarget && mapped) {
-                applyPayload(creationTarget, mapped);
-                const targetWindow = resolveWindowForTarget(creationTarget);
-                creationTarget = null;
-                if (targetWindow) {
-                    modalManager.open(targetWindow);
-                }
-            }
-            modalManager.close('math-window');
-        } catch (e) {
-            // Ошибка уже отображена модально
-        } finally {
-            setLoading(false);
-        }
-    });
-
-    document.getElementById('factory-form').addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const selected = document.querySelector('input[name="factoryKey"]:checked');
-        if (!selected) {
-            showErrorModal('Выберите тип фабрики.');
-            return;
-        }
-        try {
-            const response = await apiFetch('/ui/api/factories/activate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: selected.value })
-            });
-            factoryState = await handleResponse(response);
-            factoryTypes = factoryState.factories || [];
-            activeFactoryKey = factoryState.activeKey || selected.value;
-            syncFactoryDisplay();
-            showStatus(`Активная фабрика: ${getFactoryLabel(activeFactoryKey)}.`, 'success');
-            modalManager.close('factory-window');
-        } catch (e) {
-            // Ошибка уже отображена модально
-        }
-    });
+    document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
