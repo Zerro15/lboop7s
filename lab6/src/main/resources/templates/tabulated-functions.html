@@ -1340,7 +1340,7 @@
             if (method === 'arrays') {
                 const pointsText = document.getElementById('points-source').value;
                 const points = parsePointLines(pointsText);
-                response = await apiFetch('/ui/api/tabulated-functions/arrays', {
+                response = await apiFetch('/ui/api/creation/arrays', {
                     method: 'POST',
                     body: JSON.stringify({
                         userId: currentUser.id,
@@ -1350,7 +1350,7 @@
                     }),
                 });
             } else {
-                response = await apiFetch('/ui/api/tabulated-functions/math-function', {
+                response = await apiFetch('/ui/api/creation/math-function', {
                     method: 'POST',
                     body: JSON.stringify({
                         userId: currentUser.id,
@@ -2303,7 +2303,7 @@
                 formData.append('file', file);
                 try {
                     setLoading(true, 'Загрузка файла функции…');
-                    const response = await apiFetch(`/ui/api/tabulated-functions/basic/files/deserialize?format=${format}`, {
+                    const response = await apiFetch(`/ui/api/tabulated-functions/advanced/files/deserialize?format=${format}`, {
                         method: 'POST',
                         body: formData,
                     });
@@ -2361,7 +2361,7 @@
         const payload = functionsState[slot];
         setLoading(true, 'Сохранение функции…');
         try {
-            const response = await apiFetch(`/ui/api/tabulated-functions/basic/files/serialize?format=${format}`, {
+            const response = await apiFetch(`/ui/api/tabulated-functions/advanced/files/serialize?format=${format}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -2455,7 +2455,7 @@
                     onConfirm: async () => {
                         try {
                             setLoading(true, 'Удаление точки…');
-                            const response = await apiFetch('/ui/api/tabulated-functions/remove', {
+                            const response = await apiFetch('/ui/api/creation/remove', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
@@ -2503,7 +2503,7 @@
 
             try {
                 setLoading(true, 'Вставка точки…');
-                const response = await apiFetch('/ui/api/tabulated-functions/insert', {
+                const response = await apiFetch('/ui/api/creation/insert', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2544,7 +2544,7 @@
 
         try {
             setLoading(true, 'Выполнение операции…');
-            const response = await apiFetch('/ui/api/tabulated-functions/basic-operations', {
+            const response = await apiFetch('/ui/api/advanced-operations/apply', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2576,7 +2576,7 @@
 
         try {
             setLoading(true, 'Выполнение дифференцирования…');
-            const response = await apiFetch('/ui/api/tabulated-functions/basic-differentiate', {
+            const response = await apiFetch('/ui/api/tabulated-functions/advanced/differentiate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2610,7 +2610,7 @@
         const xValue = Number(String(explorerXInput.value).replace(',', '.'));
         try {
             setLoading(true, 'Вычисление значения…');
-            const response = await apiFetch('/ui/api/tabulated-functions/apply', {
+            const response = await apiFetch('/ui/api/creation/apply', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2650,7 +2650,7 @@
 
         try {
             setLoading(true, 'Вычисление интеграла…');
-            const response = await apiFetch('/ui/api/tabulated-functions/basic-integrate', {
+            const response = await apiFetch('/ui/api/tabulated-functions/advanced/integrate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2875,7 +2875,7 @@
 
         try {
             setLoading(true, 'Создание функции из массивов…');
-            const response = await apiFetch('/ui/api/tabulated-functions/arrays', {
+            const response = await apiFetch('/ui/api/creation/arrays', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, name, factoryType, points })
@@ -2928,7 +2928,7 @@
 
         try {
             setLoading(true, 'Табулирование функции…');
-            const response = await apiFetch('/ui/api/tabulated-functions/math-function', {
+            const response = await apiFetch('/ui/api/creation/math-function', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -2962,7 +2962,7 @@
             return;
         }
         try {
-            const response = await apiFetch('/ui/api/factories/activate', {
+            const response = await apiFetch('/ui/api/factory-management/activate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key: selected.value })
