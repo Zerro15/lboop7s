@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная — Табулированные функции</title>
+    <link rel="stylesheet" href="/css/flat.css">
+</head>
+<body>
+<header>
+    <h1>Табулированные функции — панель управления</h1>
+    <p>Переключайтесь между настройками, созданием, операциями и дифференцированием. Дизайн в стиле Flat.</p>
+</header>
+<main>
+    <section class="panel">
+        <h2>Быстрый доступ</h2>
+        <p class="sub">Главная страница не навязывает действий: выберите, что нужно сейчас. Все окна открываются в модальном режиме, чтобы избежать дубликатов.</p>
+        <div class="card-grid">
+            <div class="card">
+                <strong>Настройки фабрики</strong>
+                <p class="muted">Выберите реализацию (массив или связный список) и сохраните её как глобальную для всех окон.</p>
+                <div class="card-actions">
+                    <a class="primary" href="/settings.html">Открыть настройки</a>
+                </div>
+            </div>
+            <div class="card">
+                <strong>Создание функций</strong>
+                <p class="muted">Создавайте табулированные функции из массивов или на базе MathFunction. Окна из задания 1 доступны здесь.</p>
+                <div class="card-actions">
+                    <a class="primary" href="/creator.html">К мастерам создания</a>
+                </div>
+            </div>
+            <div class="card">
+                <strong>Операции над функциями</strong>
+                <p class="muted">Сложение, вычитание, умножение и деление поэлементно. Работает с редактируемыми таблицами.</p>
+                <div class="card-actions">
+                    <a class="primary" href="/operations.html">Перейти к операциям</a>
+                </div>
+            </div>
+            <div class="card">
+                <strong>Дифференцирование</strong>
+                <p class="muted">Получите производную табулированной функции. Результат доступен для сохранения.</p>
+                <div class="card-actions">
+                    <a class="primary" href="/differentiate.html">Открыть модуль</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel" style="margin-top:16px;">
+        <h2>Подсказки</h2>
+        <ul class="muted">
+            <li>Учетные данные и выбранная фабрика сохраняются в браузере и автоматически подставляются в формах.</li>
+            <li>Повторное открытие одного и того же окна блокируется — сперва закройте уже открытое модальное окно.</li>
+            <li>Все страницы используют единую цветовую схему Flat Design.</li>
+        </ul>
+    </section>
+</main>
+
+<div class="toast" id="toast"></div>
+<script src="/js/ui-common.js"></script>
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дифференцирование табулированной функции</title>
+    <link rel="stylesheet" href="/css/flat.css">
+</head>
+<body>
+<header>
+    <h1>Дифференциальный оператор</h1>
+    <p>Получите производную табулированной функции с учётом выбранной фабрики.</p>
+    <div class="nav">
+        <a href="/">Главная</a>
+        <a href="/creator.html">Создание функций</a>
+        <a href="/settings.html">Настройки</a>
+        <a href="/operations.html">Операции</a>
+    </div>
+</header>
+<main>
+    <section class="panel">
+        <div class="row">
+            <div class="stack">
+                <label>Тип фабрики</label>
+                <div class="pill-select" id="factorySelect"></div>
+                <span class="muted">TabulatedDifferentialOperator использует эту фабрику.</span>
+            </div>
+            <div class="stack">
+                <label for="login">Логин</label>
+                <input id="login" placeholder="admin" autocomplete="username">
+            </div>
+            <div class="stack">
+                <label for="password">Пароль</label>
+                <input id="password" type="password" placeholder="пароль" autocomplete="current-password">
+            </div>
+            <div class="stack">
+                <label>&nbsp;</label>
+                <button class="primary" onclick="applyCredentials()">Сохранить доступ</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel" style="margin-top:16px;">
+        <div class="grid">
+            <div class="stack">
+                <div class="badge">Исходная функция</div>
+                <div class="actions" style="justify-content:flex-start;">
+                    <button class="secondary" onclick="openArrayModal()">Создать из массива</button>
+                    <button class="secondary" onclick="openMathModal()">Создать из функции</button>
+                    <button class="ghost" onclick="loadFromFile()">Загрузить</button>
+                </div>
+                <div class="table-container">
+                    <table id="sourceTable"><thead><tr><th>#</th><th>x</th><th>y</th></tr></thead><tbody></tbody></table>
+                </div>
+            </div>
+            <div class="stack">
+                <div class="badge">Производная</div>
+                <div class="actions" style="justify-content:flex-start;">
+                    <button class="primary" onclick="differentiate()">Дифференцировать</button>
+                    <button class="ghost" onclick="saveDerivative()">Сохранить производную</button>
+                </div>
+                <div class="table-container">
+                    <table id="derivativeTable"><thead><tr><th>#</th><th>x</th><th>y'</th></tr></thead><tbody></tbody></table>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<dialog id="arrayModal">
+    <div class="modal-header">Создание из массива</div>
+    <div class="modal-body">
+        <div class="row">
+            <div class="stack">
+                <label for="arrayCount">Количество точек</label>
+                <input id="arrayCount" type="number" min="2" max="500" placeholder="5">
+            </div>
+            <div class="stack" style="align-self:flex-end;">
+                <button class="secondary" onclick="buildModalTable()">Построить таблицу</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table id="arrayModalTable"><thead><tr><th>#</th><th>x</th><th>y</th></tr></thead><tbody></tbody></table>
+        </div>
+    </div>
+    <div class="modal-actions">
+        <button class="ghost" onclick="closeModal(arrayModal)">Отмена</button>
+        <button class="primary" onclick="commitArrayModal()">Создать</button>
+    </div>
+</dialog>
+
+<dialog id="mathModal">
+    <div class="modal-header">Создание из функции</div>
+    <div class="modal-body">
+        <div class="row">
+            <div class="stack">
+                <label for="mathSelect">Функция</label>
+                <select id="mathSelect"></select>
+            </div>
+            <div class="stack">
+                <label for="mathPoints">Количество точек</label>
+                <input id="mathPoints" type="number" min="2" max="10000" value="10">
+            </div>
+        </div>
+        <div class="row">
+            <div class="stack">
+                <label for="mathLeft">Левая граница</label>
+                <input id="mathLeft" type="number" step="any" value="0">
+            </div>
+            <div class="stack">
+                <label for="mathRight">Правая граница</label>
+                <input id="mathRight" type="number" step="any" value="6.28">
+            </div>
+        </div>
+    </div>
+    <div class="modal-actions">
+        <button class="ghost" onclick="closeModal(mathModal)">Отмена</button>
+        <button class="primary" onclick="commitMathModal()">Создать</button>
+    </div>
+</dialog>
+
+<dialog id="errorModal">
+    <div class="modal-header" id="errorTitle">Ошибка</div>
+    <div class="modal-body">
+        <p id="errorMessage" class="error"></p>
+        <p id="errorDetails" class="muted"></p>
+    </div>
+    <div class="modal-actions">
+        <button class="secondary" onclick="errorModal.close()">Закрыть</button>
+    </div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script src="/js/ui-common.js"></script>
+<script>
+    const arrayModal = document.getElementById('arrayModal');
+    const mathModal = document.getElementById('mathModal');
+    let sourcePoints = [];
+    let derivativePoints = [];
+
+    const renderTable = (id, points, editable = true) => {
+        const tbody = document.querySelector(`#${id} tbody`);
+        tbody.innerHTML = '';
+        points.forEach((p, idx) => {
+            const row = document.createElement('tr');
+            const yCell = editable
+                ? `<input type="number" step="any" value="${p.y}" onchange="updateSource(${idx}, this.value)">`
+                : `<span>${p.y}</span>`;
+            row.innerHTML = `<td>${idx + 1}</td><td>${p.x}</td><td>${yCell}</td>`;
+            tbody.appendChild(row);
+        });
+    };
+
+    const updateSource = (index, value) => {
+        const num = safeNumber(value);
+        if (num === null) return errorModal.show('Некорректное значение', 'Введите число для y.');
+        sourcePoints[index].y = num;
+    };
+
+    const openArrayModal = () => {
+        if (arrayModal.open || mathModal.open) return;
+        document.querySelector('#arrayModalTable tbody').innerHTML = '';
+        document.getElementById('arrayCount').value = '';
+        arrayModal.showModal();
+    };
+
+    const buildModalTable = () => {
+        const count = parseInt(document.getElementById('arrayCount').value, 10);
+        if (!Number.isInteger(count) || count < 2) return errorModal.show('Размер некорректен', 'Введите целое число не менее 2.');
+        if (count > 500) return errorModal.show('Слишком много точек', 'Максимум 500 точек.');
+        const tbody = document.querySelector('#arrayModalTable tbody');
+        tbody.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${i + 1}</td>` +
+                `<td><input type="number" step="any" placeholder="x${i + 1}"></td>` +
+                `<td><input type="number" step="any" placeholder="y${i + 1}"></td>`;
+            tbody.appendChild(row);
+        }
+    };
+
+    const commitArrayModal = () => {
+        const rows = Array.from(document.querySelectorAll('#arrayModalTable tbody tr'));
+        if (rows.length < 2) return errorModal.show('Нет данных', 'Сначала постройте таблицу.');
+        const points = [];
+        for (const [idx, row] of rows.entries()) {
+            const inputs = row.querySelectorAll('input');
+            const x = safeNumber(inputs[0].value);
+            const y = safeNumber(inputs[1].value);
+            if (x === null || y === null) {
+                return errorModal.show('Некорректная строка', `Строка ${idx + 1}: заполните x и y.`);
+            }
+            points.push({ x, y });
+        }
+        sourcePoints = points;
+        renderTable('sourceTable', points, true);
+        closeModal(arrayModal);
+    };
+
+    const openMathModal = () => {
+        if (arrayModal.open || mathModal.open) return;
+        mathModal.showModal();
+    };
+
+    const commitMathModal = async () => {
+        const key = document.getElementById('mathSelect').value;
+        const pointsCount = parseInt(document.getElementById('mathPoints').value, 10);
+        const leftBound = safeNumber(document.getElementById('mathLeft').value);
+        const rightBound = safeNumber(document.getElementById('mathRight').value);
+        try {
+            const points = await previewMathPoints({ key, pointsCount, leftBound, rightBound });
+            sourcePoints = points;
+            renderTable('sourceTable', points, true);
+            closeModal(mathModal);
+        } catch (e) {
+            errorModal.show('Не удалось создать функцию', e.message);
+        }
+    };
+
+    const differentiate = async () => {
+        if (!uiState.authHeader) return errorModal.show('Нет доступа', 'Сначала сохраните логин и пароль.');
+        if (sourcePoints.length < 2) return errorModal.show('Недостаточно точек', 'Нужно минимум две точки для дифференцирования.');
+        try {
+            const response = await fetchSafe('/api/v1/operations/differentiate', {
+                method: 'POST',
+                body: JSON.stringify({ points: sourcePoints })
+            });
+            derivativePoints = response.points || [];
+            renderTable('derivativeTable', derivativePoints, false);
+            toast('Производная вычислена');
+        } catch (e) {
+            errorModal.show('Не удалось вычислить производную', e.message);
+        }
+    };
+
+    const saveDerivative = () => {
+        if (derivativePoints.length === 0) return errorModal.show('Нет производной', 'Сначала вычислите производную.');
+        downloadJson('derivative.json', { factoryType: uiState.factoryType, points: derivativePoints });
+    };
+
+    const loadFromFile = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'application/json';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const payload = await readJsonFile(file);
+                const points = payload.points || payload;
+                if (!Array.isArray(points) || points.length < 2) throw new Error('В файле нет точек');
+                points.forEach((p, idx) => {
+                    if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) throw new Error(`Строка ${idx + 1} содержит неверные значения`);
+                });
+                sourcePoints = points;
+                renderTable('sourceTable', points, true);
+            } catch (err) {
+                errorModal.show('Ошибка загрузки', err.message);
+            }
+        };
+        input.click();
+    };
+
+    const loadFactory = async () => {
+        try {
+            const info = await fetchSafe('/api/v1/factory/current');
+            updateFactoryType(info.currentFactory || uiState.factoryType);
+            factoryPills('factorySelect');
+        } catch (_) {
+            factoryPills('factorySelect');
+        }
+    };
+
+    const applyCredentials = async () => {
+        const login = document.getElementById('login').value.trim();
+        const password = document.getElementById('password').value;
+        if (!login || !password) return errorModal.show('Нет доступа', 'Введите логин и пароль.');
+        persistAuth(login, password);
+        localStorage.setItem('lastLogin', login);
+        toast('Доступ сохранён');
+        await loadFactory();
+        await renderMathOptions();
+    };
+
+    const closeModal = (modal) => { if (modal.open) modal.close(); };
+
+    const renderMathOptions = async () => {
+        try {
+            if (!uiState.authHeader) return;
+            const registry = await loadMathRegistry();
+            const select = document.getElementById('mathSelect');
+            select.innerHTML = '';
+            registry.forEach(fn => {
+                const option = document.createElement('option');
+                option.value = fn.key;
+                option.textContent = fn.label;
+                select.appendChild(option);
+            });
+        } catch (e) {
+            errorModal.show('Не удалось загрузить функции', e.message);
+        }
+    };
+
+    (async function init() {
+        document.getElementById('login').value = localStorage.getItem('lastLogin') || '';
+        factoryPills('factorySelect');
+        await renderMathOptions();
+        if (uiState.authHeader) {
+            await loadFactory();
+        }
+    })();
+</script>
+</body>
+</html>

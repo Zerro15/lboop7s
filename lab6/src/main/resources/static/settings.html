@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройки фабрики</title>
+    <link rel="stylesheet" href="/css/flat.css">
+</head>
+<body>
+<header>
+    <h1>Настройки фабрики табулированных функций</h1>
+    <p>Переключайте реализацию фабрики в модальном окне. Настройка применяется глобально.</p>
+    <div class="nav">
+        <a href="/">Главная</a>
+        <a href="/creator.html">Создание функций</a>
+        <a href="/operations.html">Операции</a>
+        <a href="/differentiate.html">Дифференцирование</a>
+    </div>
+</header>
+<main>
+    <section class="panel">
+        <h2>Выбор фабрики</h2>
+        <p class="sub">По умолчанию используется массив. Изменение хранится в браузере и сервере.</p>
+        <div class="row">
+            <div class="stack">
+                <label for="factoryPills">Тип фабрики</label>
+                <div class="pill-select" id="factoryPills"></div>
+                <span class="muted">Массив — быстрый доступ по индексу. Связный список — гибкая вставка.</span>
+            </div>
+            <div class="stack">
+                <label for="login">Логин</label>
+                <input id="login" placeholder="admin" autocomplete="username">
+            </div>
+            <div class="stack">
+                <label for="password">Пароль</label>
+                <input id="password" type="password" placeholder="пароль" autocomplete="current-password">
+            </div>
+            <div class="stack">
+                <label>&nbsp;</label>
+                <button class="primary" onclick="applyCredentials()">Сохранить и обновить</button>
+            </div>
+        </div>
+        <div class="floating-info" id="factoryInfo"></div>
+    </section>
+</main>
+
+<dialog id="errorModal">
+    <div class="modal-header" id="errorTitle">Ошибка</div>
+    <div class="modal-body">
+        <p id="errorMessage" class="error"></p>
+        <p id="errorDetails" class="muted"></p>
+    </div>
+    <div class="modal-actions">
+        <button class="secondary" onclick="errorModal.close()">Закрыть</button>
+    </div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script src="/js/ui-common.js"></script>
+<script>
+    let pills;
+
+    const renderInfo = (data) => {
+        const infoBox = document.getElementById('factoryInfo');
+        if (!data) {
+            infoBox.textContent = 'Загрузите настройки, чтобы увидеть описание.';
+            return;
+        }
+        const factoryLabel = data.currentFactory === 'linked_list' ? 'Связный список' : 'Массив';
+        infoBox.innerHTML = `<strong>Текущая фабрика:</strong> ${factoryLabel}<br>` +
+            `<span class="muted">${data.message || ''}</span>`;
+    };
+
+    const loadInfo = async () => {
+        try {
+            const info = await fetchSafe('/api/v1/factory/current');
+            updateFactoryType(info.currentFactory || 'array');
+            pills.render(info.currentFactory || 'array');
+            renderInfo(info);
+        } catch (e) {
+            renderInfo();
+            errorModal.show('Не удалось загрузить фабрику', e.message);
+        }
+    };
+
+    const persistFactory = async (type) => {
+        try {
+            await fetchSafe('/api/v1/factory/set', { method: 'POST', body: JSON.stringify({ factoryType: type }) });
+            toast('Фабрика обновлена');
+            loadInfo();
+        } catch (e) {
+            errorModal.show('Ошибка сохранения', e.message);
+        }
+    };
+
+    const applyCredentials = () => {
+        const login = document.getElementById('login').value.trim();
+        const password = document.getElementById('password').value;
+        if (!login || !password) {
+            return errorModal.show('Учётные данные не заданы', 'Введите логин и пароль для вызова API.');
+        }
+        persistAuth(login, password);
+        localStorage.setItem('lastLogin', login);
+        toast('Доступ сохранён');
+        loadInfo();
+    };
+
+    (function init() {
+        pills = factoryPills('factoryPills', persistFactory);
+        document.getElementById('login').value = localStorage.getItem('lastLogin') || '';
+        loadInfo();
+    })();
+</script>
+</body>
+</html>

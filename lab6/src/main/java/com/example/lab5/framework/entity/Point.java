@@ -1,6 +1,6 @@
 package com.example.lab5.framework.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "points")

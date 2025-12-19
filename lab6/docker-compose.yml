@@ -1,5 +1,4 @@
 services:
-  # База данных
   postgres:
     image: postgres:15-alpine
     container_name: lab5-postgres
@@ -17,9 +16,8 @@ services:
       timeout: 5s
       retries: 5
 
-  # Наше приложение
   app:
-    build: .  # Собираем из Dockerfile
+    build: .
     container_name: lab5-app
     depends_on:
       postgres:

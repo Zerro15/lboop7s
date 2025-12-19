@@ -13,4 +13,5 @@ public class MathFunctionDTO {
     private String example;
     private String category;
     private String functionType;
+    private int priority;
 }
