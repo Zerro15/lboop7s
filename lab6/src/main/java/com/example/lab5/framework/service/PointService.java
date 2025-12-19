@@ -2,8 +2,6 @@ package com.example.lab5.framework.service;
 
 import com.example.lab5.framework.entity.Function;
 import com.example.lab5.framework.entity.Point;
-import com.example.lab5.framework.repository.FunctionRepository;
-import com.example.lab5.framework.repository.PointRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,22 +18,19 @@ public class PointService {
     private static final Logger logger = LoggerFactory.getLogger(PointService.class);
 
     @Autowired
-    private PointRepository pointRepository;
-
-    @Autowired
-    private FunctionRepository functionRepository;
+    private InMemoryFunctionStore functionStore;
 
     public Point createPoint(Long functionId, Double xValue, Double yValue) {
         logger.info("Создание точки: function={}, x={}, y={}", functionId, xValue, yValue);
 
-        Optional<Function> function = functionRepository.findById(functionId);
+        Optional<Function> function = functionStore.findFunction(functionId);
         if (!function.isPresent()) {
             logger.error("Функция с ID {} не существует", functionId);
             throw new IllegalArgumentException("Function with ID " + functionId + " does not exist");
         }
 
         Point point = new Point(xValue, yValue, function.get());
-        Point savedPoint = pointRepository.save(point);
+        Point savedPoint = functionStore.savePoint(functionId, point);
         logger.debug("Создана точка с ID: {}", savedPoint.getId());
         return savedPoint;
     }
@@ -44,7 +39,7 @@ public class PointService {
         logger.info("Генерация точек для функции {}: type={}, range=[{}, {}], step={}",
                 (Object) functionId, (Object) functionType, (Object) start, (Object) end, (Object) step);
 
-        Optional<Function> function = functionRepository.findById(functionId);
+        Optional<Function> function = functionStore.findFunction(functionId);
         if (!function.isPresent()) {
             logger.error("Функция с ID {} не существует", functionId);
             return 0;
@@ -67,48 +62,43 @@ public class PointService {
         }
 
         if (!points.isEmpty()) {
-            pointRepository.saveAll(points);
+            functionStore.savePoints(functionId, points);
             logger.info("Сгенерировано {} точек для функции {}", Optional.of(pointCount), functionId);
         }
 
         return pointCount;
     }
+
     public Point updatePoint(Long id, Long functionId, Double xValue, Double yValue) {
         logger.info("Обновление точки с ID: {}", id);
 
-        Optional<Point> existingPoint = pointRepository.findById(id);
+        Optional<Point> existingPoint = functionStore.findPointById(id);
         if (existingPoint.isPresent()) {
-            Point point = existingPoint.get();
-
-            // Обновляем функцию если изменилась
-            if (!point.getFunction().getId().equals(functionId)) {
-                Optional<Function> function = functionRepository.findById(functionId);
-                if (function.isPresent()) {
-                    point.setFunction(function.get());
-                } else {
-                    logger.error("Функция с ID {} не существует", functionId);
-                    return null;
-                }
+            Optional<Function> function = functionStore.findFunction(functionId);
+            if (!function.isPresent()) {
+                logger.error("Функция с ID {} не существует", functionId);
+                return null;
             }
 
+            Point point = existingPoint.get();
+            point.setFunction(function.get());
             point.setXValue(xValue);
             point.setYValue(yValue);
 
-            Point updated = pointRepository.save(point);
+            functionStore.savePoint(functionId, point);
             logger.info("Точка с ID {} успешно обновлена", id);
-            return updated;
+            return point;
         }
 
         logger.warn("Точка с ID {} не найдена для обновления", id);
         return null;
     }
 
-
     public boolean deletePoint(Long id) {
         logger.info("Удаление точки с ID: {}", id);
 
-        if (pointRepository.existsById(id)) {
-            pointRepository.deleteById(id);
+        boolean removed = functionStore.deletePoint(id);
+        if (removed) {
             logger.info("Точка с ID {} удалена", id);
             return true;
         }
@@ -132,16 +122,18 @@ public class PointService {
 
     public Optional<Point> getPointById(Long id) {
         logger.debug("Поиск точки по ID: {}", id);
-        return pointRepository.findById(id);
+        return functionStore.findPointById(id);
     }
 
     public List<Point> getPointsByFunctionId(Long functionId) {
         logger.debug("Поиск точек функции с ID: {}", functionId);
-        return pointRepository.findByFunctionId(functionId);
+        return functionStore.findPointsByFunctionId(functionId);
     }
 
     public List<Point> getAllPoints() {
         logger.debug("Получение всех точек");
-        return pointRepository.findAll();
+        return functionStore.findAllFunctions().stream()
+                .flatMap(f -> functionStore.findPointsByFunctionId(f.getId()).stream())
+                .toList();
     }
 }

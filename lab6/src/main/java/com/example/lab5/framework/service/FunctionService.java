@@ -1,11 +1,15 @@
 package com.example.lab5.framework.service;
 
-import com.example.lab5.framework.dto.*;
+import com.example.lab5.framework.dto.CreateFromArraysRequest;
+import com.example.lab5.framework.dto.CreateFromMathRequest;
+import com.example.lab5.framework.dto.EvaluateResponse;
+import com.example.lab5.framework.dto.EvaluateTabulatedRequest;
+import com.example.lab5.framework.dto.EvaluateTabulatedResponse;
+import com.example.lab5.framework.dto.FunctionCreationResult;
+import com.example.lab5.framework.dto.TabulatedFunctionPayload;
 import com.example.lab5.framework.entity.Function;
 import com.example.lab5.framework.entity.Point;
 import com.example.lab5.framework.entity.User;
-import com.example.lab5.framework.repository.FunctionRepository;
-import com.example.lab5.framework.repository.PointRepository;
 import com.example.lab5.framework.repository.UserRepository;
 import com.example.lab5.functions.MathFunction;
 import com.example.lab5.functions.TabulatedFunction;
@@ -16,8 +20,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -25,13 +32,7 @@ public class FunctionService {
     private static final Logger logger = LoggerFactory.getLogger(FunctionService.class);
 
     @Autowired
-    private FunctionRepository functionRepository;
-
-    @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private PointRepository pointRepository;
 
     @Autowired
     private MathFunctionService mathFunctionService;
@@ -39,8 +40,10 @@ public class FunctionService {
     @Autowired
     private TabulatedFunctionFactoryHolder factoryHolder;
 
-    // Существующие методы...
+    @Autowired
+    private InMemoryFunctionStore functionStore;
 
+    // Функции хранятся только в памяти. Проверяем пользователя по БД, но сами функции не пишем в базу.
     public Function createFunction(Long userId, String name, String signature) {
         logger.info("Создание функции: user={}, name={}, signature={}", userId, name, signature);
 
@@ -51,9 +54,9 @@ public class FunctionService {
         }
 
         Function function = new Function(name, signature, user.get());
-        Function savedFunction = functionRepository.save(function);
-        logger.info("Создана функция с ID: {}", savedFunction.getId());
-        return savedFunction;
+        functionStore.saveFunction(function);
+        logger.info("Создана функция с ID: {}", function.getId());
+        return function;
     }
 
     // НОВЫЕ МЕТОДЫ ДЛЯ LAB 7
@@ -91,18 +94,18 @@ public class FunctionService {
         function.setLeftBound(Double.valueOf(resolvedX[0]));
         function.setRightBound(Double.valueOf(resolvedX[resolvedX.length - 1]));
 
-        Function savedFunction = functionRepository.save(function);
-        logger.info("Функция создана с ID: {}", savedFunction.getId());
+        functionStore.saveFunction(function);
+        logger.info("Функция создана с ID: {}", function.getId());
         for (int i = 0; i < resolvedX.length; i++) {
             Point point = new Point();
             point.setXValue(Double.valueOf(resolvedX[i]));
             point.setYValue(Double.valueOf(resolvedY[i]));
-            point.setFunction(savedFunction);
-            pointRepository.save(point);
+            point.setFunction(function);
+            functionStore.savePoint(function.getId(), point);
         }
 
-        logger.info("Создано {} точек для функции {}", Optional.of(resolvedX.length), savedFunction.getId());
-        return new FunctionCreationResult(savedFunction, resolvedX, resolvedY);
+        logger.info("Создано {} точек для функции {}", Optional.of(resolvedX.length), function.getId());
+        return new FunctionCreationResult(function, resolvedX, resolvedY);
     }
 
     @Transactional
@@ -141,8 +144,8 @@ public class FunctionService {
         function.setLeftBound(leftBound);
         function.setRightBound(rightBound);
 
-        Function savedFunction = functionRepository.save(function);
-        logger.info("Функция создана с ID: {}", savedFunction.getId());
+        functionStore.saveFunction(function);
+        logger.info("Функция создана с ID: {}", function.getId());
 
         MathFunction mathFunction = mathFunctionService.getFunctionByKey(mathFunctionKey);
         if (mathFunction == null) {
@@ -158,23 +161,23 @@ public class FunctionService {
             Point point = new Point();
             point.setXValue(Double.valueOf(xValues[i]));
             point.setYValue(Double.valueOf(yValues[i]));
-            point.setFunction(savedFunction);
-            pointRepository.save(point);
+            point.setFunction(function);
+            functionStore.savePoint(function.getId(), point);
 
             // Логируем каждые 100 точек
             if (i % 100 == 0 || i == xValues.length - 1) {
-                logger.debug("Создана точка {}: x={}, y={}");
+                logger.debug("Создана точка {}: x={}, y={}", i, xValues[i], yValues[i]);
             }
         }
 
-        logger.info("Сгенерировано {} точек для функции {}", pointsCount, savedFunction.getId());
-        return new FunctionCreationResult(savedFunction, xValues, yValues);
+        logger.info("Сгенерировано {} точек для функции {}", pointsCount, function.getId());
+        return new FunctionCreationResult(function, xValues, yValues);
     }
 
     public EvaluateResponse evaluateFunction(Long functionId, Double x) {
         logger.debug("Вычисление значения функции {} в точке x={}", functionId, x);
 
-        Optional<Function> functionOpt = functionRepository.findById(functionId);
+        Optional<Function> functionOpt = functionStore.findFunction(functionId);
         if (!functionOpt.isPresent()) {
             logger.warn("Функция с ID {} не найдена", functionId);
             return null;
@@ -186,7 +189,8 @@ public class FunctionService {
         if ("tabulated".equals(function.getSignature()) ||
                 "math_function_tabulated".equals(function.getSignature())) {
 
-            List<Point> points = pointRepository.findByFunctionIdOrderByXValueAsc(functionId);
+            List<Point> points = functionStore.findPointsByFunctionId(functionId);
+            points.sort(Comparator.comparing(Point::getXValue));
 
             if (points.isEmpty()) {
                 logger.warn("У функции {} нет точек", functionId);
@@ -263,32 +267,32 @@ public class FunctionService {
         return function.apply(x);
     }
 
-    // Остальные существующие методы...
     public Optional<Function> getFunctionById(Long id) {
         logger.debug("Поиск функции по ID: {}", id);
-        return functionRepository.findById(id);
+        return functionStore.findFunction(id);
     }
 
     public List<Function> getFunctionsByUserId(Long userId) {
         logger.debug("Поиск функций пользователя с ID: {}", userId);
-        Optional<User> user = userRepository.findById(userId);
-        return user.map(functionRepository::findByUser).orElse(List.of());
+        return functionStore.findFunctionsByUserId(userId);
     }
 
     public List<Function> getFunctionsByName(String name) {
         logger.debug("Поиск функций по имени: {}", name);
-        return functionRepository.findByNameContaining(name);
+        return functionStore.findAllFunctions().stream()
+                .filter(f -> f.getName() != null && f.getName().contains(name))
+                .collect(Collectors.toList());
     }
 
     public List<Function> getAllFunctions() {
         logger.debug("Получение всех функций");
-        return functionRepository.findAll();
+        return functionStore.findAllFunctions();
     }
 
     public Function updateFunction(Long functionId, Long userId, String name, String signature) {
         logger.info("Обновление функции с ID: {}", functionId);
 
-        Optional<Function> existingFunction = functionRepository.findById(functionId);
+        Optional<Function> existingFunction = functionStore.findFunction(functionId);
         if (existingFunction.isPresent()) {
             Optional<User> user = userRepository.findById(userId);
             if (!user.isPresent()) {
@@ -301,9 +305,9 @@ public class FunctionService {
             function.setName(name);
             function.setSignature(signature);
 
-            Function updated = functionRepository.save(function);
+            functionStore.saveFunction(function);
             logger.info("Функция с ID {} успешно обновлена", functionId);
-            return updated;
+            return function;
         }
 
         logger.warn("Функция с ID {} не найдена для обновления", functionId);
@@ -313,10 +317,9 @@ public class FunctionService {
     public boolean deleteFunction(Long functionId) {
         logger.info("Удаление функции с ID: {}", functionId);
 
-        if (functionRepository.existsById(functionId)) {
-            pointRepository.deleteByFunctionId(functionId);
-            functionRepository.deleteById(functionId);
-            logger.info("Функция с ID {} и все её точки удалены", functionId);
+        boolean removed = functionStore.deleteFunction(functionId);
+        if (removed) {
+            logger.info("Функция с ID {} и все её точки удалены (in-memory)", functionId);
             return true;
         }
 
@@ -327,9 +330,9 @@ public class FunctionService {
     public FunctionStatistics getFunctionStatistics(Long functionId) {
         logger.debug("Получение статистики для функции с ID: {}", functionId);
 
-        Optional<Function> function = functionRepository.findById(functionId);
+        Optional<Function> function = functionStore.findFunction(functionId);
         if (function.isPresent()) {
-            List<Point> points = pointRepository.findByFunctionId(functionId);
+            List<Point> points = new ArrayList<>(functionStore.findPointsByFunctionId(functionId));
 
             double minX = points.stream().mapToDouble(Point::getXValue).min().orElse(0);
             double maxX = points.stream().mapToDouble(Point::getXValue).max().orElse(0);
