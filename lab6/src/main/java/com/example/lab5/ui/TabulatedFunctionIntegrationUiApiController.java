@@ -4,13 +4,11 @@ import com.example.lab5.framework.dto.IntegrationRequest;
 import com.example.lab5.framework.dto.IntegrationResponse;
 import com.example.lab5.framework.service.TabulatedIntegrationService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/ui/api/tabulated-functions/integration")
+@RequestMapping("/ui/api/tabulated-functions/advanced") // Тот же префикс, что и у differentiation
 public class TabulatedFunctionIntegrationUiApiController {
 
     private final TabulatedIntegrationService integrationService;
@@ -19,7 +17,8 @@ public class TabulatedFunctionIntegrationUiApiController {
         this.integrationService = integrationService;
     }
 
-    @PostMapping
+    @PostMapping("/integrate") // Теперь путь: /ui/api/tabulated-functions/advanced/integrate
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<IntegrationResponse> integrate(@RequestBody IntegrationRequest request) {
         return ResponseEntity.ok(integrationService.integrate(request));
     }

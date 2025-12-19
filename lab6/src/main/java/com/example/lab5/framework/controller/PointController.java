@@ -124,9 +124,13 @@ public class PointController {
         logger.info("POST /api/v1/points/generate/{} - генерация точек. Тип: {}, от {} до {} шаг {}",
                 (Object) functionId, (Object) functionType, (Object) start, (Object) end, (Object) step);
 
-        int count = pointService.generateFunctionPoints(functionId, functionType, start, end, step);
-
-        logger.info("Сгенерировано {} точек для функции {}", Optional.of(count), functionId);
-        return ResponseEntity.ok("Сгенерировано " + count + " точек");
+        try {
+            int count = pointService.generateFunctionPoints(functionId, functionType, start, end, step);
+            logger.info("Сгенерировано {} точек для функции {}", Optional.of(count), functionId);
+            return ResponseEntity.ok("Сгенерировано " + count + " точек");
+        } catch (IllegalArgumentException ex) {
+            logger.warn("Не удалось сгенерировать точки: {}", ex.getMessage());
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
     }
 }

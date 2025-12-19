@@ -50,6 +50,13 @@ public class PointService {
             return 0;
         }
 
+        if (step <= 0) {
+            throw new IllegalArgumentException("Шаг генерации точек должен быть положительным");
+        }
+        if (end < start) {
+            throw new IllegalArgumentException("Правая граница диапазона должна быть больше или равна левой");
+        }
+
         List<Point> points = new ArrayList<>();
         int pointCount = 0;
 
