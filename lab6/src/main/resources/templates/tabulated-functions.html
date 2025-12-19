@@ -2303,7 +2303,7 @@
                 formData.append('file', file);
                 try {
                     setLoading(true, 'Загрузка файла функции…');
-                    const response = await apiFetch(`/ui/api/tabulated-functions/files/deserialize?format=${format}`, {
+                    const response = await apiFetch(`/ui/api/tabulated-functions/basic/files/deserialize?format=${format}`, {
                         method: 'POST',
                         body: formData,
                     });
@@ -2361,7 +2361,7 @@
         const payload = functionsState[slot];
         setLoading(true, 'Сохранение функции…');
         try {
-            const response = await apiFetch(`/ui/api/tabulated-functions/files/serialize?format=${format}`, {
+            const response = await apiFetch(`/ui/api/tabulated-functions/basic/files/serialize?format=${format}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -2544,7 +2544,7 @@
 
         try {
             setLoading(true, 'Выполнение операции…');
-            const response = await apiFetch('/ui/api/tabulated-functions/operations', {
+            const response = await apiFetch('/ui/api/tabulated-functions/basic-operations', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2576,7 +2576,7 @@
 
         try {
             setLoading(true, 'Выполнение дифференцирования…');
-            const response = await apiFetch('/ui/api/tabulated-functions/differential', {
+            const response = await apiFetch('/ui/api/tabulated-functions/basic-differentiate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2650,7 +2650,7 @@
 
         try {
             setLoading(true, 'Вычисление интеграла…');
-            const response = await apiFetch('/ui/api/tabulated-functions/integration', {
+            const response = await apiFetch('/ui/api/tabulated-functions/basic-integrate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2732,8 +2732,8 @@
             onConfirm: async () => {
                 try {
                     setLoading(true, 'Удаление функции…');
-                    const response = await apiFetch('/api/v1/math-functions/composite/delete', {
-                        method: 'POST',
+                    const response = await apiFetch('/api/v1/math-functions/composite', {
+                        method: 'DELETE',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name })
                     });
