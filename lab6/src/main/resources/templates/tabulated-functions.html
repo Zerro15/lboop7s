@@ -478,6 +478,37 @@
         </div>
     </div>
 
+    <div class="card" id="endpoint-map-card">
+        <h2>Карта REST API → UI</h2>
+        <p>Сводка по контроллерам Spring Boot и тем компонентам интерфейса, которые их вызывают. Выберите раздел, чтобы
+            быстро понять, какой эндпоинт обслуживает нужное действие.</p>
+        <div class="form-grid">
+            <div>
+                <label for="endpoint-area-filter">Раздел контроллеров</label>
+                <select id="endpoint-area-filter"></select>
+            </div>
+            <div>
+                <label>Подсказка</label>
+                <div class="status info">Данные берутся напрямую из описания бэкенда: методы, пути и модели запросов/ответов.</div>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table class="table" id="endpoint-map-table">
+                <thead>
+                <tr>
+                    <th>Раздел</th>
+                    <th>Метод и путь</th>
+                    <th>UI компонент</th>
+                    <th>Запрос → Ответ</th>
+                </tr>
+                </thead>
+                <tbody id="endpoint-map-body">
+                <tr><td colspan="4">Карта загружается…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="card" id="creator-card">
         <h2>Создание функции через API</h2>
         <p>Функция сохраняется целиком: перед отправкой убедитесь, что авторизованы и выберите способ создания.</p>
@@ -1104,6 +1135,192 @@
     const pointsCountInput = document.getElementById('points-count-input');
     const pointsCountError = document.getElementById('points-count-error');
     const MAX_POINTS = 1000;
+    const endpointMap = [
+        {
+            area: 'Авторизация',
+            method: 'POST',
+            path: '/api/v1/auth/login',
+            ui: 'Форма входа',
+            request: 'AuthRequest { login, password }',
+            response: 'AuthResponse { id, login, role, token }'
+        },
+        {
+            area: 'Авторизация',
+            method: 'POST',
+            path: '/api/v1/auth/register',
+            ui: 'Форма регистрации',
+            request: 'CreateUserRequest { login, password, role }',
+            response: 'UserDTO { id, login, role }'
+        },
+        {
+            area: 'Функции',
+            method: 'GET',
+            path: '/api/v1/users/{userId}/functions',
+            ui: 'Селектор «Функции пользователя»',
+            request: 'Path userId',
+            response: 'List<FunctionDTO>'
+        },
+        {
+            area: 'Функции',
+            method: 'PUT',
+            path: '/api/v1/functions/{id}',
+            ui: 'Кнопка «Сохранить имя»',
+            request: 'FunctionDTO { id, userId, name, signature }',
+            response: 'FunctionDTO'
+        },
+        {
+            area: 'Точки',
+            method: 'GET',
+            path: '/api/v1/functions/{functionId}/points',
+            ui: 'Таблица точек редактора',
+            request: 'Path functionId',
+            response: 'List<PointDTO { xValue, yValue }>'
+        },
+        {
+            area: 'Точки',
+            method: 'POST',
+            path: '/api/v1/points',
+            ui: 'Кнопка «Добавить точку»',
+            request: 'PointDTO { functionId, xValue, yValue }',
+            response: 'PointDTO'
+        },
+        {
+            area: 'Точки',
+            method: 'DELETE',
+            path: '/api/v1/points/{id}',
+            ui: 'Кнопка удаления точки',
+            request: 'Path id',
+            response: '204 No Content'
+        },
+        {
+            area: 'Создание',
+            method: 'POST',
+            path: '/ui/api/creation/arrays',
+            ui: 'Блок «Создание функции через API» и модал «Из массивов»',
+            request: 'CreateFromArraysRequest { userId, name, factoryType, points[x,y] }',
+            response: 'FunctionDTO + points'
+        },
+        {
+            area: 'Создание',
+            method: 'POST',
+            path: '/ui/api/creation/math-function',
+            ui: 'Блок «Создание функции через API» и модал «MathFunction»',
+            request: 'CreateFromMathRequest { userId, name, mathFunctionKey, pointsCount, leftBound, rightBound, factoryType }',
+            response: 'FunctionDTO + points'
+        },
+        {
+            area: 'Создание',
+            method: 'POST',
+            path: '/ui/api/creation/apply',
+            ui: 'Исследователь f(x)',
+            request: 'EvaluateTabulatedRequest { function, x, factoryType }',
+            response: 'EvaluateTabulatedResponse { y }'
+        },
+        {
+            area: 'Создание',
+            method: 'POST',
+            path: '/ui/api/creation/insert',
+            ui: 'Модал «Вставка точки»',
+            request: 'InsertPointRequest { function, x, y, factoryType }',
+            response: 'TabulatedFunctionPayload'
+        },
+        {
+            area: 'Создание',
+            method: 'POST',
+            path: '/ui/api/creation/remove',
+            ui: 'Кнопка «Удалить точку»',
+            request: 'RemovePointRequest { function, index, factoryType }',
+            response: 'TabulatedFunctionPayload'
+        },
+        {
+            area: 'Операции',
+            method: 'POST',
+            path: '/ui/api/advanced-operations/apply',
+            ui: 'Окно бинарных операций',
+            request: 'OperationRequest { operation, factoryType, left, right }',
+            response: 'OperationResponse { result }'
+        },
+        {
+            area: 'Операции',
+            method: 'POST',
+            path: '/ui/api/tabulated-functions/advanced/differentiate',
+            ui: 'Окно дифференцирования',
+            request: 'DifferentiationRequest { factoryType, function }',
+            response: 'DifferentiationResponse { result }'
+        },
+        {
+            area: 'Операции',
+            method: 'POST',
+            path: '/ui/api/tabulated-functions/advanced/integrate',
+            ui: 'Окно параллельного интеграла',
+            request: 'IntegrationRequest { function, threads, factoryType }',
+            response: 'IntegrationResponse { result, factoryType }'
+        },
+        {
+            area: 'Файлы',
+            method: 'POST',
+            path: '/ui/api/tabulated-functions/advanced/files/serialize?format={json|xml|dat}',
+            ui: 'Кнопки «Сохранить…»',
+            request: 'TabulatedFunctionPayload',
+            response: 'ByteArrayResource (file)'
+        },
+        {
+            area: 'Файлы',
+            method: 'POST',
+            path: '/ui/api/tabulated-functions/advanced/files/deserialize?format={json|xml|dat}',
+            ui: 'Кнопки «Загрузить…»',
+            request: 'Multipart file',
+            response: 'TabulatedFunctionPayload { xValues, yValues, insertable, removable }'
+        },
+        {
+            area: 'Фабрики',
+            method: 'GET',
+            path: '/ui/api/factory-management',
+            ui: 'Статус активной фабрики',
+            request: '—',
+            response: 'FactoryStateResponse { factories[], activeKey }'
+        },
+        {
+            area: 'Фабрики',
+            method: 'POST',
+            path: '/ui/api/factory-management/activate',
+            ui: 'Окно «Настройки»',
+            request: 'ActivateFactoryRequest { key }',
+            response: 'FactoryStateResponse'
+        },
+        {
+            area: 'MathFunction',
+            method: 'GET',
+            path: '/api/v1/math-functions/groups',
+            ui: 'Селекты формул и таблица композитов',
+            request: '—',
+            response: 'MathFunctionGroupsResponse { baseFunctions, customFunctions }'
+        },
+        {
+            area: 'MathFunction',
+            method: 'POST',
+            path: '/api/v1/math-functions/composite',
+            ui: 'Форма создания композитной функции',
+            request: 'CompositeCreateRequest { name, outerKey, innerKey }',
+            response: 'MathFunctionGroupsResponse'
+        },
+        {
+            area: 'MathFunction',
+            method: 'POST',
+            path: '/api/v1/math-functions/composite/rename',
+            ui: 'Таблица композитов → «Переименовать»',
+            request: 'CompositeRenameRequest { oldName, newName }',
+            response: 'MathFunctionGroupsResponse'
+        },
+        {
+            area: 'MathFunction',
+            method: 'DELETE',
+            path: '/api/v1/math-functions/composite',
+            ui: 'Таблица композитов → «Удалить»',
+            request: 'CompositeDeleteRequest { name }',
+            response: 'MathFunctionGroupsResponse'
+        },
+    ];
     const explorerXInput = document.getElementById('explorer-x');
     const explorerYOutput = document.getElementById('explorer-y');
     const insertSlotInput = document.getElementById('insert-slot');
@@ -1249,6 +1466,79 @@
                 }
                 return { x, y };
             });
+    }
+
+    function renderEndpointFilterOptions() {
+        const filter = document.getElementById('endpoint-area-filter');
+        if (!filter) {
+            return;
+        }
+        const areas = ['all', ...new Set(endpointMap.map((item) => item.area))];
+        filter.innerHTML = '';
+        areas.forEach((area) => {
+            const option = document.createElement('option');
+            option.value = area;
+            option.textContent = area === 'all' ? 'Все разделы' : area;
+            filter.appendChild(option);
+        });
+    }
+
+    function renderEndpointTable() {
+        const tbody = document.getElementById('endpoint-map-body');
+        const filter = document.getElementById('endpoint-area-filter');
+        if (!tbody) {
+            return;
+        }
+        const selectedArea = filter ? filter.value : 'all';
+        const rows = endpointMap.filter((item) => selectedArea === 'all' || item.area === selectedArea);
+
+        tbody.innerHTML = '';
+        if (rows.length === 0) {
+            const emptyRow = document.createElement('tr');
+            const emptyCell = document.createElement('td');
+            emptyCell.colSpan = 4;
+            emptyCell.textContent = 'Для выбранного раздела нет эндпоинтов.';
+            emptyRow.appendChild(emptyCell);
+            tbody.appendChild(emptyRow);
+            return;
+        }
+
+        rows.forEach((item) => {
+            const tr = document.createElement('tr');
+
+            const areaCell = document.createElement('td');
+            areaCell.textContent = item.area;
+            tr.appendChild(areaCell);
+
+            const pathCell = document.createElement('td');
+            const methodBadge = document.createElement('span');
+            methodBadge.className = 'badge';
+            methodBadge.textContent = item.method;
+            const pathText = document.createElement('span');
+            pathText.textContent = ` ${item.path}`;
+            pathCell.appendChild(methodBadge);
+            pathCell.appendChild(pathText);
+            tr.appendChild(pathCell);
+
+            const uiCell = document.createElement('td');
+            uiCell.textContent = item.ui;
+            tr.appendChild(uiCell);
+
+            const dtoCell = document.createElement('td');
+            dtoCell.innerHTML = `<strong>${item.request}</strong><br>→ ${item.response}`;
+            tr.appendChild(dtoCell);
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function initEndpointMap() {
+        renderEndpointFilterOptions();
+        const filter = document.getElementById('endpoint-area-filter');
+        if (filter) {
+            filter.addEventListener('change', renderEndpointTable);
+        }
+        renderEndpointTable();
     }
 
     async function handleLogin(event) {
@@ -2772,6 +3062,7 @@
 
     bindNewUi();
     syncFactoryDisplay();
+    initEndpointMap();
 
     document.getElementById('open-array-window').addEventListener('click', () => modalManager.open('arrays-window'));
     document.getElementById('open-math-window').addEventListener('click', () => modalManager.open('math-window'));
