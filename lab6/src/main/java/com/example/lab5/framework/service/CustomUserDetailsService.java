@@ -1,7 +1,7 @@
 package com.example.lab5.framework.service;
 
 import com.example.lab5.framework.entity.User;
-import com.example.lab5.framework.repository.UserRepository;
+import com.example.lab5.framework.service.InMemoryUserStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,13 +19,13 @@ public class CustomUserDetailsService implements UserDetailsService {
     private static final Logger logger = LoggerFactory.getLogger(CustomUserDetailsService.class);
 
     @Autowired
-    private UserRepository userRepository;
+    private InMemoryUserStore inMemoryUserStore;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         logger.info("=== AUTH: Загрузка пользователя для аутентификации: {}", username);
 
-        User user = userRepository.findByLogin(username)
+        User user = inMemoryUserStore.findByLogin(username)
                 .orElseThrow(() -> {
                     logger.warn("=== AUTH: Пользователь не найден: {}", username);
                     return new UsernameNotFoundException("Пользователь не найден: " + username);
