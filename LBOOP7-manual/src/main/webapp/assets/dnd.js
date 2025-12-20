@@ -20,8 +20,10 @@
     const damageChaValue = document.getElementById('damageChaValue');
     const rollDamageIntBtn = document.getElementById('rollDamageInt');
     const rollDamageChaBtn = document.getElementById('rollDamageCha');
+    const themeToggle = document.getElementById('themeToggle');
 
     const STORAGE_KEY = 'grunge-sheet-character';
+    const THEME_KEY = 'dnd-sheet-theme';
 
     const classMap = {
         leader: {
@@ -104,6 +106,7 @@
 
     function rollStat(key) {
         state.stats[key].base = randomD20();
+        flashCard(key);
         renderStats();
         statusMessage.textContent = `Характеристика «${statKeys.find(s => s.key === key)?.label}» брошена.`;
     }
@@ -117,6 +120,7 @@
         state.freeRoll = randomD20();
         if (freeRollValue) freeRollValue.textContent = state.freeRoll;
         statusMessage.textContent = 'Свободный бросок готов — выберите характеристику и примените.';
+        animateButton(freeRollBtn);
     }
 
     function assignFreeRoll() {
@@ -130,6 +134,7 @@
             return;
         }
         state.stats[target].base = state.freeRoll;
+        flashCard(target);
         renderStats();
         statusMessage.textContent = `Свободный бросок ${state.freeRoll} применён к «${statKeys.find(s => s.key === target)?.label}».`;
     }
@@ -156,11 +161,13 @@
                 hpValue.textContent = '—';
             } else {
                 hpValue.textContent = constitution * 2 + strength;
+                flashMetric(hpValue);
             }
         }
 
         if (damageIntValue) {
             damageIntValue.textContent = intelligence === null ? '—' : `${Math.floor(intelligence / 2)} + 1d6`;
+            if (intelligence !== null) flashMetric(damageIntValue);
         }
         if (damageChaValue) {
             if (charisma === null || luck === null) {
@@ -168,6 +175,7 @@
             } else {
                 const base = Math.floor(charisma / 2) + Math.floor(luck / 4);
                 damageChaValue.textContent = `${base} + 1d6`;
+                flashMetric(damageChaValue);
             }
         }
     }
@@ -184,6 +192,8 @@
             const total = base + d6;
             damageIntValue.textContent = `${base} + d6(${d6}) = ${total}`;
             statusMessage.textContent = 'Урон по формуле интеллекта рассчитан.';
+            animateButton(rollDamageIntBtn);
+            flashMetric(damageIntValue);
         } else {
             if (totals.charisma === null || totals.luck === null) {
                 statusMessage.textContent = 'Сначала бросьте Харизму и Удачу.';
@@ -193,7 +203,40 @@
             const total = base + d6;
             damageChaValue.textContent = `${base} + d6(${d6}) = ${total}`;
             statusMessage.textContent = 'Урон по формуле харизмы рассчитан.';
+            animateButton(rollDamageChaBtn);
+            flashMetric(damageChaValue);
         }
+    }
+
+    function animateButton(btn) {
+        if (!btn) return;
+        btn.classList.add('rolling');
+        setTimeout(() => btn.classList.remove('rolling'), 520);
+    }
+
+    function flashCard(statKey) {
+        const card = statsGrid?.querySelector(`[data-stat="${statKey}"]`);
+        if (!card) return;
+        card.classList.add('updated');
+        setTimeout(() => card.classList.remove('updated'), 900);
+    }
+
+    function flashMetric(node) {
+        const metric = node?.closest('.metric');
+        if (!metric) return;
+        metric.classList.add('updated');
+        setTimeout(() => metric.classList.remove('updated'), 900);
+    }
+
+    function setTheme(mode) {
+        const body = document.body;
+        if (mode === 'dark') {
+            body.classList.add('dark');
+        } else {
+            body.classList.remove('dark');
+        }
+        localStorage.setItem(THEME_KEY, mode);
+        if (themeToggle) themeToggle.textContent = mode === 'dark' ? 'Светлая тема' : 'Темная тема';
     }
 
     function validateForm() {
@@ -280,7 +323,10 @@
         statsGrid.querySelectorAll('.mini-roll').forEach(btn => {
             btn.addEventListener('click', () => {
                 const statKey = btn.dataset.roll;
-                if (statKey) rollStat(statKey);
+                if (statKey) {
+                    animateButton(btn);
+                    rollStat(statKey);
+                }
             });
         });
         rollAllBtn?.addEventListener('click', rollAllStats);
@@ -294,10 +340,15 @@
         assignBtn?.addEventListener('click', assignFreeRoll);
         rollDamageIntBtn?.addEventListener('click', () => rollDamage('int'));
         rollDamageChaBtn?.addEventListener('click', () => rollDamage('cha'));
+        themeToggle?.addEventListener('click', () => {
+            const next = document.body.classList.contains('dark') ? 'light' : 'dark';
+            setTheme(next);
+        });
     }
 
     bindEvents();
     updateClassCallout();
     renderStats();
+    setTheme(localStorage.getItem(THEME_KEY) || 'light');
     loadCharacter();
 })();
