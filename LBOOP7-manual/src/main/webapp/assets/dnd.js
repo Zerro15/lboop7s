@@ -11,6 +11,15 @@
     const saveBtn = document.getElementById('saveCharacter');
     const newBtn = document.getElementById('newCharacter');
     const statsGrid = document.getElementById('statsGrid');
+    const freeRollBtn = document.getElementById('freeRoll');
+    const freeRollValue = document.getElementById('freeRollValue');
+    const assignSelect = document.getElementById('assignSelect');
+    const assignBtn = document.getElementById('assignRoll');
+    const hpValue = document.getElementById('hpValue');
+    const damageIntValue = document.getElementById('damageIntValue');
+    const damageChaValue = document.getElementById('damageChaValue');
+    const rollDamageIntBtn = document.getElementById('rollDamageInt');
+    const rollDamageChaBtn = document.getElementById('rollDamageCha');
 
     const STORAGE_KEY = 'grunge-sheet-character';
 
@@ -45,6 +54,7 @@
         level: 1,
         stats: Object.fromEntries(statKeys.map(({ key }) => [key, { base: null, total: null }])),
         classId: '',
+        freeRoll: null,
     };
 
     function updateClassCallout() {
@@ -89,6 +99,7 @@
             const sign = modValue > 0 ? '+' : '';
             modEl.textContent = `${sign}${modValue}`;
         });
+        updateMetrics();
     }
 
     function rollStat(key) {
@@ -100,6 +111,89 @@
     function rollAllStats() {
         statKeys.forEach(({ key }) => rollStat(key));
         statusMessage.textContent = 'Все характеристики брошены d20.';
+    }
+
+    function rollFree() {
+        state.freeRoll = randomD20();
+        if (freeRollValue) freeRollValue.textContent = state.freeRoll;
+        statusMessage.textContent = 'Свободный бросок готов — выберите характеристику и примените.';
+    }
+
+    function assignFreeRoll() {
+        if (state.freeRoll === null) {
+            statusMessage.textContent = 'Сначала выполните свободный бросок d20.';
+            return;
+        }
+        const target = assignSelect?.value;
+        if (!target) {
+            statusMessage.textContent = 'Выберите характеристику для назначения броска.';
+            return;
+        }
+        state.stats[target].base = state.freeRoll;
+        renderStats();
+        statusMessage.textContent = `Свободный бросок ${state.freeRoll} применён к «${statKeys.find(s => s.key === target)?.label}».`;
+    }
+
+    function calcTotals() {
+        const classInfo = classMap[state.classId];
+        return Object.fromEntries(statKeys.map(({ key }) => {
+            const base = state.stats[key].base;
+            const mod = classInfo?.mods[key] ?? 0;
+            return [key, base === null ? null : base + mod];
+        }));
+    }
+
+    function updateMetrics() {
+        const totals = calcTotals();
+        const strength = totals.strength;
+        const constitution = totals.constitution;
+        const intelligence = totals.intelligence;
+        const charisma = totals.charisma;
+        const luck = totals.luck;
+
+        if (hpValue) {
+            if (strength === null || constitution === null) {
+                hpValue.textContent = '—';
+            } else {
+                hpValue.textContent = constitution * 2 + strength;
+            }
+        }
+
+        if (damageIntValue) {
+            damageIntValue.textContent = intelligence === null ? '—' : `${Math.floor(intelligence / 2)} + 1d6`;
+        }
+        if (damageChaValue) {
+            if (charisma === null || luck === null) {
+                damageChaValue.textContent = '—';
+            } else {
+                const base = Math.floor(charisma / 2) + Math.floor(luck / 4);
+                damageChaValue.textContent = `${base} + 1d6`;
+            }
+        }
+    }
+
+    function rollDamage(type) {
+        const totals = calcTotals();
+        const d6 = Math.floor(Math.random() * 6) + 1;
+        if (type === 'int') {
+            if (totals.intelligence === null) {
+                statusMessage.textContent = 'Сначала бросьте Интеллект.';
+                return;
+            }
+            const base = Math.floor(totals.intelligence / 2);
+            const total = base + d6;
+            damageIntValue.textContent = `${base} + d6(${d6}) = ${total}`;
+            statusMessage.textContent = 'Урон по формуле интеллекта рассчитан.';
+        } else {
+            if (totals.charisma === null || totals.luck === null) {
+                statusMessage.textContent = 'Сначала бросьте Харизму и Удачу.';
+                return;
+            }
+            const base = Math.floor(totals.charisma / 2) + Math.floor(totals.luck / 4);
+            const total = base + d6;
+            damageChaValue.textContent = `${base} + d6(${d6}) = ${total}`;
+            statusMessage.textContent = 'Урон по формуле харизмы рассчитан.';
+        }
     }
 
     function validateForm() {
@@ -168,6 +262,8 @@
         groupInput.value = '';
         state.classId = '';
         state.stats = Object.fromEntries(statKeys.map(({ key }) => [key, { base: null, total: null }]));
+        state.freeRoll = null;
+        if (freeRollValue) freeRollValue.textContent = '—';
         updateClassCallout();
         renderStats();
         validationMessage.textContent = '';
@@ -194,6 +290,10 @@
         [nameInput, backgroundInput, classSelect, groupInput].forEach(field => {
             field?.addEventListener('input', validateForm);
         });
+        freeRollBtn?.addEventListener('click', rollFree);
+        assignBtn?.addEventListener('click', assignFreeRoll);
+        rollDamageIntBtn?.addEventListener('click', () => rollDamage('int'));
+        rollDamageChaBtn?.addEventListener('click', () => rollDamage('cha'));
     }
 
     bindEvents();
