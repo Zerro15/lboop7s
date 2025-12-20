@@ -1,26 +1,44 @@
-# Этап 1: Сборка
-FROM maven:3.9.6-eclipse-temurin-17 AS build
-WORKDIR /app
+# Use Tomcat with Java 17
+FROM tomcat:9.0-jre17
 
-# Копируем pom.xml
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
+# Set maintainer
+LABEL maintainer="your-email@example.com"
+LABEL version="1.0"
+LABEL description="Lab5 Manual Application with Basic Auth"
 
-# Копируем исходный код
-COPY src ./src
+# Install PostgreSQL client for health checks
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Собираем проект
-RUN mvn clean package -DskipTests
+# Remove default Tomcat applications
+RUN rm -rf /usr/local/tomcat/webapps/*
 
-# Этап 2: Запуск
-FROM eclipse-temurin:17-jre-alpine
-WORKDIR /app
+# Create application directories
+RUN mkdir -p /usr/local/tomcat/logs /app/logs
 
-# Копируем JAR (
-COPY --from=build /app/target/lab5-framework.jar app.jar
+# Copy WAR file to Tomcat
+COPY target/lab5-manual.war /usr/local/tomcat/webapps/ROOT.war
 
-# Открываем порт
+# Copy configuration files
+COPY docker/wait-for-db.sh /usr/local/bin/wait-for-db.sh
+COPY docker/healthcheck.sh /usr/local/bin/healthcheck.sh
+
+# Make scripts executable
+RUN chmod +x /usr/local/bin/wait-for-db.sh /usr/local/bin/healthcheck.sh
+
+# Create a non-root user for security
+RUN groupadd -r tomcat && useradd -r -g tomcat tomcat
+RUN chown -R tomcat:tomcat /usr/local/tomcat
+USER tomcat
+
+# Expose Tomcat port
 EXPOSE 8080
 
-# Команда запуска
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD /usr/local/bin/healthcheck.sh
+
+# Start Tomcat
+CMD ["catalina.sh", "run"]
