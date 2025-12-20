@@ -5,6 +5,8 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.annotation.WebListener;
 import java.util.logging.Logger;
 
+import com.lab7.Lab7Application;
+
 @WebListener
 public class Lab5Application implements ServletContextListener {
     private static final Logger logger = Logger.getLogger(Lab5Application.class.getName());
@@ -20,6 +22,7 @@ public class Lab5Application implements ServletContextListener {
         try {
             // Инициализация connection pool и других ресурсов
             initDatabase();
+            Lab7Application.initialize();
             logger.info("Database initialized successfully");
         } catch (Exception e) {
             logger.severe("Failed to initialize application: " + e.getMessage());

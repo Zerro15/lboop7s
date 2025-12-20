@@ -40,6 +40,9 @@
         <appender-ref ref="CONSOLE" />
     </logger>
 
+    <!-- LB7 components -->
+    <logger name="com.lab7" level="INFO" />
+
     <!-- Servlet logging with security -->
     <logger name="com.example.lab5.servlets" level="INFO" additivity="false">
         <appender-ref ref="FILE" />
