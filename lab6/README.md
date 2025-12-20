@@ -14,7 +14,7 @@ mvn clean package
 mvn tomcat7:run
 ```
 
-Then open http://localhost:8080/lab5/ (adjust context path if your container differs). The frontend files are served from the root; API calls use the `/api/lb7/*` endpoints.
+Then open http://localhost:8080/lab5/ (adjust context path if your container differs). The frontend files are served from the root; API calls use the `/api/lb7/*` endpoints and autodetect the context path (e.g., `/lab5/api/lb7` when deployed under `/lab5`).
 
 ### Docker compose option
 If you prefer the existing Docker workflow:

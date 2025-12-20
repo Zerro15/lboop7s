@@ -1,4 +1,8 @@
-const API_BASE = '/api/lb7';
+const CONTEXT = (() => {
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    return parts.length ? `/${parts[0]}` : '';
+})();
+const API_BASE = `${CONTEXT}/api/lb7`;
 
 const api = {
     async request(path, options = {}) {
