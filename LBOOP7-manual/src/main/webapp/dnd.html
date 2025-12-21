@@ -355,6 +355,7 @@
         <p class="muted">Неоморфный лист с боёвкой лабораторий.</p>
       </div>
       <div class="actions">
+        <button id="newCharacterBtn" class="ghost" type="button">🆕 Новый персонаж</button>
         <button id="themeToggle" class="ghost" type="button"><i class="fa-regular fa-moon"></i> Тёмная тема</button>
         <a class="button ghost" href="/index.html">Главная</a>
       </div>
@@ -519,9 +520,9 @@
   <div class="modal" id="defeatModal" hidden>
     <div class="modal-card">
       <h3>💀 Поражение</h3>
-      <p>Ваш персонаж пал. Попробуйте снова.</p>
+      <p>Ваш персонаж пал. Создайте нового героя и начните путь заново.</p>
       <div class="actions">
-        <button id="retryBtn">Попробовать снова</button>
+        <button id="openResetBtn">Открыть создание персонажа</button>
       </div>
     </div>
   </div>
@@ -533,6 +534,17 @@
       <div class="choice-grid" id="levelChoices"></div>
       <div class="actions" style="margin-top:10px;">
         <button id="confirmLevelUp" disabled>Подтвердить</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="resetModal" hidden>
+    <div class="modal-card">
+      <h3 id="resetTitle">🆕 Новый персонаж</h3>
+      <p id="resetMessage">Сбросьте текущего героя и начните прохождение лабораторий сначала.</p>
+      <div class="actions" style="margin-top:10px;">
+        <button id="confirmReset">Создать заново</button>
+        <button id="cancelReset" class="ghost">Отмена</button>
       </div>
     </div>
   </div>
@@ -557,8 +569,9 @@
         playerHp: null,
         enemy: null,
         enemyIndex: 0,
-        abilityBoost: 0,
-        abilityActive: false,
+        abilityCooldown: 0,
+        buffTurns: 0,
+        buffs: { luck: 0, intelligence: 0 },
         enemyDebuff: 0,
       };
 
@@ -566,9 +579,9 @@
       const THEME_KEY = 'lab7Theme';
 
       const classMap = {
-        leader: { name: 'Староста', mods: { charisma: 2, luck: 1 }, ability: 'Вдохновляющая речь' },
-        nerd: { name: 'Умник', mods: { intelligence: 2, luck: -1, charisma: -1 }, ability: 'Анализ уязвимостей' },
-        vibe: { name: 'Вайбкодер', mods: { dexterity: 2, luck: 2 }, ability: 'Код под бит' },
+        leader: { name: 'Староста', mods: { charisma: 2, luck: 1 }, ability: 'Удача старосты' },
+        nerd: { name: 'Умник', mods: { intelligence: 2, luck: -1, charisma: -1 }, ability: 'Скан уязвимостей' },
+        vibe: { name: 'Вайбкодер', mods: { dexterity: 2, luck: 2 }, ability: 'Код разума' },
       };
 
       const enemies = [
@@ -635,12 +648,18 @@
         victoryName: document.getElementById('victoryName'),
         victoryXP: document.getElementById('victoryXP'),
         nextLabBtn: document.getElementById('nextLabBtn'),
-        retryBtn: document.getElementById('retryBtn'),
         confirmLevelUp: document.getElementById('confirmLevelUp'),
         levelChoices: document.getElementById('levelChoices'),
         progressLevelBadge: document.getElementById('progressLevel'),
         themeToggle: document.getElementById('themeToggle'),
         battleSection: document.getElementById('battleSection'),
+        newCharacterBtn: document.getElementById('newCharacterBtn'),
+        resetModal: document.getElementById('resetModal'),
+        confirmReset: document.getElementById('confirmReset'),
+        cancelReset: document.getElementById('cancelReset'),
+        resetTitle: document.getElementById('resetTitle'),
+        resetMessage: document.getElementById('resetMessage'),
+        openResetBtn: document.getElementById('openResetBtn'),
       };
 
       // ---------- Helpers ----------
@@ -663,6 +682,20 @@
         if (state.classId === 'leader') return 'charisma';
         if (state.classId === 'nerd') return 'intelligence';
         return 'dexterity';
+      }
+
+      function effectiveStat(key) {
+        const total = state.stats[key].total || 0;
+        const buff = state.buffTurns > 0 ? (state.buffs[key] || 0) : 0;
+        return total + buff;
+      }
+
+      function updateAbilityButton() {
+        const abilityName = classMap[state.classId]?.ability || 'Способность';
+        if (!elements.useAbility) return;
+        const cd = state.abilityCooldown;
+        elements.useAbility.textContent = cd > 0 ? `✨ ${abilityName} (CD ${cd})` : `✨ ${abilityName}`;
+        elements.useAbility.disabled = !state.classId || cd > 0;
       }
 
       // ---------- Rendering ----------
@@ -708,12 +741,14 @@
         elements.hpSheet.textContent = hpSheet || '—';
         elements.hpBattle.textContent = hpBattle || '—';
 
-        elements.damageIntValue.textContent = totals.intelligence.total === null ? '—' :
-          `${Math.floor(totals.intelligence.total / 2)} + 1d6`;
-        if (totals.charisma.total === null || totals.luck.total === null) {
+        const intStat = state.stats.intelligence.total === null && state.buffTurns === 0 ? null : effectiveStat('intelligence');
+        elements.damageIntValue.textContent = intStat === null ? '—' :
+          `${Math.floor(intStat / 2)} + 1d6`;
+        const luckStat = state.stats.luck.total === null && state.buffTurns === 0 ? null : effectiveStat('luck');
+        if (state.stats.charisma.total === null || luckStat === null) {
           elements.damageChaValue.textContent = '—';
         } else {
-          const base = Math.floor(totals.charisma.total / 2) + Math.floor(totals.luck.total / 4);
+          const base = Math.floor(state.stats.charisma.total / 2) + Math.floor(luckStat / 4);
           elements.damageChaValue.textContent = `${base} + 1d6`;
         }
         updateBattleUI();
@@ -739,11 +774,13 @@
         const info = classMap[state.classId];
         if (!info) {
           elements.classDetails.textContent = 'Выберите класс, чтобы увидеть бонусы.';
+          updateAbilityButton();
           return;
         }
         const mods = Object.entries(info.mods).map(([k,v]) => `${k}: ${v>0?'+':''}${v}`).join(', ');
         elements.classDetails.textContent = `${info.name}. Бонусы: ${mods}. Способность: ${info.ability}`;
         elements.useAbility.textContent = `✨ ${info.ability}`;
+        updateAbilityButton();
       }
 
       // ---------- Storage ----------
@@ -755,7 +792,9 @@
           stats: state.stats,
           classId: state.classId,
           enemyIndex: state.enemyIndex,
-          abilityBoost: state.abilityBoost,
+          abilityCooldown: state.abilityCooldown,
+          buffTurns: state.buffTurns,
+          buffs: state.buffs,
           enemyDebuff: state.enemyDebuff,
           playerHp: state.playerHp,
           freeRoll: state.freeRoll,
@@ -777,7 +816,9 @@
           state.stats = data.stats || state.stats;
           state.classId = data.classId || '';
           state.enemyIndex = data.enemyIndex || 0;
-          state.abilityBoost = data.abilityBoost || 0;
+          state.abilityCooldown = data.abilityCooldown || 0;
+          state.buffTurns = data.buffTurns || 0;
+          state.buffs = data.buffs || { luck: 0, intelligence: 0 };
           state.enemyDebuff = data.enemyDebuff || 0;
           state.playerHp = data.playerHp || null;
           state.freeRoll = data.freeRoll ?? null;
@@ -827,18 +868,61 @@
         return !unrolled;
       }
 
+      function resetCharacter(logReset = true) {
+        state.level = 1;
+        state.xp = 0;
+        state.rests = 3;
+        state.classId = '';
+        state.enemy = null;
+        state.enemyIndex = 0;
+        state.playerHp = null;
+        state.freeRoll = null;
+        state.enemyDebuff = 0;
+        state.abilityCooldown = 0;
+        state.buffTurns = 0;
+        state.buffs = { luck: 0, intelligence: 0 };
+        statList.forEach(({ key }) => state.stats[key] = { base: null, total: null });
+        document.getElementById('charName').value = '';
+        document.getElementById('charBackground').value = '';
+        document.getElementById('charClass').value = '';
+        document.getElementById('charGroup').value = '';
+        elements.freeRollValue.textContent = '—';
+        elements.assignSelect.value = '';
+        elements.classDetails.textContent = 'Выберите класс, чтобы увидеть бонусы.';
+        elements.victoryModal.hidden = true;
+        elements.levelModal.hidden = true;
+        elements.defeatModal.hidden = true;
+        elements.resetModal.hidden = true;
+        localStorage.removeItem(STORAGE_KEY);
+        renderStatsValues();
+        updateAbilityButton();
+        updateBattleUI();
+        if (elements.battleLog) elements.battleLog.innerHTML = '';
+        if (logReset) log('Персонаж сброшен. Заполните лист заново.', 'info');
+      }
+
+      function openResetModal(fromDefeat = false) {
+        if (fromDefeat) {
+          elements.resetTitle.textContent = 'Поражение — новый герой';
+          elements.resetMessage.textContent = 'Прогресс лабораторий сброшен. Начните с первого уровня.';
+        } else {
+          elements.resetTitle.textContent = 'Новый персонаж';
+          elements.resetMessage.textContent = 'Все характеристики и прогресс будут очищены.';
+        }
+        elements.resetModal.hidden = false;
+      }
+
       // ---------- Battle ----------
       function deriveCombat() {
-        const totals = state.stats;
         const mainKey = classStatKey();
-        const mainStat = totals[mainKey].total || 0;
-        const luck = totals.luck.total || 0;
-        const dex = totals.dexterity.total || 0;
-        const con = totals.constitution.total || 0;
+        const mainStat = effectiveStat(mainKey);
+        const luck = effectiveStat('luck');
+        const dex = effectiveStat('dexterity');
+        const con = state.stats.constitution.total || 0;
         const maxHp = 20 + con * 3;
         const attackBonus = Math.floor(mainStat / 4) + Math.floor(luck / 6);
         const rollLuck = Math.floor(luck / 3);
-        const baseDamageBonus = Math.floor(mainStat / 3) + state.abilityBoost;
+        const baseDamageBonus = Math.floor(mainStat / 3);
         const ac = 10 + Math.floor(dex / 4);
         return { maxHp, attackBonus, rollLuck, baseDamageBonus, ac, mainStat, luck };
       }
@@ -897,6 +981,7 @@
         const progress = (state.enemyIndex / enemies.length) * 100;
         elements.labProgressFill.style.width = `${progress}%`;
         elements.labProgressText.textContent = `${state.enemyIndex}/${enemies.length}`;
+        updateAbilityButton();
       }
 
       function log(message, type = 'info') {
@@ -906,6 +991,19 @@
         entry.textContent = message;
         elements.battleLog.appendChild(entry);
         elements.battleLog.scrollTop = elements.battleLog.scrollHeight;
+      }
+
+      function consumeBuffTurn() {
+        if (state.buffTurns > 0) {
+          state.buffTurns -= 1;
+          if (state.buffTurns === 0) state.buffs = { luck: 0, intelligence: 0 };
+        }
+      }
+
+      function advanceTurn() {
+        consumeBuffTurn();
+        if (state.abilityCooldown > 0) state.abilityCooldown -= 1;
+        updateAbilityButton();
       }
 
       function playerAttack() {
@@ -930,6 +1028,7 @@
         }
         enemyAttack();
         state.enemyDebuff = 0;
+        advanceTurn();
         saveToStorage();
         updateBattleUI();
       }
@@ -961,18 +1060,18 @@
         state.enemyIndex = Math.min(enemies.length, state.enemyIndex + 1);
         const derived = deriveCombat();
         state.playerHp = derived.maxHp;
+        state.buffTurns = 0;
+        state.buffs = { luck: 0, intelligence: 0 };
         maybeLevelUp();
+        advanceTurn();
         saveToStorage();
         updateBattleUI();
       }
 
       function handleDefeat() {
         log('Вы пали в бою.', 'defeat');
-        elements.defeatModal.hidden = false;
-        state.enemy = null;
-        state.playerHp = deriveCombat().maxHp;
-        saveToStorage();
-        updateBattleUI();
+        resetCharacter(false);
+        openResetModal(true);
       }
 
       function restPlayer() {
@@ -980,25 +1079,35 @@
         state.rests -= 1;
         state.playerHp = deriveCombat().maxHp;
         log('Отдых восстановил HP.', 'heal');
+        advanceTurn();
         saveToStorage();
         updateBattleUI();
       }
 
       function useAbility() {
         if (!state.classId) { log('Выберите класс.', 'info'); return; }
+        if (!validateForm()) { log('Заполните лист и бросьте характеристики.', 'info'); return; }
+        if (state.abilityCooldown > 0) {
+          log(`Способность будет готова через ${state.abilityCooldown} хода(ов).`, 'info');
+          return;
+        }
         const cls = state.classId;
-        if (!state.enemy) { log('Нет противника.', 'info'); return; }
+        state.buffs = { luck: 0, intelligence: 0 };
         if (cls === 'leader') {
-          const derived = deriveCombat();
-          state.playerHp = Math.min(derived.maxHp, state.playerHp + 15);
-          log('Вдохновляющая речь: +15 HP', 'heal');
+          state.buffs.luck = 10;
+          state.buffTurns = 1;
+          log('Удача старосты: +10 к удаче на следующий ход.', 'info');
         } else if (cls === 'nerd') {
           state.enemyDebuff = 2;
-          log('Анализ уязвимостей: защита врага -2 на ход.', 'info');
+          state.buffTurns = 0;
+          log('Скан уязвимостей: защита врага -2 на ход.', 'info');
         } else if (cls === 'vibe') {
-          state.abilityBoost = 5;
-          log('Код под бит: +5 к урону следующей атаки.', 'info');
+          state.buffs.intelligence = 10;
+          state.buffTurns = 1;
+          log('Код разума: +10 к интеллекту на следующий ход.', 'info');
         }
+        state.abilityCooldown = 3;
+        updateAbilityButton();
         saveToStorage();
         updateBattleUI();
       }
@@ -1064,15 +1173,22 @@
           saveToStorage();
         });
         elements.assignRoll.addEventListener('click', assignFree);
+        elements.statsGrid.addEventListener('click', (e) => {
+          const btn = e.target.closest('.mini-roll');
+          if (btn) rollStat(btn.dataset.roll);
+        });
         elements.battleStart.addEventListener('click', () => { ensureEnemy(); updateBattleUI(); log('Бой начат.', 'info'); });
-        elements.battleAttack.addEventListener('click', () => { state.abilityBoost = state.abilityBoost || 0; playerAttack(); state.abilityBoost = 0; });
+        elements.battleAttack.addEventListener('click', playerAttack);
         elements.useAbility.addEventListener('click', useAbility);
         elements.battleRest.addEventListener('click', restPlayer);
         elements.nextLabBtn.addEventListener('click', () => { elements.victoryModal.hidden = true; ensureEnemy(); updateBattleUI(); });
-        elements.retryBtn.addEventListener('click', () => { elements.defeatModal.hidden = true; ensureEnemy(); updateBattleUI(); });
         elements.confirmLevelUp.addEventListener('click', confirmLevelUp);
         elements.themeToggle.addEventListener('click', toggleTheme);
         elements.battleLog.addEventListener('dblclick', () => { elements.battleLog.innerHTML = ''; });
+        elements.newCharacterBtn.addEventListener('click', () => { openResetModal(false); });
+        elements.confirmReset.addEventListener('click', () => { resetCharacter(); });
+        elements.cancelReset.addEventListener('click', () => { elements.resetModal.hidden = true; });
+        elements.openResetBtn?.addEventListener('click', () => { elements.defeatModal.hidden = true; openResetModal(true); });
         document.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' && document.activeElement.tagName === 'INPUT') {
             saveToStorage();
