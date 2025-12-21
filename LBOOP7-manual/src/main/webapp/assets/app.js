@@ -529,6 +529,7 @@ async function syncFromServer() {
         });
         syncFunctionSelects();
         persistLocalFunctions();
+        drawChart();
     }
 
     catch (error) {
