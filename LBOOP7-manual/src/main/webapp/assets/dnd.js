@@ -21,9 +21,15 @@
     const rollDamageIntBtn = document.getElementById('rollDamageInt');
     const rollDamageChaBtn = document.getElementById('rollDamageCha');
     const themeToggle = document.getElementById('themeToggle');
+    const battleStatus = document.getElementById('battleStatus');
+    const enemyStatus = document.getElementById('enemyStatus');
+    const battleLog = document.getElementById('battleLog');
+    const battleStartBtn = document.getElementById('battleStart');
+    const battleAttackBtn = document.getElementById('battleAttack');
+    const battleRestBtn = document.getElementById('battleRest');
 
     const STORAGE_KEY = 'grunge-sheet-character';
-    const THEME_KEY = 'dnd-sheet-theme';
+    const THEME_KEY = 'lab7Theme';
 
     const classMap = {
         leader: {
@@ -57,7 +63,26 @@
         stats: Object.fromEntries(statKeys.map(({ key }) => [key, { base: null, total: null }])),
         classId: '',
         freeRoll: null,
+        xp: 0,
+        rests: 3,
+        battleIndex: 0,
+        playerHp: null,
+        playerMax: null,
+        enemy: null,
+        enemyTurn: 1,
+        aiPenalty: 0,
     };
+
+    const labs = [
+        { id: 'lab1', name: 'Лаба 1: Hello World', hp: lvl => 15 + lvl * 5, dmg: () => randInt(1, 4) + 1, def: lvl => 8 + lvl, reward: 25, special: 'firstHit' },
+        { id: 'lab2', name: 'Лаба 2: Калькулятор', hp: lvl => 25 + lvl * 5, dmg: () => randInt(1, 6) + 2, def: lvl => 10 + lvl, reward: 35, special: 'doubleEveryThird' },
+        { id: 'lab3', name: 'Лаба 3: Массив данных', hp: lvl => 35 + lvl * 5, dmg: () => randInt(1, 6) + 3, def: lvl => 12 + lvl, reward: 50, special: 'counter' },
+        { id: 'lab4', name: 'Лаба 4: База данных', hp: lvl => 50 + lvl * 5, dmg: () => randInt(1, 8) + 4, def: lvl => 14 + lvl, reward: 75, special: 'regen' },
+        { id: 'lab5', name: 'Лаба 5: Веб-сервер', hp: lvl => 65 + lvl * 5, dmg: () => randInt(1, 8) + 5, def: lvl => 16 + lvl, reward: 100, special: 'reflect' },
+        { id: 'lab6', name: 'Лаба 6: Многопоточность', hp: lvl => 80 + lvl * 5, dmg: () => randInt(1, 10) + 6, def: lvl => 18 + lvl, reward: 150, special: 'doubleHit' },
+        { id: 'lab7', name: 'Лаба 7: Искусственный интеллект', hp: lvl => 100 + lvl * 5, dmg: () => randInt(1, 12) + 7, def: lvl => 20 + lvl, reward: 200, special: 'learning' },
+        { id: 'boss', name: 'Финальный босс: Экзаменационная комиссия', hp: lvl => 150 + lvl * 10, dmg: () => randInt(1, 8) + randInt(1, 8) + 8, def: lvl => 22 + lvl, reward: 500, special: 'boss' },
+    ];
 
     function updateClassCallout() {
         const classInfo = classMap[state.classId];
@@ -208,6 +233,170 @@
         }
     }
 
+    function enemyDamage(enemy) {
+        const lab = labs.find(l => l.id === enemy.id);
+        return lab ? lab.dmg() : randInt(1, 6);
+    }
+
+    function handleEnemyTurn() {
+        if (!state.enemy) return;
+        const derived = derivePlayerStats();
+        const enemy = state.enemy;
+        if (enemy.special === 'regen') {
+            enemy.hp += 5;
+            logBattle(`${enemy.name} восстанавливает 5 HP (теперь ${enemy.hp}).`);
+        }
+        const hitPlayer = () => {
+            const roll = randInt(1, 20) + Math.floor(state.level / 2) + 2;
+            return roll >= derived.ac;
+        };
+        const applyHit = (dmg) => {
+            state.playerHp = Math.max(0, state.playerHp - Math.max(1, dmg));
+            logBattle(`${enemy.name} наносит ${dmg} урона. Ваши HP: ${state.playerHp}/${derived.maxHp}`);
+        };
+
+        const act = () => {
+            let dmg = enemyDamage(enemy);
+            if (enemy.special === 'doubleEveryThird' && enemy.turn % 3 === 0) {
+                dmg *= 2;
+                logBattle(`${enemy.name} усиливает удар!`);
+            }
+            if (hitPlayer()) {
+                applyHit(dmg);
+            } else {
+                logBattle(`${enemy.name} промахивается.`);
+            }
+        };
+
+        if (enemy.special === 'doubleHit') {
+            act();
+            act();
+        } else {
+            act();
+        }
+        enemy.turn += 1;
+        updateBattleStatus();
+        if (state.playerHp <= 0) {
+            statusMessage.textContent = 'Вы пали в бою. Попробуйте снова.';
+            battleAttackBtn?.setAttribute('disabled', 'disabled');
+            logBattle('Поражение. Используйте отдых или перебросьте характеристики.');
+        }
+    }
+
+    function handleWin() {
+        const enemy = state.enemy;
+        if (!enemy) return;
+        const fatigue = Math.max(1, Math.floor(state.playerHp * 0.9));
+        state.playerHp = fatigue;
+        state.xp += enemy.reward;
+        logBattle(`Победа! Получено ${enemy.reward} XP. Усталость: HP теперь ${fatigue}.`);
+        state.enemy = null;
+        state.battleIndex += 1;
+        battleAttackBtn?.setAttribute('disabled', 'disabled');
+        while (state.xp >= state.level * 120) {
+            state.xp -= state.level * 120;
+            state.level += 1;
+            levelValue.textContent = state.level;
+            logBattle(`Повышение уровня! Теперь уровень ${state.level}.`);
+        }
+        const derived = derivePlayerStats();
+        state.playerMax = derived.maxHp;
+        state.playerHp = Math.min(state.playerHp, derived.maxHp);
+        updateMetrics();
+        updateBattleStatus();
+    }
+
+    function playerAttack() {
+        if (!state.enemy) {
+            statusMessage.textContent = 'Сначала начните бой с лабой.';
+            return;
+        }
+        const enemy = state.enemy;
+        const derived = derivePlayerStats();
+        const attackRoll = randInt(1, 20);
+        const totalRoll = attackRoll + derived.attackBonus;
+        let hit = totalRoll >= enemy.defense;
+        if (enemy.special === 'firstHit' && enemy.turn === 1) hit = true;
+        if (enemy.special === 'boss') {
+            const threshold = Math.max(2, 15 - derived.luckBonus);
+            if (attackRoll < threshold) hit = false;
+        }
+        if (!hit) {
+            logBattle(`Вы промахнулись (бросок ${attackRoll}+${derived.attackBonus}).`);
+            handleEnemyTurn();
+            return;
+        }
+        let dmg = randInt(1, 6) + derived.baseDamageBonus;
+        let crit = false;
+        if (Math.random() < derived.critChance) {
+            crit = true;
+            dmg *= 2;
+        }
+        if (enemy.special === 'learning') {
+            dmg = Math.max(1, dmg - state.aiPenalty);
+            state.aiPenalty += 1;
+        }
+        enemy.hp = Math.max(0, enemy.hp - dmg);
+        logBattle(`Вы попали по ${enemy.name} на ${dmg} урона${crit ? ' (крит!)' : ''}. Осталось HP: ${enemy.hp}`);
+
+        if (enemy.special === 'reflect' && Math.random() < 0.25) {
+            const reflect = Math.max(1, Math.floor(dmg * 0.3));
+            state.playerHp = Math.max(0, state.playerHp - reflect);
+            logBattle(`${enemy.name} отражает ${reflect} урона обратно! Ваши HP: ${state.playerHp}`);
+        }
+        if (enemy.special === 'counter' && Math.random() < 0.5) {
+            const counter = Math.floor(enemyDamage(enemy) / 2);
+            state.playerHp = Math.max(0, state.playerHp - counter);
+            logBattle(`${enemy.name} контратакует на ${counter} урона.`);
+        }
+
+        if (enemy.hp <= 0) {
+            handleWin();
+            return;
+        }
+
+        handleEnemyTurn();
+    }
+
+    function restPlayer() {
+        if (state.rests <= 0) {
+            statusMessage.textContent = 'Запасы отдыха исчерпаны.';
+            return;
+        }
+        const derived = derivePlayerStats();
+        state.rests -= 1;
+        state.playerHp = derived.maxHp;
+        logBattle('Вы полностью восстановились.');
+        updateBattleStatus();
+    }
+
+    function derivePlayerStats() {
+        const totals = calcTotals();
+        const level = state.level;
+        const maxHp = 20 + (totals.constitution || 0) * 3 + level * 10;
+        const luckBonus = Math.floor((totals.luck || 0) / 6);
+        const dexBonus = Math.floor((totals.dexterity || 0) / 4);
+        const classAttr = state.classId === 'leader' ? totals.charisma : state.classId === 'nerd' ? totals.intelligence : totals.dexterity;
+        const attackBonus = Math.floor((classAttr || 0) / 4) + luckBonus + level;
+        const baseDamageBonus = Math.floor((classAttr || 0) / 3);
+        const ac = 10 + dexBonus + level;
+        const critChance = 0.05 + (totals.luck || 0) / 20;
+        return { totals, level, maxHp, luckBonus, attackBonus, baseDamageBonus, ac, classAttr: classAttr || 0, critChance };
+    }
+
+    function ensurePlayerReady() {
+        if (!classSelect.value) {
+            statusMessage.textContent = 'Выберите класс перед боем.';
+            return false;
+        }
+        const unrolled = statKeys.filter(({ key }) => state.stats[key].base === null);
+        if (unrolled.length) {
+            statusMessage.textContent = 'Сначала бросьте все характеристики.';
+            return false;
+        }
+        return true;
+    }
+
     function animateButton(btn) {
         if (!btn) return;
         btn.classList.add('rolling');
@@ -237,6 +426,63 @@
         }
         localStorage.setItem(THEME_KEY, mode);
         if (themeToggle) themeToggle.textContent = mode === 'dark' ? 'Светлая тема' : 'Темная тема';
+    }
+
+    function updateBattleStatus() {
+        const derived = derivePlayerStats();
+        const lab = labs[state.battleIndex] || null;
+        if (state.playerMax === null) state.playerMax = derived.maxHp;
+        if (state.playerHp === null) state.playerHp = derived.maxHp;
+        const restText = `Отдыхов: ${state.rests}`;
+        if (battleStatus) {
+            battleStatus.textContent = `Уровень ${state.level} • HP ${state.playerHp}/${derived.maxHp} • AC ${derived.ac} • XP ${state.xp} • ${restText}`;
+        }
+        if (enemyStatus) {
+            if (!state.enemy && lab) {
+                enemyStatus.textContent = `Следующая цель: ${lab.name}`;
+            } else if (state.enemy) {
+                enemyStatus.textContent = `${state.enemy.name}: ${state.enemy.hp} HP • Защита ${state.enemy.defense}`;
+            } else {
+                enemyStatus.textContent = 'Все лабоработы побеждены!';
+            }
+        }
+        if (battleRestBtn) battleRestBtn.textContent = `Отдохнуть (${state.rests})`;
+        if (battleAttackBtn) battleAttackBtn.disabled = !state.enemy;
+    }
+
+    function logBattle(text) {
+        if (!battleLog) return;
+        const line = document.createElement('div');
+        line.textContent = text;
+        battleLog.appendChild(line);
+        battleLog.scrollTop = battleLog.scrollHeight;
+    }
+
+    function startBattle() {
+        if (!ensurePlayerReady()) return;
+        if (state.battleIndex >= labs.length) {
+            statusMessage.textContent = 'Все лабы уже пройдены!';
+            return;
+        }
+        const derived = derivePlayerStats();
+        state.playerMax = derived.maxHp;
+        if (state.playerHp === null || state.playerHp > derived.maxHp) state.playerHp = derived.maxHp;
+        const lab = labs[state.battleIndex];
+        state.enemy = {
+            id: lab.id,
+            name: lab.name,
+            hp: lab.hp(state.level),
+            defense: lab.def(state.level),
+            reward: lab.reward,
+            special: lab.special,
+            turn: 1,
+        };
+        state.enemyTurn = 1;
+        state.aiPenalty = 0;
+        if (battleLog) battleLog.innerHTML = '';
+        if (battleAttackBtn) battleAttackBtn.disabled = false;
+        logBattle(`Начинается бой: ${lab.name}`);
+        updateBattleStatus();
     }
 
     function validateForm() {
@@ -344,6 +590,9 @@
             const next = document.body.classList.contains('dark') ? 'light' : 'dark';
             setTheme(next);
         });
+        battleStartBtn?.addEventListener('click', startBattle);
+        battleAttackBtn?.addEventListener('click', playerAttack);
+        battleRestBtn?.addEventListener('click', restPlayer);
     }
 
     bindEvents();
@@ -351,4 +600,5 @@
     renderStats();
     setTheme(localStorage.getItem(THEME_KEY) || 'light');
     loadCharacter();
+    updateBattleStatus();
 })();

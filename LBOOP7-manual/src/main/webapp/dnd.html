@@ -180,6 +180,26 @@
         </div>
     </section>
 
+    <section class="card" id="battleSection">
+        <div class="card-header">
+            <div>
+                <h2>Боёвка: Лабы против героя</h2>
+                <p class="muted">Сразитесь последовательно с 7 лабами и финальным боссом. Используются ваши характеристики.</p>
+            </div>
+        </div>
+        <div class="sheet-note">После каждой победы — усталость (-10% HP). У вас есть 3 отдыха для полного восстановления между боями.</div>
+        <div class="sheet-grid">
+            <div class="class-callout" id="battleStatus" aria-live="polite"></div>
+            <div class="class-callout" id="enemyStatus" aria-live="polite"></div>
+        </div>
+        <div class="actions">
+            <button id="battleStart">Начать / следующая лаба</button>
+            <button id="battleAttack" class="ghost" disabled>Атаковать</button>
+            <button id="battleRest" class="ghost">Отдохнуть</button>
+        </div>
+        <div id="battleLog" class="game-log"></div>
+    </section>
+
     <section class="card class-legend">
         <h2>Памятка по классам</h2>
         <div class="legend-grid">
