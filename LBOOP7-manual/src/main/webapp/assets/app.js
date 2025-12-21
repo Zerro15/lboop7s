@@ -583,6 +583,7 @@ function gatherPoints() {
 function syncFunctionSelects() {
     ['opFirst', 'opSecond', 'diffSource', 'integralSource', 'chartSource', 'saveSource'].forEach(id => {
         const select = document.getElementById(id);
+        const prevValue = select.value;
         select.innerHTML = '';
         state.functions.forEach(fn => {
             const option = document.createElement('option');
@@ -590,6 +591,13 @@ function syncFunctionSelects() {
             option.textContent = `${fn.name} (${fn.points.length} тчк)`;
             select.appendChild(option);
         });
+        if (prevValue && state.functions.some(fn => fn.id === prevValue)) {
+            select.value = prevValue;
+        } else if (id === 'opSecond' && state.functions[1]) {
+            select.value = state.functions[1].id;
+        } else if (state.functions[0]) {
+            select.value = state.functions[0].id;
+        }
     });
     syncComposite();
     renderAllDropdowns();
@@ -1001,8 +1009,14 @@ function createFunctionFromSimple() {
 bind('buildSimple', 'click', createFunctionFromSimple);
 
 function binaryOp(op) {
-    const first = state.functions.find(f => f.id === document.getElementById('opFirst').value);
-    const second = state.functions.find(f => f.id === document.getElementById('opSecond').value);
+    let first = state.functions.find(f => f.id === document.getElementById('opFirst').value);
+    let second = state.functions.find(f => f.id === document.getElementById('opSecond').value);
+    if (!first && state.functions[0]) first = state.functions[0];
+    if ((!second || second.id === first?.id) && state.functions[1]) {
+        second = state.functions[1];
+        const select = document.getElementById('opSecond');
+        if (select) select.value = second.id;
+    }
     if (!first || !second) return showModal('Ошибка', 'Нужно выбрать обе функции.');
 
     if (state.auth?.user && first.persisted && second.persisted) {
