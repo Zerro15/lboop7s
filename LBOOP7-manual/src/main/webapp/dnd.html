@@ -10,45 +10,43 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE0x1r3ZLr3I8aH3V9Wf0R7WkG7rG3f67j6c6Ww5q3P6lz1Kg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     :root {
-      --bg: #f5f8ff;
-      --text: #0f1a3d;
-      --card: #ffffff;
-      --surface: #f0f3ff;
-      --border: #d8e2ff;
-      --hover: #ebf0ff;
-      --active: #d5ddff;
-      --shadow-dark: #c7d2f3;
-      --shadow-light: #ffffff;
-      --accent: #1f4bff;
-      --success: #34c759;
-      --danger: #ff5e57;
-      --warning: #f7b500;
-      --info: #4ba3ff;
-      --muted: #5d6a85;
+      --bg: #0f1116;
+      --text: #f5f7fb;
+      --card: #1d2330;
+      --surface: #151a24;
+      --border: #243041;
+      --hover: #1f2735;
+      --active: #273143;
+      --shadow: 0 18px 32px rgba(0,0,0,0.35);
+      --accent: #4dd2c7;
+      --success: #7be7a6;
+      --danger: #f56f6f;
+      --warning: #f7c066;
+      --info: #5cb6ff;
+      --muted: #9da8bd;
     }
     body.dark {
-      --bg: #0f172a;
-      --text: #e8f0ff;
-      --card: #121c36;
-      --surface: #0d162d;
-      --border: #1f2b46;
-      --hover: #18243f;
-      --active: #1f2f52;
-      --shadow-dark: #0a1124;
-      --shadow-light: #18243f;
-      --accent: #7ba3ff;
-      --success: #50e3c2;
-      --danger: #ff7b7b;
-      --warning: #f5c06d;
-      --info: #8ab6ff;
-      --muted: #9fb4d7;
+      --bg: #0b0d13;
+      --text: #e9edf7;
+      --card: #141924;
+      --surface: #0f141e;
+      --border: #1c2433;
+      --hover: #1a2131;
+      --active: #222c3f;
+      --shadow: 0 18px 32px rgba(0,0,0,0.45);
+      --accent: #53d6d2;
+      --success: #6bdd9a;
+      --danger: #ff8a8a;
+      --warning: #ffc46b;
+      --info: #7bc7ff;
+      --muted: #b7c2d9;
     }
 
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: 'Titillium Web', 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
+      background: linear-gradient(145deg, rgba(77,210,199,0.12), rgba(12,18,32,0.85)), var(--bg);
       color: var(--text);
       transition: background .3s ease, color .3s ease;
       padding: 16px;
@@ -65,26 +63,18 @@
     }
     .panel, .card {
       background: var(--card);
-      border-radius: 18px;
+      border-radius: 14px;
       padding: 16px 18px;
-      box-shadow: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--shadow-light);
+      box-shadow: var(--shadow);
       border: 1px solid var(--border);
       position: relative;
-      overflow: hidden;
     }
     .panel {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-    }
-    .panel::after {
-      content: '';
-      position: absolute;
-      inset: 10px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.1);
-      pointer-events: none;
+      background: linear-gradient(135deg, rgba(77,210,199,0.12), rgba(123,231,166,0.08));
     }
     .actions {
       display: flex;
@@ -95,18 +85,21 @@
     button {
       padding: 10px 14px;
       border-radius: 12px;
-      border: 1px solid var(--border);
-      background: linear-gradient(135deg, rgba(31,75,255,0.18), rgba(31,75,255,0.32));
-      color: var(--text);
-      font-weight: 700;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), #27b6ae);
+      color: #0a0f18;
+      font-weight: 800;
       cursor: pointer;
-      box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
-      transition: transform .12s ease, box-shadow .12s ease, filter .2s ease;
+      box-shadow: 0 12px 22px rgba(0,0,0,0.25);
+      transition: transform .12s ease, box-shadow .12s ease, filter .2s ease, opacity .2s ease;
     }
     button:hover { transform: translateY(-1px); filter: brightness(1.05); }
     button:active { transform: translateY(0); }
     button.ghost {
-      background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(31,75,255,0.12));
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: none;
     }
     button:disabled { opacity: .55; cursor: not-allowed; }
 
