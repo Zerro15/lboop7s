@@ -6,7 +6,7 @@
   <title>D&D Лист персонажа с визуальной боёвкой</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE0x1r3ZLr3I8aH3V9Wf0R7WkG7rG3f67j6c6Ww5q3P6lz1Kg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     :root {
@@ -45,8 +45,8 @@
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: 'Titillium Web', 'Segoe UI', system-ui, sans-serif;
-      background: linear-gradient(145deg, rgba(77,210,199,0.12), rgba(12,18,32,0.85)), var(--bg);
+      font-family: 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
       color: var(--text);
       transition: background .3s ease, color .3s ease;
       padding: 16px;
@@ -62,11 +62,11 @@
       gap: 16px;
     }
     .panel, .card {
-      background: var(--card);
-      border-radius: 14px;
-      padding: 16px 18px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
+      background: transparent;
+      border-radius: 0;
+      padding: 16px 0;
+      box-shadow: none;
+      border: none;
       position: relative;
     }
     .panel {
@@ -74,7 +74,8 @@
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-      background: linear-gradient(135deg, rgba(77,210,199,0.12), rgba(123,231,166,0.08));
+      padding: 16px 0;
+      border-bottom: 2px solid var(--accent);
     }
     .actions {
       display: flex;
@@ -84,21 +85,21 @@
     }
     button {
       padding: 10px 14px;
-      border-radius: 12px;
-      border: none;
-      background: linear-gradient(135deg, var(--accent), #27b6ae);
-      color: #0a0f18;
-      font-weight: 800;
+      border-radius: 4px;
+      border: 2px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 12px 22px rgba(0,0,0,0.25);
-      transition: transform .12s ease, box-shadow .12s ease, filter .2s ease, opacity .2s ease;
+      box-shadow: none;
+      transition: transform .12s ease, filter .2s ease, opacity .2s ease, border-color .2s ease;
     }
     button:hover { transform: translateY(-1px); filter: brightness(1.05); }
     button:active { transform: translateY(0); }
     button.ghost {
       background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
+      color: var(--accent);
+      border: 2px solid var(--accent);
       box-shadow: none;
     }
     button:disabled { opacity: .55; cursor: not-allowed; }
