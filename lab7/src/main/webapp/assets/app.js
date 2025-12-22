@@ -679,7 +679,8 @@ function renderFancySelect(selectId, options = {}) {
         menu.hidden = true;
     }
 
-    toggle.addEventListener('click', () => {
+    toggle.addEventListener('click', (event) => {
+        event.stopPropagation();
         const isFolded = dropdown.classList.contains('folded');
         if (isFolded) {
             dropdown.classList.remove('folded');
@@ -808,7 +809,8 @@ function renderChartPicker() {
         menu.hidden = true;
     }
 
-    toggle.addEventListener('click', () => {
+    toggle.addEventListener('click', (event) => {
+        event.stopPropagation();
         if (!state.functions.length) return;
         const isFolded = dropdown.classList.contains('folded');
         if (isFolded) {

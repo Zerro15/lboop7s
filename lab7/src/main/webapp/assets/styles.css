@@ -162,7 +162,7 @@ input, select, textarea {
     padding: 10px 12px;
     border-radius: var(--radius);
     border: 2px solid var(--border);
-    background: transparent;
+    background: var(--surface);
     color: var(--text);
     outline: none;
     transition: border-color .12s ease, box-shadow .12s ease;
@@ -172,6 +172,11 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px rgba(31,75,255,0.15);
+}
+
+select option {
+    background: var(--surface);
+    color: var(--text);
 }
 
 .table {
@@ -232,6 +237,7 @@ input:focus, select:focus, textarea:focus {
     border-bottom: 1px solid var(--border);
     display: flex;
     gap: 6px;
+    z-index: 1;
 }
 .dropdown-search input { width: 100%; border-radius: var(--radius); padding: 9px 10px; }
 
