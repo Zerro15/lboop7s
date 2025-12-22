@@ -1438,36 +1438,36 @@ function drawChart() {
     canvas.onmousemove = e => {
         const view = state.chartView;
         const rect = canvas.getBoundingClientRect();
-        const xPixel = e.clientX - rect.left;
-        const normalized = Math.min(Math.max(xPixel - pad, 0), innerW) / innerW;
+        const xPixelRaw = e.clientX - rect.left;
+        const yPixelRaw = e.clientY - rect.top;
+        const cx = Math.min(Math.max(xPixelRaw, pad), width - pad);
+        const cy = Math.min(Math.max(yPixelRaw, pad), height - pad);
+        const normalized = Math.min(Math.max(cx - pad, 0), innerW) / innerW;
         const targetX = view.minX + normalized * view.spanX;
         const closest = findClosestPoint(searchPoints, targetX);
         if (closest) {
-            const cx = mapX(closest.x);
-            const cy = mapY(closest.y);
             tooltipEl.style.left = `${e.pageX + 10}px`;
             tooltipEl.style.top = `${e.pageY + 10}px`;
             tooltipEl.textContent = `(${closest.x.toFixed(4)}; ${closest.y.toFixed(4)})`;
             tooltipEl.hidden = false;
-
-            if (overlayCtx && chartOverlay) {
-                overlayCtx.clearRect(0, 0, width * ratio, height * ratio);
-                overlayCtx.save();
-                overlayCtx.scale(ratio, ratio);
-                overlayCtx.setLineDash([5, 5]);
-                overlayCtx.strokeStyle = 'rgba(99,102,241,0.6)';
-                overlayCtx.lineWidth = 1;
-                overlayCtx.beginPath();
-                overlayCtx.moveTo(cx, pad);
-                overlayCtx.lineTo(cx, height - pad);
-                overlayCtx.moveTo(pad, cy);
-                overlayCtx.lineTo(width - pad, cy);
-                overlayCtx.stroke();
-                overlayCtx.restore();
-            }
         } else {
             tooltipEl.hidden = true;
-            overlayCtx?.clearRect(0, 0, width * ratio, height * ratio);
+        }
+
+        if (overlayCtx && chartOverlay) {
+            overlayCtx.clearRect(0, 0, width * ratio, height * ratio);
+            overlayCtx.save();
+            overlayCtx.scale(ratio, ratio);
+            overlayCtx.setLineDash([5, 5]);
+            overlayCtx.strokeStyle = 'rgba(99,102,241,0.6)';
+            overlayCtx.lineWidth = 1;
+            overlayCtx.beginPath();
+            overlayCtx.moveTo(cx, pad);
+            overlayCtx.lineTo(cx, height - pad);
+            overlayCtx.moveTo(pad, cy);
+            overlayCtx.lineTo(width - pad, cy);
+            overlayCtx.stroke();
+            overlayCtx.restore();
         }
     };
     canvas.onmouseleave = () => {
@@ -1503,6 +1503,8 @@ window.addEventListener('resize', () => {
 
 function syncComposite() {
     const container = document.getElementById('compositeSteps');
+    if (!container) return;
+    const container = document.getElementById('compositeSteps');
     container.querySelectorAll('select[data-kind="fn"]').forEach(sel => {
         sel.innerHTML = '';
         state.functions.forEach(fn => {
@@ -1517,6 +1519,7 @@ function syncComposite() {
 }
 
 bind('addCompositeStep', 'click', () => {
+    if (!document.getElementById('compositeSteps')) return;
     const div = document.createElement('div');
     div.className = 'card muted';
     div.innerHTML = `
@@ -1532,6 +1535,7 @@ bind('addCompositeStep', 'click', () => {
 });
 
 bind('buildComposite', 'click', () => {
+    if (!document.getElementById('compositeSteps')) return;
     const steps = Array.from(document.querySelectorAll('#compositeSteps div'));
     if (steps.length === 0) return showModal('Ошибка', 'Добавьте хотя бы один шаг.');
     let resultPoints = null;
