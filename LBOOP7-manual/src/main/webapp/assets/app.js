@@ -145,30 +145,7 @@ const simpleFunctions = [
 
 function renderSimpleGallery() {
     const gallery = document.getElementById('simpleGallery');
-    if (!gallery) return;
-    gallery.innerHTML = '';
-    const sorted = simpleFunctions.slice().sort((a, b) => a.label.localeCompare(b.label));
-    sorted.forEach(def => {
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = 'fn-card';
-        card.dataset.key = def.key;
-        const params = def.params?.length ? `${def.params.length} параметров` : 'Без параметров';
-        card.innerHTML = `
-            <div class="fn-card__title">${def.label}</div>
-            <div class="fn-card__meta">${params}</div>
-        `;
-        card.addEventListener('click', () => {
-            const select = document.getElementById('simpleFunctionSelect');
-            select.value = def.key;
-            state.gallerySelection = def.key;
-            document.querySelectorAll('.fn-card').forEach(c => c.classList.toggle('active', c.dataset.key === def.key));
-            renderSimpleParams();
-        });
-        gallery.appendChild(card);
-    });
-    const activeKey = document.getElementById('simpleFunctionSelect').value;
-    document.querySelectorAll('.fn-card').forEach(c => c.classList.toggle('active', c.dataset.key === activeKey));
+    if (gallery) gallery.innerHTML = '';
 }
 
 function bootstrapDemoFunctions() {
@@ -1642,40 +1619,13 @@ bind('syncBtn', 'click', syncFromServer);
 
 function setupCollapsibles() {
     const cards = Array.from(document.querySelectorAll('[data-mobile-collapse]'));
-    const media = window.matchMedia('(max-width: 768px)');
-
-    const apply = () => {
-        cards.forEach((card, idx) => {
-            const body = card.querySelector('.card-body');
-            if (!body) return;
-            if (!media.matches) {
-                card.classList.remove('collapsed');
-                body.hidden = false;
-                return;
-            }
-            if (!card.dataset.initCollapse) {
-                const collapseByDefault = idx > 1;
-                card.classList.toggle('collapsed', collapseByDefault);
-                body.hidden = collapseByDefault;
-                card.dataset.initCollapse = 'true';
-            } else {
-                body.hidden = card.classList.contains('collapsed');
-            }
-        });
-    };
-
     cards.forEach(card => {
         const body = card.querySelector('.card-body');
-        const toggle = card.querySelector('.collapse-toggle');
-        if (!body || !toggle) return;
-        toggle.addEventListener('click', () => {
-            const collapsed = card.classList.toggle('collapsed');
-            if (media.matches) body.hidden = collapsed; else body.hidden = false;
-        });
+        if (body) {
+            card.classList.remove('collapsed');
+            body.hidden = false;
+        }
     });
-
-    media.addEventListener('change', apply);
-    apply();
 }
 
 function seedDefaults() {

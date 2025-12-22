@@ -1,30 +1,30 @@
 :root {
+    --bg: #f0f2f7;
+    --panel: #ffffff;
+    --card: #ffffff;
+    --muted: #485062;
+    --accent: #0c8fa2;
+    --accent-2: #16c47f;
+    --text: #0b1326;
+    --danger: #c23b3b;
+    --shadow: 0 12px 26px rgba(15,19,38,0.12);
+    --radius: 14px;
+    font-family: 'Titillium Web', 'Segoe UI', 'Helvetica Neue', sans-serif;
+    color-scheme: light;
+}
+
+body.dark {
     --bg: #0f1116;
-    --panel: #161b24;
-    --card: #1d2330;
-    --muted: #9da8bd;
+    --panel: #131926;
+    --card: #161d2c;
+    --muted: #a9b3c8;
     --accent: #4dd2c7;
     --accent-2: #7be7a6;
     --text: #f5f7fb;
     --danger: #f56f6f;
     --shadow: 0 18px 32px rgba(0,0,0,0.35);
     --radius: 14px;
-    font-family: 'Titillium Web', 'Segoe UI', 'Helvetica Neue', sans-serif;
     color-scheme: dark;
-}
-
-body.light {
-    --bg: #eef2f7;
-    --panel: #ffffff;
-    --card: #ffffff;
-    --muted: #4a5160;
-    --accent: #0b9fab;
-    --accent-2: #18c97a;
-    --text: #0d1627;
-    --danger: #c23b3b;
-    --shadow: 0 10px 24px rgba(16,24,40,0.16);
-    --radius: 12px;
-    color-scheme: light;
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@600&display=swap');
